@@ -428,8 +428,6 @@ do kcell = 1,nlist
         write(*,'(a,6i8)') 'Error: par_mover: bad indx: ',kcell,site1,indx
         stop
     endif
-    ! TESTING ---------- to track down why case use_chemotaxis + chemo_K_exit = 0
-    !                    is not the same as not use_chemotaxis
 	if (use_chemotaxis) then
 		call chemo_jumper(kcell,indx,slot,go,kpar)
 	else
