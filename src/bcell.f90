@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------------------------
-! Simplifying assumptions:
+! Simplifying assumptions: 
 ! (1) The follicle is assumed always to be approximately bounded by a spheroid, 
 !     the surface created by rotating an ellipse about the X axis.  The ellipse
 !     is defined by the major axis radius (in the X direction) and the eccentricity e.

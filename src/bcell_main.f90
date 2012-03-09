@@ -8,7 +8,7 @@ integer :: ncpu, res, summarydata(100)
 character*(128) :: infile,outfile
 character*(64) :: travelfile = 'travel_time_dist.out'
 integer :: status, nlen, cnt, i, inbuflen, outbuflen
-integer :: jstep, hour, ntot, ncog(2), inflow, nexits
+integer :: jstep, hour, ntot, ncog(2), inflow
 character*(128) :: b, c, progname
 
 call process_command_line(ncpu,infile,outfile)
@@ -76,8 +76,8 @@ do jstep = 1,Nsteps
 		ntot = summaryData(4)
 		ncog(1:2) = summaryData(6:7)
 		inflow = summaryData(11)
-		nexits = summaryData(12)
-		write(*,'(5(a,i6))') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog(1),' inflow: ',inflow,' nexits: ', nexits		
+!		nexits = summaryData(12)
+		write(*,'(5(a,i6))') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog(1),' inflow: ',inflow	
 	endif
 enddo
 end
