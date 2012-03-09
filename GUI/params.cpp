@@ -1,0 +1,161 @@
+#include <qstring.h>
+#include "params.h"
+
+Params::Params()
+{
+	PARAM_SET params[] = {
+{"BC_AVIDITY_MEDIAN", 1.0, 0.1, 10.0,
+"BCR avidity median parameter",
+"BCR avidity has a lognormal distribution, described by the median and shape parameters.\n\
+(BCR stimulation rate is proportional to the product of BC avidity and antigen load.)"},
+
+{"BC_AVIDITY_SHAPE", 1.1, 1.01, 3.0,
+"BCR avidity shape parameter",
+"BCR avidity has a lognormal distribution, described by the median and shape parameters.\n\
+The shape value must be greater than 1, and values close to 1 give distributions that are close to normal."},
+
+{"BC_COGNATE_FRACTION", 0.0001, 0.0, 0.002,
+"B cell cognate fraction",
+"The fraction of B cells that are cognate, i.e. recognize and respond to the antigen."},
+
+{"BC_STIM_RATE_CONSTANT", 1, 0.0, 100.0,
+"BCR stimulation rate constant",
+"Rate constant Ks for BCR stimulation, where:\n\
+rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
+[molecules/min]"},
+	
+{"BC_STIM_HALFLIFE", 24.0, 0.0, 100.0,
+"BCR stimulation halflife",
+"Integrated BCR stimulation decays with a specified halflife. \n\
+[hours]"},
+
+{"DIVIDE1_MEDIAN", 6.0, 0.0, 100.0,
+"1st division time median parameter",
+"The time taken for the first B cell division, after full activation, has a lognormal distribution, described by the median and shape parameters. \n\
+[hours]"},
+
+{"DIVIDE1_SHAPE", 1.1, 1.01, 3.0,
+"1st division time shape parameter",
+"The time taken for the first B cell division, after full activation, has a lognormal distribution, described by the median and shape parameters."},
+
+{"DIVIDE2_MEDIAN", 5.0, 0, 100.0,
+"Later division time median parameter",
+"The time taken for later B cell divisions has a lognormal distribution, described by the median and shape parameters.\n\
+[hours]"},
+
+{"DIVIDE2_SHAPE", 1.1, 1.01, 3.0,
+"Later division time shape parameter",
+"The time taken for later B cell divisions has a lognormal distribution, described by the median and shape parameters."},
+
+{"MOTILITY_BETA", 0.35, 0.25, 0.5,
+"Motility speed parameter",
+"B cell motility is described by speed and persistence parameters, each in the range 0 - 1. Median B cell speed is roughly proportional to MOTILITY_BETA."},
+
+{"MOTILITY_RHO", 0.76, 0.5, 0.9,
+"Motility persistence parameter",
+"B cell motility is described by speed and persistence parameters, each in the range 0 - 1. MOTILITY_RHO determines the extent to which motion is in the same direction from one time step to the next."},
+
+{"NX", 100, 100, 300,
+"Lattice size",
+"Dimension of the lattice (number of sites in X, Y and Z directions).  Typically 4*BLOB_RADIUS is OK."},
+
+{"BLOB_RADIUS", 23.1, 15.0, 50.0,
+"Initial blob size",
+"The radius of the initial ellipsoidal blob of B cells, as number of sites.  (18.38, 23.1, 29.1, 36.7 -> 25k, 50k, 100k, 200k sites)"},
+
+{"BC_FRACTION", 0.6, 0.4, 0.8,
+"B cell fraction",
+"Fraction of the follicular volume occupied by B cells."},
+
+{"FLUID_FRACTION", 0.1, 0.05, 0.2,
+"Fluid fraction",
+"Fraction of the paracortical volume occupied by fluid."},
+
+{"USE_TRAFFIC", 1, 0, 1,
+"B cell trafficking?",
+"B cell trafficking is simulated (ingress and egress)"},
+
+{"USE_EXIT_CHEMOTAXIS", 0, 0, 1,
+"B cell exit chemotaxis?",
+"S1P-modulated B cell chemotaxis towards exit portals is simulated"},
+
+{"COMPUTED_OUTFLOW", 0, 0, 1,
+"Compute B cell outflow limit?",
+"The upper bound on B cell outflow is computed together with inflow.  The alternative is to permit (probabilistic) egress of any cell at a portal."},
+
+{"RESIDENCE_TIME", 24.0, 12.0, 36.0,
+"B cell residence time",
+"B cell residence time.\n\
+[hours]"},
+
+{"INFLAMM_DAYS1", 3.5, 0.0, 10.0,
+"Inflammation plateau duration",
+"Period over which the level of inflammation signal from the periphery is constant.\n\
+[days]"},
+
+{"INFLAMM_DAYS2", 4.5, 0.0, 10.0,
+"Inflammation cessation time",
+"Time at which the level of inflammation signal from the periphery goes to zero.\n\
+[days]"},
+
+{"INFLAMM_LEVEL", 0.0, 0.0, 10.0,
+"Inflammation level",
+"The plateau inflammation signal level."},
+
+{"CHEMO_RADIUS", 60.0, 10.0, 200.0,
+"Radius of chemotactic influence",
+"Range of chemotactic influence of an exit site on B cell motion.  At this distance the influence is reduced to 5% of its maximum value.\n\
+[um]"},
+
+{"CHEMO_K_EXIT", 0.5, 0.0, 1.0,
+"Exit chemotaxis influence parameter",
+"Strength of chemotactic influence on B cell motion towards exits."},
+
+{"NDAYS", 1.0, 0.0, 30.0,
+"Number of days",
+"Length of the simulation.\n\
+[days]"},
+
+{"SEED1", 1234, 0, 0,
+"First RNG seed",
+"The random number generator is seeded by a pair of integers.  Changing the seed generates a different Monte Carlo realization."},
+
+{"SEED2", 5678, 0, 0,
+"Second RNG seed",
+"The random number generator is seeded by a pair of integers.  Changing the seed generates a different Monte Carlo realization."},
+
+{"NCPU", 1, 1, 8,
+"Number of CPUs",
+"Number of CPUs to use for the simulation."},
+
+{"NT_ANIMATION", 20, 0, 0,
+ "Animation interval (timesteps)",
+ "Interval between animation screen updates (timesteps).  One timestep = 15 sec."},
+
+{"INPUT_FILE", 0, 0, 0,
+"bc_fixed.inpdata",
+"The auxiliary input file contains data that (almost!) never changes"}
+
+};
+	nParams = sizeof(params)/sizeof(PARAM_SET);
+	workingParameterList = new PARAM_SET[nParams];
+	for (int i=0; i<nParams; i++) {
+		workingParameterList[i] = params[i];
+	}
+}
+
+
+PARAM_SET Params::get_param(int k)
+{
+	return workingParameterList[k];
+}
+
+void Params::set_value(int k, double v)
+{
+	workingParameterList[k].value = v;
+}
+
+void Params::set_label(int k, QString str)
+{
+	workingParameterList[k].label = str;
+}
