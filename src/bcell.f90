@@ -760,7 +760,7 @@ logical :: ok
 integer :: x, y, z, k, kcell, indx(2), ctype, gen, stage, region, site(3), n, slot
 integer :: node_inflow, node_outflow, add(3), net_inflow, ihr
 real(DP) :: R, df, prob
-real :: tnow
+real :: tnow, exit_prob
 logical :: left
 integer :: kpar=0
 type (boundary_type), pointer :: bdry
@@ -768,6 +768,7 @@ type (boundary_type), pointer :: bdry
 ok = .true.
 !write(*,*) 'traffic'
 tnow = istep*DELTA_T
+exit_prob = base_exit_prob*12/residence_time
 node_inflow = InflowTotal
 !node_outflow = OutflowTotal
 !node_outflow = 0    ! TESTING
@@ -808,9 +809,13 @@ do while ( associated ( bdry ))
         kcell = indx(slot)
         if (kcell > 0) then
             R = par_uni(kpar)
-            if (R < base_exit_prob) then    ! this cell can leave
+            if (R < exit_prob) then    ! this cell can leave
                 call CellExit(kcell,slot,site,left)
                 if (.not.left) cycle
+                if (cellist(kcell)%ctype == COG_TYPE_TAG) then
+					write(*,*) 'traffic: cognate cell left: ',kcell
+					stop
+				endif
                 node_outflow = node_outflow + 1
                 if (evaluate_residence_time) then
                     if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
@@ -1118,11 +1123,6 @@ else
 endif
 NBcells = NBcells - 1
 if (cognate) then
-!	if (stage > CLUSTERS) then
-!		activated = .true.
-!	else
-!		activated = .false.
-!	endif
     if (.not.evaluate_residence_time .and. activated) then
 		call efferent(p,ctype)
 	endif
@@ -1130,6 +1130,8 @@ if (cognate) then
 	gaplist(ngaps) = kcell
 	cellist(kcell)%ID = 0
     cognate_list(p%cogID) = 0
+    write(*,*) 'CellExit: cognate cell left: ',kcell
+    stop
 else
 	ngaps = ngaps + 1
 	gaplist(ngaps) = kcell
@@ -1250,7 +1252,6 @@ nadd_limit = 0.01*NBcells0
 nadd_total = nadd_sites
 
 if ((abs(nadd_total) > nadd_limit) .or. (tnow > lastbalancetime + BALANCER_INTERVAL)) then
-    write(*,*) 'balancer: ',istep
     if (dbug) write(nflog,*) 'balancer: nadd_total: ',nadd_total,nadd_limit,lastbalancetime,BALANCER_INTERVAL
     if (dbug) write(nflog,*) 'call squeezer'
 	call squeezer(.false.)
@@ -1488,8 +1489,8 @@ character*(256) :: msg
 ok = .true.
 return
 
-allocate(gendist(TC_MAX_GEN))
-allocate(div_gendist(TC_MAX_GEN))
+allocate(gendist(BC_MAX_GEN))
+allocate(div_gendist(BC_MAX_GEN))
 tnow = istep*DELTA_T
 noncog = 0
 ncog = 0
@@ -1513,7 +1514,7 @@ do kcell = 1,nlist
         stim(stage) = stim(stage) + p%stimulation
 !        IL2sig(stage) = IL2sig(stage) + get_IL2store(p)
         gen = get_generation(p)
-        if (gen < 0 .or. gen > TC_MAX_GEN) then
+        if (gen < 0 .or. gen > BC_MAX_GEN) then
             write(logmsg,'(a,2i6)') 'show_snapshot: bad gen: ',kcell,gen
             call logger(logmsg)
             ok = .false.
@@ -1542,13 +1543,13 @@ do i = 1,FINISHED
     endif
 enddo
 tgen = sum(gendist)
-do i = TC_MAX_GEN,1,-1
+do i = BC_MAX_GEN,1,-1
     if (gendist(i) /= 0) exit
 enddo
 ngens = i
 
-teffgen = sum(totalres%N_EffCogTCGen(1:TC_MAX_GEN))
-do i = TC_MAX_GEN,1,-1
+teffgen = sum(totalres%N_EffCogTCGen(1:BC_MAX_GEN))
+do i = BC_MAX_GEN,1,-1
     if (totalres%N_EffCogTCGen(i) /= 0) exit
 enddo
 neffgens = i
@@ -1889,10 +1890,10 @@ integer :: kcell, ctype, stype, ncog, ntot, i
 integer :: gen
 real :: tcr, avid, dtcr, hour
 type (cog_type), pointer :: p
-integer :: gendist(TC_MAX_GEN),aviddist(MAX_AVID_LEVELS),tcrdist(tcr_nlevels)
+integer :: gendist(BC_MAX_GEN),aviddist(MAX_AVID_LEVELS),tcrdist(tcr_nlevels)
 character*(60) :: fmtstr = '(f6.2,2i8,4x,15f7.4,4x,10f7.4,4x,10f7.4,4x,10i7)'
 
-write(fmtstr(14:15),'(i2)') TC_MAX_GEN
+write(fmtstr(14:15),'(i2)') BC_MAX_GEN
 write(fmtstr(24:25),'(i2)') tcr_nlevels
 write(fmtstr(34:35),'(i2)') avidity_nlevels
 write(fmtstr(44:45),'(i2)') avidity_nlevels
@@ -2046,7 +2047,7 @@ end subroutine
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
 subroutine SaveGenDist
-integer :: gendist(TC_MAX_GEN)
+integer :: gendist(BC_MAX_GEN)
 integer :: k, kcell, stage, region, gen, maxg
 real :: fac
 
@@ -2084,7 +2085,7 @@ end subroutine
 ! paracortex.  This info must be supplemented by counts of cells that have died and cells that
 ! have returned to the circulation.
 !-----------------------------------------------------------------------------------------
-subroutine get_summary(summaryData) BIND(C)
+subroutine get_summary_old(summaryData) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_summary
 use, intrinsic :: iso_c_binding
 integer(c_int) :: summaryData(*)
@@ -2104,7 +2105,6 @@ if (firstSummary) then
 	firstSummary = .false.
 endif
 ok = .true.
-return
 
 allocate(gendist(TC_MAX_GEN))
 allocate(div_gendist(TC_MAX_GEN))
@@ -2230,6 +2230,7 @@ if (use_tcp) then
     call logger(msg)
 endif
 deallocate(gendist)
+deallocate(div_gendist)
 
 totalres%dN_EffCogTC = 0
 totalres%dN_EffCogTCGen = 0
@@ -2244,6 +2245,127 @@ write(nflog,*) 'ndivisions = ',ndivisions
 write(logmsg,'(a,i5,a,2i4,i6,i8,100i4)') 'In: ',check_inflow,' Out: ',Nexits,Lastexit,sum(check_egress),NBcells
 	!,(check_egress(i),i=1,Lastexit)
 call logger(logmsg)
+check_inflow = 0
+check_egress = 0
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Using the complete list of cells, cellist(), extract info about the current state of the
+! paracortex.  This info must be supplemented by counts of cells that have died and cells that
+! have returned to the circulation.
+!-----------------------------------------------------------------------------------------
+subroutine get_summary(summaryData) BIND(C)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_summary
+use, intrinsic :: iso_c_binding
+integer(c_int) :: summaryData(*)
+logical :: ok
+integer :: kcell, ctype, stype, ncog, noncog, ntot, nbnd, stage, region, i, iseq, error
+integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nact
+real :: stim(2*STAGELIMIT), IL2sig(2*STAGELIMIT), tgen, tnow, fac, act, cyt_conc, mols_pM
+type (cog_type), pointer :: p
+integer :: nst(FINISHED)
+integer, allocatable :: gendist(:)
+integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
+character*(6) :: numstr
+character*(256) :: msg
+
+if (firstSummary) then
+	write(nfout,'(a)') "==========================================================================="
+	firstSummary = .false.
+endif
+ok = .true.
+
+allocate(gendist(BC_MAX_GEN))
+allocate(div_gendist(BC_MAX_GEN))
+tnow = istep*DELTA_T
+noncog = 0
+ncog = 0
+ntot = 0
+nbnd = 0
+nst = 0
+stim = 0
+IL2sig = 0
+gendist = 0
+div_gendist = 0
+do kcell = 1,nlist
+    if (cellist(kcell)%ID == 0) cycle
+    p => cellist(kcell)%cptr
+    if (associated(p)) then
+		call get_stage(p,stage,region)
+	else
+		stage = 0
+		region = FOLLICLE
+	endif
+	if (region == FOLLICLE) then
+	    ntot = ntot + 1
+	else
+		write(*,*) 'kcell, region: ',kcell,region
+		stop
+	endif
+    ctype = cellist(kcell)%ctype
+!    stype = struct_type(ctype)
+    if (ctype == COG_TYPE_TAG) then
+        ncog = ncog + 1
+!        nst(stage) = nst(stage) + 1
+!        stim(stage) = stim(stage) + p%stimulation
+        gen = get_generation(p)
+        if (gen < 0 .or. gen > BC_MAX_GEN) then
+            write(logmsg,'(a,2i6)') 'get_summary: bad gen: ',kcell,gen
+            call logger(logmsg)
+            ok = .false.
+            return
+        endif
+        gendist(gen) = gendist(gen) + 1
+    elseif (ctype == NONCOG_TYPE_TAG) then
+        noncog = noncog + 1
+    else
+        write(*,*) 'ERROR: show_snapshot: bad stype: ',ctype,stype
+        stop
+    endif
+enddo
+
+tgen = sum(gendist)
+do i = BC_MAX_GEN,1,-1
+    if (gendist(i) /= 0) exit
+enddo
+ngens = i
+
+teffgen = sum(totalres%N_EffCogTCGen(1:BC_MAX_GEN))
+do i = BC_MAX_GEN,1,-1
+    if (totalres%N_EffCogTCGen(i) /= 0) exit
+enddo
+neffgens = i
+
+dNdead = totalres%dN_Dead
+Ndead = totalres%N_Dead
+!mols_pM = L_um3*M_pM/(NBcells*Vc*Navo)
+
+if (teffgen > 0) then
+    fac = 1/real(teffgen)
+else
+    fac = 0
+endif
+
+if (use_tcp) then
+    msg = ''
+    do i = 1,ngens
+		write(numstr,'(i6)') gendist(i)
+		msg = trim(msg)//trim(adjustl(numstr))
+		msg = trim(msg)//'('
+		write(numstr,'(i6)') div_gendist(i)
+		msg = trim(msg)//trim(adjustl(numstr))
+		msg = trim(msg)//')-'
+	enddo
+    call logger(msg)
+endif
+deallocate(gendist)
+deallocate(div_gendist)
+
+totalres%dN_EffCogTC = 0
+totalres%dN_EffCogTCGen = 0
+totalres%dN_Dead = 0
+
+summaryData(1:8) = (/int(tnow/60),istep,ntot,ncogseed,ncog,Ndead,int(InflowTotal*60/DELTA_T), teffgen/)
 check_inflow = 0
 check_egress = 0
 end subroutine
@@ -2372,7 +2494,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine simulate_step(res) BIND(C)
-!DEC$ ATTRIBUTES DLLEXPORT :: simulate_step 
+!DEC$ ATTRIBUTES DLLEXPORT :: simulate_step  
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 logical :: ok
@@ -2386,10 +2508,6 @@ if (dbug) then
 	call logger(logmsg)
 endif
 
-!if (istep > 25900) then
-!	write(logmsg,*) 'exit #10: ',istep,exitlist(10)%site,exitlist(5)%site
-!	call logger(logmsg)
-!endif
 if (mod(istep,240) == 0) then
     if (log_traffic) then
         write(nftraffic,'(5i8,3f8.3)') istep, NBcells, Nexits, total_in, total_out, &
@@ -2462,7 +2580,7 @@ if (dbug) call check_xyz(3)
 
 if (dbug) write(nflog,*) 'call balancer'
 call balancer(ok)
-if (dbug) write(nflog,*) 'did balancer'
+if (dbug) write(nflog,*) 'did balancer' 
 if (.not.ok) then
 	call logger('balancer returned error')
 	res = 1

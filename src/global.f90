@@ -575,7 +575,8 @@ logical :: stopped, clear_to_send, simulation_start, par_zig_init
 logical :: dbug = .false.
 logical :: use_portal_egress			! use fixed exit portals rather than random exit points
 logical :: FIXED_NEXITS = .false.		! the number of exit portals is held fixed
-real :: base_exit_prob = 0.00095		    ! for chemotaxis case, prob of exit of cell at bdry site
+!real :: base_exit_prob = 0.00097		! prob of exit of cell at bdry site (Tres = 24)
+real :: base_exit_prob = 0.00195		! prob of exit of cell at bdry site (Tres = 12)
 real :: INLET_R_FRACTION = 0.7			! fraction of blob radius within which ingress occurs
 real :: INLET_EXIT_LIMIT = 5			! if RELAX_INLET_EXIT_PROXIMITY, this determines how close an inlet point can be to an exit portal.
 
@@ -1068,10 +1069,10 @@ inflow = inflow0*Vascularity   ! level of vascularity (1 = steady-state)
 outflow = NBcells*DELTA_T/(RESIDENCE_TIME*60)
 InflowTotal = inflow
 OutflowTotal = outflow
-if (mod(istep,240) == 0) then
-	write(logmsg,*) 'generate_traffic: inflow: ',inflow0,Vascularity,InflowTotal
-	call logger(logmsg)
-endif
+!if (mod(istep,240) == 0) then
+!	write(logmsg,*) 'generate_traffic: inflow: ',inflow0,Vascularity,InflowTotal
+!	call logger(logmsg)
+!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1396,7 +1397,7 @@ do k = 1,lastcogID
         nd = nd+1
         site = cellist(kcell)%site
         gen = get_generation(cellist(kcell)%cptr)
-        tcstate = (gen-1.0)/(TC_MAX_GEN-1.0)*spectrum_max*spectrum_freefraction
+        tcstate = (gen-1.0)/(BC_MAX_GEN-1.0)*spectrum_max*spectrum_freefraction
 !        write(nfcmgui,'(a,i8,3i4,f4.1,i3,i2)') 'Node: ',nd, site, bcell_diam, gen, tcbound
         write(nfcmgui,'(a,i8,3i4,f4.1,f6.2)') 'Node: ',nd, site, bcell_diam, tcstate
     endif
@@ -2178,6 +2179,28 @@ indx = occupancy(site1(1),site1(2),site1(3))%indx
 if (indx(1) == 0 .and. indx(2) /= 0) write(*,*) 'check_site_indx: ',site1,indx
 indx = occupancy(site2(1),site2(2),site2(3))%indx
 if (indx(1) == 0 .and. indx(2) /= 0) write(*,*) 'check_site_indx: ',site1,indx
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine check_cells
+type (cog_type), pointer :: p
+integer :: kcell, ctype, n1, n2
+
+n1 = 0
+n2 = 0
+do kcell = 1,nlist
+    if (cellist(kcell)%ID == 0) cycle
+    p => cellist(kcell)%cptr
+    if (associated(p)) then
+		n1 = n1 + 1
+	endif
+    ctype = cellist(kcell)%ctype
+    if (ctype == COG_TYPE_TAG) then
+		n2 = n2 + 1
+	endif
+enddo
+write(*,*) 'n1, n2: ',n1,n2
 end subroutine
 
 end module

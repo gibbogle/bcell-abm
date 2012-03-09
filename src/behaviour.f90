@@ -96,7 +96,9 @@ integer :: gen, stage, region
 real :: p1, p2
 integer :: kpar = 0
 
-BClifetime = 0
+BClifetime = BIG_TIME
+return
+
 !stage = get_stage(ptr)
 call get_stage(ptr,stage,region)
 if (stage == NAIVE) then
@@ -468,6 +470,7 @@ integer :: kcell
 integer :: k, idc, site(3), indx(2), ctype, stype, region
 logical :: cognate
 
+write(*,*) 'Bcell_death: ',kcell
 !write(logmsg,*) 'Bcell_death: ',kcell
 !call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
@@ -746,7 +749,7 @@ elseif (stype == COG_TYPE_TAG) then
     ! to chemotaxis and exit until it has received enough TCR signal to drive CD69 high.
 !    cell%cptr%CD69 = 0
 !    cell%cptr%S1P1 = 0
-!    cell%cptr%dietime = tnow + BClifetime(cell%cptr)
+    cell%cptr%dietime = tnow + BClifetime(cell%cptr)
     cell%cptr%dividetime = tnow
     cell%cptr%stagetime = BIG_TIME
 
@@ -1000,6 +1003,8 @@ do x = 1,NX
 					endif
 			    else
                     ctype = select_cell_type(kpar)
+!    ctype = cellist(kcell)%ctype
+!    stype = struct_type(ctype)
                     if (ctype /= NONCOG_TYPE_TAG) then
                         ncogseed = ncogseed + 1
                     endif
@@ -1013,6 +1018,14 @@ do x = 1,NX
                     ntagged = ntagged + 1
                     cellist(k)%ctype = TAGGED_CELL
                 endif
+                if (ctype == COG_TYPE_TAG) then
+					write(*,*) 'COG_TYPE_TAG: ',k
+					if (.not.associated(cellist(k)%cptr)) then
+						write(*,*) 'COG_TYPE_TAG but cptr not associated'
+						stop
+					endif
+				endif
+
                 if (IDTEST == 0 .and. ctype /= NONCOG_TYPE_TAG) IDTEST = cellist(k)%ID
             endif
 	    enddo
@@ -1037,6 +1050,7 @@ NBcells0 = NBcells
 aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
 bRadius = aRadius/ELLIPSE_RATIO
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
+write(*,*) 'ncogseed: ',ncogseed
 end subroutine
 
 !-----------------------------------------------------------------------------
