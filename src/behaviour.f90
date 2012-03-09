@@ -338,6 +338,8 @@ else
 endif
 if (usechemo == 1) then
 	use_chemotaxis = .true.
+	! Interim measure:
+	chemo_K = 1.0
 else
 	use_chemotaxis = .false.
 	chemo_K_exit = 0
@@ -772,6 +774,19 @@ elseif (stype == COG_TYPE_TAG) then
 else
     write(*,*) 'ERROR: CreateBcell: bad ctype: ',ctype
     stop
+endif
+! Interim measure:
+if (use_S1P) then
+    cell%suscept(S1P) = 1
+endif
+if (use_CCL21) then
+    cell%suscept(CCL21) = 1
+endif
+if (use_OXY) then
+    cell%suscept(OXY) = 1
+endif
+if (use_CXCL13) then
+    cell%suscept(CXCL13) = 1
 endif
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
