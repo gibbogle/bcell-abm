@@ -26,7 +26,8 @@ real(DP) :: psum, p(MAXRELDIR+1), R, pR, psumm
 cell => cellist(kcell)
 site1 = cell%site
 if (site1(1) < 1) then
-    write(*,*) 'jumper: bad site1: ',site1
+    write(logmsg,*) 'jumper: bad site1: ',site1
+    call logger(logmsg)
     stop
 endif
 fullslots1 = 0
@@ -37,7 +38,6 @@ do k = 1,2
 enddo
 if (fullslots1 /= BOTH) then
     R = par_uni(kpar)
-!    if (kcell == 1) write(*,*) 'R: ',R,dirprob(0)
     if (R <= dirprob(0)) then    ! case of no jump
 	    go = .false.
         return
@@ -65,7 +65,6 @@ do irel = 1,nreldir
                     fullslots2 = fullslots2 + k
                 endif
             enddo
-!    	    if (kcell == 1) write(*,'(8i6)') irel,dir1,site2
             if (fullslots2 == BOTH) then
                 cycle
             elseif (fullslots2 /= 0) then
@@ -115,9 +114,12 @@ if (dir1 > njumpdirs) then
         endif
     enddo
     if (dir1 == 0) then
-        write(*,*) 'jumper: bad dir1: ',dir1
-        write(*,*) 'R, psum, psumm: ',R,psum,psumm
-        write(*,*) p
+        write(logmsg,*) 'jumper: bad dir1: ',dir1
+	    call logger(logmsg)
+        write(logmsg,*) 'R, psum, psumm: ',R,psum,psumm
+		call logger(logmsg)
+        write(logmsg,*) p
+	    call logger(logmsg)
         stop
     endif
 endif
@@ -144,7 +146,8 @@ elseif (fullslots2 == SLOT_NUM1) then
 elseif (fullslots2 == SLOT_NUM2) then
     kslot2 = SLOT_NUM1
 else
-    write(*,*) 'ERROR in jumper: jump to crowded site'
+    write(logmsg,*) 'ERROR in jumper: jump to crowded site'
+    call logger(logmsg)
     stop
 endif
 cell%site = site2
@@ -163,18 +166,20 @@ integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
 type (cell_type), pointer :: cell
 integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype
-integer :: irel,dir1,lastdir1,indx2(2),k,rv(3)
+integer :: irel,dir1,lastdir1,indx2(2),k,rv(3),id
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
-real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob
+real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
 logical :: chemo
 
 dbug = .false.
 tnow = istep*DELTA_T
 cell => cellist(kcell)
+id = cell%id
 site1 = cell%site
 if (site1(1) < 1) then
-    write(*,*) 'chemo_jumper: bad site1: ',site1
+    write(logmsg,*) 'chemo_jumper: bad site1: ',site1
+    call logger(logmsg)
     stop
 endif
 fullslots1 = 0
@@ -205,21 +210,29 @@ if (chemo) then
                 v = CCL21_grad(:,site1(1),site1(2),site1(3))
             case (OXY)
                 v = OXY_grad(:,site1(1),site1(2),site1(3))
+            case (CXCL13)
+                v = CXCL13_grad(:,site1(1),site1(2),site1(3))
             end select
-	    	vsum = vsum + (f/norm(v))*v
+!	    	vsum = vsum + (f/norm(v))*v
+	    	vsum = vsum + f*v
 	    endif
 	enddo
-	f = min(1.0,norm(vsum))     ! Note: f is in (0-1)
 	! For exit chemotaxis:
 	! Need to create estimate of v() that corresponds to the direction of vsum,
 	! nearest discrete location on the 3D lattice (for chemo_p(x,y,z))
 	! This is an approximation to increase speed - it enables a table lookup.
 	! Note that we use only the direction of v (magnitude is insignificant at this stage,
-	! since it has been accounted for in f)
+	! since it is accounted for in f)
 !	v = chemo_N*vsum/norm(vsum)	! this is a quick approximation, needs checking!!!!
     ! Note: need to ensure that chemo_N is set.  How big?
-    rv = -chemo_N*vsum/norm(vsum)
-	v = vsum/norm(vsum)
+    if (norm(vsum) > 0) then
+		f = min(1.0,norm(vsum))     ! Note: f is in (0-1)
+		v = vsum/norm(vsum)
+		rv = chemo_N*v
+	else
+		f = 0
+		chemo = .false.
+	endif
     stay_prob = dirprob(0)
     stay_prob = (1-f)*stay_prob
 else
@@ -273,8 +286,9 @@ if (sum(p) == 0) then
 endif
 
 if (chemo) then
-!	call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
-	call chemo_probs(p,v,f)
+	psave = p
+!	call chemo_probs(p,v,f)
+	call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
 endif
 psum = sum(p)
 
@@ -303,12 +317,15 @@ if (dir1 > njumpdirs) then
             exit
         endif
     enddo
-    if (dir1 == 0) then
-        write(*,*) 'chemo_jumper: bad dir1: ',dir1,kcell,istep
-        write(*,*) 'R, psum, psumm: ',R,psum,psumm
-        write(*,*) p
-        stop
-    endif
+!    if (dir1 == 0) then
+!        write(*,*) 'chemo_jumper: bad dir1: ',dir1,kcell,istep
+!        write(*,*) 'R, psum, psumm: ',R,psum,psumm
+!        write(*,*) 'p:'
+!        write(*,*) p
+!        write(*,*) 'psave:'
+!        write(*,*) psave
+!        stop
+!    endif
 endif
 site2 = savesite2a(:,dir1)
 
@@ -332,7 +349,8 @@ elseif (fullslots2 == SLOT_NUM1) then
 elseif (fullslots2 == SLOT_NUM2) then
     kslot2 = SLOT_NUM1
 else
-    write(*,*) 'ERROR in jumper: jump to crowded site'
+    write(logmsg,*) 'ERROR in jumper: jump to crowded site'
+	call logger(logmsg)
     stop
 endif
 cell%site = site2
@@ -417,7 +435,8 @@ do kcell = 1,nlist
     if (zdomain(z) /= slice) cycle      ! not in the slice for this processor
     indx = occupancy(site1(1),site1(2),site1(3))%indx
     if (indx(1) < 0) then
-        write(*,*) 'Error: par_mover: OUTSIDE_TAG or DC: ',kcell,site1,indx
+        write(logmsg,*) 'Error: par_mover: OUTSIDE_TAG or DC: ',kcell,site1,indx
+		call logger(logmsg)
         stop
     endif
     if (kcell == indx(1)) then
@@ -425,7 +444,8 @@ do kcell = 1,nlist
     elseif (kcell == indx(2)) then
         slot = 2
     else
-        write(*,'(a,6i8)') 'Error: par_mover: bad indx: ',kcell,site1,indx
+        write(logmsg,'(a,6i8)') 'Error: par_mover: bad indx: ',kcell,site1,indx
+		call logger(logmsg)
         stop
     endif
 	if (use_chemotaxis) then
@@ -475,14 +495,12 @@ if (istep == 1) then    ! must be executed when the blob size changes
             xlim(i) = x
             xtotal(i) = sum - sump
             sump = sum
-            write(*,*) 'i,sum: ',i,sum,xtotal(i)
             i = i+1
             if (i == 2*Mnodes) exit
         endif
     enddo
     xlim(2*Mnodes) = NX
     xtotal(2*Mnodes) = NBcells - sum
-    write(*,*) 'i,sum: ',i,sum,xtotal(i)
     deallocate(xcount)
 endif
 
@@ -691,10 +709,6 @@ if (MODEL == NEUMANN_MODEL) then
 			endif
 		enddo
 	enddo
-    	write(*,*) 'reldir'
-	    do lastdir = 1,6
-		    write(*,'(6i6)') (reldir(lastdir,k),k=1,6)
-	    enddo
 	jumpvec(:,1:6) = neumann(:,1:6)
 
 else
@@ -938,7 +952,8 @@ if (diagonal_jumps) then
 	nax = naxes(jump)
 !	if (dbug) write(nfres,*) 'fix_lastdir: jump,nax: ',nax,jump
 	if (nax == 0) then
-	    write(*,*) 'Should not get here: fix_lastdir: nax=0'
+	    write(logmsg,*) 'Should not get here: fix_lastdir: nax=0'
+		call logger(logmsg)
 	    stop
 		fix_lastdir = random_int(1,6,kpar)
 	elseif (nax == 1) then
@@ -949,7 +964,8 @@ if (diagonal_jumps) then
 		fix_lastdir = axes(k,jump)
 	endif
 else
-	write(*,*) 'fix_lastdir: Not MOORE model: ',jump
+	write(logmsg,*) 'fix_lastdir: Not MOORE model: ',jump
+	call logger(logmsg)
 	stop
 endif
 end function

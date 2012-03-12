@@ -1,4 +1,4 @@
-! Concentration fields
+! Chemokine concentration fields
 
 module fields
 use global
@@ -75,7 +75,6 @@ integer :: x, y, z
 integer :: k, site(3)
 type (boundary_type), pointer :: bdry
 
-!allocate(bdrylist(MAX_BDRY))
 nullify(bdrylist)
 nbdry = 0
 do x = 1,NX
@@ -90,20 +89,16 @@ do x = 1,NX
                 bdry%CXCL13 = .false.
                 bdry%CCL21 = .false.
                 bdry%OXY = .false.
-!                nullify(bdry%previous)
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,bdrylist)
                 call AssignBdryRole(site,bdry)
-!BDRY                occupancy(x,y,z)%bdry = .true.
                 occupancy(x,y,z)%bdry => bdry
             endif
         enddo
     enddo
 enddo
-write(*,*) 'nbdry = ',nbdry, ' NBcells: ',NBcells
 !call bdrylist_print(bdrylist)
 !call TestAddRemoveSites
-!stop
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -128,11 +123,9 @@ do x = 1,NX
                 bdry%CXCL13 = .false.
                 bdry%CCL21 = .false.
                 bdry%OXY = .false.
-!                nullify(bdry%previous)
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,checklist)
                 call AssignBdryRole(site,bdry)
-!                occupancy(x,y,z)%bdry = .true.
             endif
         enddo
     enddo
@@ -149,32 +142,36 @@ end subroutine
 ! and Ra and Rb are the major and minor axis radii of the defining ellipse.
 !----------------------------------------------------------------------------------------
 subroutine AssignBdryRole(site,bdry)
-integer :: site(3), r(3)
-real :: dy2
+integer :: site(3), dy
 type (boundary_type), pointer :: bdry
+real, parameter :: S1Pfraction = 0.25
 
+bdry%S1P = .false.
+bdry%CCL21 = .false.
+bdry%OXY = .false.
+bdry%CXCL13 = .false.
 site = bdry%site
-if (site(2) > Centre(2)) then
+dy = site(2) - Centre(2)
+if (dy > 0) then
     bdry%OXY = .true.
     bdry%S1P = .true.
 else
-    bdry%CCL21 = .true.
-    if (Centre(2) - site(2) < 0.3*bRadius) then
+    if (dy > -S1Pfraction*bRadius) then
         bdry%S1P = .true.
+    else
+	    bdry%CCL21 = .true.
     endif
 endif
-r = site - Centre
-if (r(2) > -ENTRY_ALPHA*bRadius) then
+if (dy > -ENTRY_ALPHA*bRadius) then
     bdry%entry_ok = .false.
 else
     bdry%entry_ok = .true.
 endif
-if (r(2) > -EXIT_ALPHA*bRadius) then
+if (dy > -EXIT_ALPHA*bRadius) then
     bdry%exit_ok = .false.
 else
     bdry%exit_ok = .true.
 endif 
-bdry%CXCL13 = .false.
 end subroutine
 
 
@@ -204,11 +201,11 @@ end subroutine
 subroutine AddSite(ok)
 logical :: ok
 type (boundary_type), pointer :: bdry
-integer :: site(3), psite(3), indx(2), k, kmin
+integer :: site(3), psite(3), indx(2), k, kmin, x, y, z
 real :: r(3), x2, y2, z2, dp, t, tmax, dpq, dmax, dmin
+real :: cmin, cmax
 
 !write(*,*) 'AddSite'
-!call bdrylist_print(bdrylist)
 dmax = -1.0e10
 bdry => bdrylist
 do while ( associated ( bdry )) 
@@ -227,9 +224,9 @@ do while ( associated ( bdry ))
     endif
     bdry => bdry%next
 enddo
-!write(*,'(a,3i4,2f8.4)') 'psite, tmax, dmax:     ',psite,tmax,dmax
 if (.not.isbdry(psite(1),psite(2),psite(3)))then
-    write(*,*) 'psite is not a bdry site'
+    write(logmsg,*) 'psite is not a bdry site'
+	call logger(logmsg)
     stop
 endif
 
@@ -241,7 +238,6 @@ do k = 1,27
 	if (k == 14) cycle
 	site = psite + jumpvec(:,k)
 	indx = occupancy(site(1),site(2),site(3))%indx
-!	write(*,'(6i8)') k,site,indx
     if (indx(1) >= 0) cycle
     r = site - Centre
     x2 = r(1)**2
@@ -254,7 +250,8 @@ do k = 1,27
     endif
 enddo    
 if (kmin == 0) then
-    write(*,*) 'Error: no outside neighbours of bdry site'
+    write(logmsg,*) 'Error: no outside neighbours of bdry site'
+	call logger(logmsg)
     ok = .false.
     return
 endif
@@ -273,23 +270,40 @@ if (isbdry(site(1),site(2),site(3))) then   ! add it to the bdrylist
     bdry%CXCL13 = .false.
     bdry%CCL21 = .false.
     bdry%OXY = .false.
-!    nullify(bdry%previous)
     nullify(bdry%next)
     call bdrylist_insert(bdry,bdrylist)
     call AssignBdryRole(site,bdry)
-!BDRY    occupancy(site(1),site(2),site(3))%bdry = .true.
     occupancy(site(1),site(2),site(3))%bdry => bdry
     call SetBdryConcs(site)
 else
-    write(*,*) 'Added site is not bdry: ',site
+    write(logmsg,*) 'Added site is not bdry: ',site
+	call logger(logmsg)
     stop
 endif
 ok = .true.
+return
+
+cmin = 1.0e10
+cmax = 0
+do x = 1,NX
+	do y = 1,NY
+		do z = 1,NZ
+			if (occupancy(x,y,z)%indx(1) >= 0) then
+				cmin = min(cmin,S1P_conc(x,y,z))
+				cmax = max(cmin,S1P_conc(x,y,z))
+			endif
+		enddo
+	enddo
+enddo
+write(*,*) 'S1P_conc: min, max: ',cmin,cmax
+stop
 end subroutine
 
 !----------------------------------------------------------------------------------------
 ! Check all sites in bdrylist to ensure that they are still on the bdry, and remove any 
 ! that are not from bdrylist.
+! When a site is removed from the list its chemokine concs and gradients are replaced by
+! neighbourhood averages.
 !----------------------------------------------------------------------------------------
 subroutine FixBdrylist
 integer :: site(3), sitelist(1000,3), k, n
@@ -301,7 +315,6 @@ bdry => bdrylist
 do while ( associated ( bdry )) 
     site = bdry%site
     if (.not.isbdry(site(1),site(2),site(3))) then
-!        write(*,*) 'Not a bdry site: ',site
         n = n+1
         sitelist(n,:) = site
     endif
@@ -310,18 +323,14 @@ enddo
 do k = 1,n
     site = sitelist(k,:)
     call bdrylist_delete(site,bdrylist)
-!BDRY    occupancy(site(1),site(2),site(3))%bdry = .false.
     nullify(occupancy(site(1),site(2),site(3))%bdry)
     nbdry = nbdry - 1
-!    write(*,*) 'Removed site from bdrylist: ',site
-!    if (site(1)==28 .and. site(2)==48 .and. site(3)==51) then
-!        write(*,*) '-----------------------------------------------------------'
-!    endif
-!    write(*,*) 'Head site: ',bdrylist%site
     if (bdrylist_present(site, bdrylist)) then
-        write(*,*) 'Error: still in bdrylist: ',site
+        write(logmsg,*) 'Error: FixBdrylist: still in bdrylist: ',site
+		call logger(logmsg)
         stop
     endif
+    call SetConcs(site)
 enddo
 end subroutine
 
@@ -356,13 +365,14 @@ do while ( associated ( bdry ))
     bdry => bdry%next
 enddo
 if (psite(1) == 0) then
-    write(*,*) 'No more bdry sites: ',nbdry
+    write(logmsg,*) 'No more bdry sites: ',nbdry
+	call logger(logmsg)
     ok = .false.
     return
 endif
-!write(*,*) 'psite, dmax: ',psite,dmin
 if (.not.isbdry(psite(1),psite(2),psite(3))) then
-    write(*,*) 'Not a bdry site: ',psite
+    write(logmsg,*) 'Not a bdry site: ',psite
+	call logger(logmsg)
     ok = .false.
     return
 endif
@@ -385,23 +395,20 @@ do k = 1,27
     endif
 enddo    
 if (kmax == 0) then
-    write(*,*) 'Error: no inside neighbours of bdry site'
+    write(logmsg,*) 'Error: no inside neighbours of bdry site'
+	call logger(logmsg)
     ok = .false.
     return
 endif
 ! This is the site to convert to 'outside'
 site = psite + jumpvec(:,kmax)
-! Note: any occupying cells need to be moved!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 call ClearSite(site)
-!call GiveChemokines(site)
 occupancy(site(1),site(2),site(3))%indx = OUTSIDE_TAG
 Nsites = Nsites - 1
 aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
 bRadius = aRadius/ELLIPSE_RATIO
-!BDRY if (occupancy(site(1),site(2),site(3))%bdry) then   ! remove it from the bdrylist
 if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from the bdrylist
     call bdrylist_delete(site, bdrylist)
-!BDRY    occupancy(site(1),site(2),site(3))%bdry = .false.
     nullify(occupancy(site(1),site(2),site(3))%bdry)
     nbdry = nbdry - 1
 ! Need to check for a new bdry site to replace the one removed
@@ -410,7 +417,6 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
     do k = 1,27
 	    site = psite + jumpvec(:,k)
         if (occupancy(site(1),site(2),site(3))%indx(1) < 0) cycle   ! outside
-!BDRY        if (occupancy(site(1),site(2),site(3))%bdry) cycle   ! bdry
         if (associated(occupancy(site(1),site(2),site(3))%bdry)) cycle   ! bdry
         if (isbdry(site(1),site(2),site(3))) then
             nbdry = nbdry + 1
@@ -423,7 +429,6 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
             nullify(bdry%next)
             call bdrylist_insert(bdry,bdrylist)
             call AssignBdryRole(site,bdry)
-!BDRY            occupancy(site(1),site(2),site(3))%bdry = .true.
             occupancy(site(1),site(2),site(3))%bdry => bdry
             call SetBdryConcs(site)
         endif
@@ -483,21 +488,137 @@ call CreateCheckList
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! Check consistency between bdrylist and occupancy%bdry
+!-----------------------------------------------------------------------------------------
+subroutine CheckBdryList
+type (boundary_type), pointer :: bdry => null(), ocbdry => null()
+integer :: x, y, z, site(3), dy, nb1, nb2, nbx
+
+nb1 = 0
+nbx = 0
+bdry => bdrylist
+do while ( associated ( bdry )) 
+	nb1 = nb1 + 1
+	if (bdry%exit_ok) nbx = nbx + 1
+    site = bdry%site
+    ocbdry => occupancy(site(1),site(2),site(3))%bdry
+    if (.not.associated(ocbdry,bdry)) then
+		write(logmsg,*) 'Error: CheckBdryList: inconsistent bdry pointers at site: ',site
+		call logger(logmsg)
+		stop
+	endif
+    bdry => bdry%next
+enddo
+nb2 = 0
+do x = 1,NX
+	do y = 1,NY
+		do z = 1,NZ
+			bdry => occupancy(x,y,z)%bdry
+			if (associated(bdry)) then
+				nb2 = nb2 + 1
+				dy = y - Centre(2)
+!				if (dy > -EXIT_ALPHA*bRadius) then
+!					if (bdry%exit_ok) then
+!						write(*,*) 'Error: bdry%exit_ok wrongly true: ',x,y,z, dy, -EXIT_ALPHA*bRadius
+!					endif
+!				else
+!					if (.not.bdry%exit_ok) then
+!						write(*,*) 'Error: bdry%exit_ok wrongly false: ',x,y,z, dy, -EXIT_ALPHA*bRadius
+!					endif
+!				endif
+			else
+				if (isbdry(x,y,z)) then
+					write(logmsg,*) 'Error: boundary site not in list: ',x,y,z
+					call logger(logmsg)
+					stop
+				endif
+			endif
+		enddo
+	enddo				
+enddo
+if (nb1 /= nb2) then
+	write(logmsg,*) 'Error: inconsistent boundary site counts: ',nb1,nb2
+	call logger(logmsg)
+	stop
+endif
+write(logmsg,*) 'bdrylist and occupancy%bdry are consistent: ',nb1,nbx
+call logger(logmsg)
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! The added site needs approximate values for chemokine concentrations and gradients,
+! as an interim measure until the next steady-state computation.  Actually only the
+! gradient is used (for chemotaxis) but the concentration serves as the starting value
+! when the steady-state solution is computed.
 !-----------------------------------------------------------------------------------------
 subroutine SetBdryConcs(site)
 integer :: site(3)
+type (boundary_type), pointer :: bdry
+real :: cbnd
+
+bdry => occupancy(site(1),site(2),site(3))%bdry
+if (.not.associated(bdry)) then
+	write(logmsg,*) 'Error: SetBdryConcs: not a bdry site'
+	call logger(logmsg)
+	stop
+endif
 
 if (use_S1P) then
-    S1P_conc(site(1),site(2),site(3)) = BdryS1PConc
+	if (bdry%S1P) then
+		cbnd = BdryS1PConc
+	else
+		cbnd = -1
+	endif 
+	call AverageBdryConc(bdry,S1P_conc,S1P_grad,site,cbnd)
 endif
 if (use_OXY) then
-    OXY_conc(site(1),site(2),site(3)) = BdryOXYConc
+	if (bdry%OXY) then
+		cbnd = BdryOXYConc
+	else
+		cbnd = -1
+	endif 
+	call AverageBdryConc(bdry,OXY_conc,OXY_grad,site,cbnd)
 endif
 if (use_CCL21) then
-    CCL21_conc(site(1),site(2),site(3)) = BdryCCL21Conc
+	if (bdry%CCL21) then
+		cbnd = BdryCCL21Conc
+	else
+		cbnd = -1
+	endif 
+	call AverageBdryConc(bdry,CCL21_conc,CCL21_grad,site,cbnd)
 endif
 if (use_CXCL13) then
-    CXCL13_conc(site(1),site(2),site(3)) = BdryCXCL13Conc
+	if (bdry%CXCL13) then
+		cbnd = BdryCXCL13Conc
+	else
+		cbnd = -1
+	endif 
+	call AverageBdryConc(bdry,CXCL13_conc,CXCL13_grad,site,cbnd)
+endif
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! This subroutine is for the case of a site that was boundary and is now in the blob
+! interior.  The chemokine gradients are adjusted to reduce the inaccuracy in chemotactic 
+! effects until the new steady-state is computed, while the aim in adjusting the concs
+! is to speed up convergence in the steady-state computation.  In fact it doesn't have
+! much effect on the convergence.  There might be a better way to do the adjustment than
+! the simple neighbourhood averaging that is used.
+!-----------------------------------------------------------------------------------------
+subroutine SetConcs(site)
+integer :: site(3)
+
+if (use_S1P) then
+	call AverageConc(S1P_conc,S1P_grad,site)
+endif
+if (use_OXY) then
+	call AverageConc(OXY_conc,OXY_grad,site)
+endif
+if (use_CCL21) then
+	call AverageConc(CCL21_conc,CCL21_grad,site)
+endif
+if (use_CXCL13) then
+	call AverageConc(CXCL13_conc,CXCL13_grad,site)
 endif
 end subroutine
 
@@ -544,7 +665,7 @@ end subroutine
 ! Using bdrylist, randomly select bdry sites, check that the site is an entrysite and
 ! suitable for cell ingress.  In fact we look at all neighbouring 'inside' sites.
 !-----------------------------------------------------------------------------------------
-subroutine getEntrySite(site,ok)
+subroutine GetEntrySite(site,ok)
 integer :: site(3)
 logical :: ok
 integer :: ibdry, k, it, bsite(3), indx(2), nt = 100, kpar=0
@@ -578,14 +699,80 @@ do
 enddo
 end subroutine
 
-
 !----------------------------------------------------------------------------------------
-! When a site is removed from the blob (freed), the mass of each chemokine in that gridcell
-! must be shared out among the neighbour sites.
+! If the site is a source boundary for the chemokine, cbnd = boundary concentration,
+! otherwise cbnd = -1, which is a flag to compute the estimate of concentration by
+! averaging the over neighbour sites.
+! For the gradient, averaging is always used.
 !----------------------------------------------------------------------------------------
-subroutine GiveChemokines(site)
+subroutine AverageBdryConc(bdry,C,G,site,cbnd)
 integer :: site(3)
+real :: C(:,:,:), G(:,:,:,:)
+real :: cbnd
+integer :: x, y, z, k, nave
+real :: cave, gave(3)
+type (boundary_type), pointer :: bdry
 
+cave = 0
+gave = 0
+nave = 0
+do k = 1,27
+	if (k == 14) cycle
+    x = site(1) + jumpvec(1,k)
+    y = site(2) + jumpvec(2,k)
+    z = site(3) + jumpvec(3,k)
+    if (outside_xyz(x,y,z)) cycle
+    if (occupancy(x,y,z)%indx(1) < 0) cycle
+    nave = nave + 1
+    cave = cave + C(x,y,z)
+    gave = gave + G(:,x,y,z)
+enddo
+if (cbnd >= 0) then
+	C(site(1),site(2),site(3)) = cbnd
+else
+	if (nave > 0) then
+		C(site(1),site(2),site(3)) = cave/nave
+	else
+		C(site(1),site(2),site(3)) = 0
+	endif
+endif
+if (nave > 0) then
+	G(:,site(1),site(2),site(3)) = gave/nave
+else
+	G(:,site(1),site(2),site(3)) = 0
+endif
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! The concentration and gradient are estimated by averaging the over neighbour sites.
+!----------------------------------------------------------------------------------------
+subroutine AverageConc(C,G,site)
+integer :: site(3)
+real :: C(:,:,:), G(:,:,:,:)
+integer :: x, y, z, k, nave
+real :: cave, gave(3)
+
+cave = 0
+gave = 0
+nave = 0
+do k = 1,27
+	if (k == 14) cycle
+    x = site(1) + jumpvec(1,k)
+    y = site(2) + jumpvec(2,k)
+    z = site(3) + jumpvec(3,k)
+    if (outside_xyz(x,y,z)) cycle
+    if (occupancy(x,y,z)%indx(1) < 0) cycle
+    nave = nave + 1
+    cave = cave + C(x,y,z)
+    gave = gave + G(:,x,y,z)
+enddo
+if (nave > 0) then
+	C(site(1),site(2),site(3)) = cave/nave
+	G(:,site(1),site(2),site(3)) = gave/nave
+else
+	C(site(1),site(2),site(3)) = 0
+	G(:,site(1),site(2),site(3)) = 0
+endif
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -603,25 +790,122 @@ end subroutine
 !----------------------------------------------------------------------------------------
 subroutine InitFields
 integer :: i
+logical, save :: first = .true.
 
-if (use_CXCL13) then
-	call init_CXCL13
-endif
 if (use_S1P) then
+	if (first) then
+		allocate(S1P_conc(NX,NY,NZ))
+		allocate(S1P_grad(3,NX,NY,NZ))
+		S1P_conc = 0
+	endif
 	call init_S1P
 endif
 if (use_OXY) then
+	if (first) then
+		allocate(OXY_conc(NX,NY,NZ))
+		allocate(OXY_grad(3,NX,NY,NZ))
+		OXY_conc = 0
+	endif
 	call init_OXY
 endif
 if (use_CCL21) then
+	if (first) then
+		allocate(CCL21_conc(NX,NY,NZ))
+		allocate(CCL21_grad(3,NX,NY,NZ))
+		CCL21_conc = 0
+	endif
 	call init_CCL21
 endif
-call ShowConcs
+if (use_CXCL13) then
+	if (first) then
+		allocate(CXCL13_conc(NX,NY,NZ))
+		allocate(CXCL13_grad(3,NX,NY,NZ))
+		CXCL13_conc = 0
+	endif
+	call init_CXCL13
+endif
+if (first) then
+	call ShowConcs
+endif
+first = .false.
 
 !do i = 1,100
 !    call evolveS1P(6,0.0)
 !enddo
 !call ShowConcs
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! Recompute steady-state concentration fields if there has been a significant change in
+! the B cell population.
+!----------------------------------------------------------------------------------------
+subroutine UpdateFields
+integer, save :: NBlast = 0
+integer :: x, y, z, site(3)
+real :: delNB
+real :: cmin, cmax, dc, dcmax
+real, allocatable :: S1P_old(:,:,:)
+logical :: doit
+
+if (NBlast == 0) then
+	NBlast = NBcells0
+endif
+doit = .false.
+if (inflammation_level == 0) then
+	if (mod(istep,4*60*6) == 0) then	! every 6 hours in no inflammation case
+		doit = .true.
+	endif
+else
+	delNB = abs(NBcells - NBlast)
+	if (delNB/NBcells > 0.05) then
+		doit = .true.
+	endif
+endif
+if (.not.doit) return
+!cmin = 1.0e10
+!cmax = 0
+!do x = 1,NX
+!	do y = 1,NY
+!		do z = 1,NZ
+!			if (occupancy(x,y,z)%indx(1) >= 0) then
+!				cmin = min(cmin,S1P_conc(x,y,z))
+!				cmax = max(cmin,S1P_conc(x,y,z))
+!			endif
+!		enddo
+!	enddo
+!enddo
+!write(*,*) 'S1P_conc: min, max: ',cmin,cmax
+!allocate(S1P_old(NX,NY,NZ))
+!S1P_old = S1P_conc
+call InitFields
+NBlast = NBcells
+!dcmax = 0
+!do x = 1,NX
+!	do y = 1,NY
+!		do z = 1,NZ
+!			if (occupancy(x,y,z)%indx(1) >= 0) then
+!				dc = (abs(S1P_old(x,y,z) - S1P_conc(x,y,z)))/S1P_old(x,y,z)
+!				if (dc > dcmax) then
+!					dcmax = dc
+!					site = (/x,y,z/)
+!				endif
+!			endif
+!		enddo
+!	enddo
+!enddo
+!write(*,*) 'Max fractional change in S1P_conc: ',dcmax,S1P_old(site(1),site(2),site(3)),S1P_conc(site(1),site(2),site(3))
+!write(*,*) 'site: ',site
+!x = site(1)
+!y = site(2)
+!z = site(3)
+!write(*,*) 'old conc:'
+!write(*,'(a,4e12.3)') 'above: ',S1P_old(x,y+1,z)
+!write(*,'(a,4e12.3)') 'level: ',S1P_old(x-1,y,z),S1P_old(x+1,y,z),S1P_old(x,y,z-1),S1P_old(x,y,z+1)
+!write(*,'(a,4e12.3)') 'below: ',S1P_old(x,y-1,z)
+!write(*,*) 'new conc:'
+!write(*,'(a,4e12.3)') 'above: ',S1P_conc(x,y+1,z)
+!write(*,'(a,4e12.3)') 'level: ',S1P_conc(x-1,y,z),S1P_conc(x+1,y,z),S1P_conc(x,y,z-1),S1P_conc(x,y,z+1)
+!write(*,'(a,4e12.3)') 'below: ',S1P_conc(x,y-1,z)
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -631,9 +915,15 @@ integer :: x, y, z
 
 x = NX/2
 z = NZ/2
+write(nfout,*) 'Conc   S1P         CCL21'
 do y = 1,NY
     if (occupancy(x,y,z)%indx(1) < 0) cycle
-    write(*,'(i4,4e12.4)') y,S1P_conc(x,y,z),CCL21_conc(x,y,z) !,OXY_conc(x,y,z)
+    write(nfout,'(i4,4e12.4)') y,S1P_conc(x,y,z),CCL21_conc(x,y,z) !,OXY_conc(x,y,z)
+enddo
+write(nfout,*) 'Grad   S1P                                 CCL21'
+do y = 1,NY
+    if (occupancy(x,y,z)%indx(1) < 0) cycle
+    write(nfout,'(i4,6e12.4)') y,S1P_grad(:,x,y,z),CCL21_grad(:,x,y,z)
 enddo
 end subroutine
 
@@ -702,20 +992,13 @@ end subroutine
 subroutine init_S1P
 integer :: x, y, z, xx, yy, zz, k, nb
 real :: g(3), gamp, gmax
-logical :: steady = .true.
 
 write(logmsg,*) 'Initializing S1P'
 call logger(logmsg)
-allocate(S1P_conc(NX,NY,NZ))
-allocate(S1P_grad(3,NX,NY,NZ))
-allocate(S1P_influx(NX,NY,NZ))
-
-!call SetupS1P_influx
 
 call SolveSteadystate(S1P,S1P_KDIFFUSION,S1P_KDECAY,S1P_conc)
 ! Now compute the gradient field.
 call gradient(S1P_conc,S1P_grad)
-!write(*,*) 'S1P gradient: ',S1P_grad(:,25,25,25)
 gmax = 0
 do x = 1,NX
 	do y = 1,NY
@@ -735,17 +1018,9 @@ end subroutine
 subroutine init_OXY
 integer :: x, y, z, xx, yy, zz, k, nb
 real :: g(3), gamp, gmax
-logical :: steady = .true.
 
 write(logmsg,*) 'Initializing OXY'
 call logger(logmsg)
-allocate(OXY_conc(NX,NY,NZ))
-allocate(OXY_grad(3,NX,NY,NZ))
-allocate(OXY_influx(NX,NY,NZ))
-
-OXY_influx = -1
-
-! Set up OXY_influx
 
 call SolveSteadystate(OXY,OXY_KDIFFUSION,OXY_KDECAY,OXY_conc)
 ! Now compute the gradient field.
@@ -769,17 +1044,9 @@ end subroutine
 subroutine init_CCL21
 integer :: x, y, z, xx, yy, zz, k, nb
 real :: g(3), gamp, gmax
-logical :: steady = .true.
 
 write(logmsg,*) 'Initializing CCL21'
 call logger(logmsg)
-allocate(CCL21_conc(NX,NY,NZ))
-allocate(CCL21_grad(3,NX,NY,NZ))
-allocate(CCL21_influx(NX,NY,NZ))
-
-CCL21_influx = -1
-
-! Set up CCL21_influx
 
 call SolveSteadystate(CCL21,CCL21_KDIFFUSION,CCL21_KDECAY,CCL21_conc)
 ! Now compute the gradient field.
@@ -804,23 +1071,24 @@ subroutine init_CXCL13
 integer :: isignal, site(3), x, y, z, it, nt, isig, iblast
 real :: dt, sum
 real :: g(3), gamp, gmax
-!real, parameter :: Kdecay = 0.00001, Kdiffusion = 0.001
 
-write(logmsg,*) 'Initializing CXCL13: KDECAY: ', CXCL13_KDECAY
-!call formulate(CXCL12_KDIFFUSION,CXCL12_KDECAY)
-
+write(logmsg,*) 'Initializing CXCL13'
 call logger(logmsg)
-allocate(CXCL13_conc(NX,NY,NZ))
-allocate(CXCL13_grad(3,NX,NY,NZ))
-allocate(CXCL13_influx(NX,NY,NZ))
-
-CXCL13_grad = 0
-CXCL13_influx = -1
-
-! Set up CXCL13_influx
 
 call SolveSteadystate(CXCL13,CXCL13_KDIFFUSION,CXCL13_KDECAY,CXCL13_conc)
 call gradient(CXCL13_conc,CXCL13_grad)
+gmax = 0
+do x = 1,NX
+	do y = 1,NY
+		do z = 1,NZ
+			g = CXCL13_grad(:,x,y,z)
+			gamp = sqrt(dot_product(g,g))
+			gmax = max(gamp,gmax)
+		enddo
+	enddo
+enddo
+write(logmsg,*) 'Max CXCL13 gradient: ',gmax
+call logger(logmsg)
 ! Testing convergence
 !nt = 10
 !dt = 100*DELTA_T
@@ -889,6 +1157,7 @@ call gradient(CXCL13_conc,CXCL13_grad)
 end subroutine
 
 !----------------------------------------------------------------------------------------
+! On entry C contains the starting concentration field, which may be 0.
 !----------------------------------------------------------------------------------------
 subroutine SolveSteadystate(ichemo,Kdiffusion,Kdecay,C)
 integer :: ichemo
@@ -896,7 +1165,7 @@ real :: C(:,:,:)
 real :: Kdiffusion, Kdecay
 real :: dx2diff, total, maxchange, maxchange_par, total_par
 real, parameter :: alpha = 0.5
-real, parameter :: tol = 1.0e-6		! max change in C at any site as fraction of average C
+real, parameter :: tol = 1.0e-5		! max change in C at any site as fraction of average C
 integer :: nc, nc_par, k, it, n, kpar
 integer :: xlim(2,16), dx, x1, x2, xfr, xto	! max 16 threads
 real, allocatable :: C_par(:,:,:)
@@ -910,11 +1179,7 @@ do k = 1,Mnodes
 enddo
 xlim(2,Mnodes) = NX
 
-C = 0
 do it = 1,nt
-    if (mod(it,10) == 0) then
-        write(*,*) 'iteration: ',it
-    endif
 	maxchange = 0
 	total = 0
 	nc = 0
@@ -1162,7 +1427,6 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine gradient(C,grad)
-!real :: influx(:,:,:)
 real :: C(:,:,:), grad(:,:,:,:)
 integer :: x, y, z, xx, yy, zz, x1, x2, y1, y2, z1, z2, i, k
 real :: g(3)
@@ -1173,13 +1437,11 @@ grad = 0
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-!			if (influx(x,y,z) < 0) cycle
 			if (occupancy(x,y,z)%indx(1) < 0) cycle
 			x1 = x - 1
 			x2 = x + 1
 			if (x1 < 1 .or. x2 > NX) then
 				g(1) = 0
-!			elseif (influx(x1,y,z) >= 0 .and. influx(x2,y,z) >= 0) then
 			elseif (occupancy(x1,y,z)%indx(1) >= 0 .and. occupancy(x2,y,z)%indx(1) >= 0) then
 				g(1) = (C(x2,y,z) - C(x1,y,z))/(2*DELTA_X)
 			else
@@ -1189,7 +1451,6 @@ do z = 1,NZ
 			y2 = y + 1
 			if (y1 < 1 .or. y2 > NY) then
 				g(2) = 0
-!			elseif (influx(x,y1,z) >= 0 .and. influx(x,y2,z) >= 0) then
 			elseif (occupancy(x,y1,z)%indx(1) >= 0 .and. occupancy(x,y2,z)%indx(1) >= 0) then
 				g(2) = (C(x,y2,z) - C(x,y1,z))/(2*DELTA_X)
 			else
@@ -1199,7 +1460,6 @@ do z = 1,NZ
 			z2 = z + 1
 			if (z1 < 1 .or. z2 > NZ) then
 				g(3) = 0
-!			elseif (influx(x,y,z1) >= 0 .and. influx(x,y,z2) >= 0) then
 			elseif (occupancy(x,y,z1)%indx(1) >= 0 .and. occupancy(x,y,z2)%indx(1) >= 0) then
 				g(3) = (C(x,y,z2) - C(x,y,z1))/(2*DELTA_X)
 			else
@@ -1212,7 +1472,6 @@ enddo
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-!			if (influx(x,y,z) < 0) cycle
 			if (occupancy(x,y,z)%indx(1) < 0) cycle
 			do i = 1,3
 				if (grad(i,x,y,z) == MISSING_VAL) then
@@ -1223,7 +1482,6 @@ do z = 1,NZ
 						yy = y + neumann(2,k)
 						zz = z + neumann(3,k)
 						if (outside_xyz(xx,yy,zz)) cycle
-!						if (influx(xx,yy,zz) < 0) cycle
 						if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
 						if (grad(i,xx,yy,zz) /= MISSING_VAL) then
 							grad(i,x,y,z) = grad(i,xx,yy,zz)
@@ -1258,7 +1516,6 @@ allocate(Ctemp(NX,NY,NZ))
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-!			if (influx(x,y,z) < 0) cycle
 			if (occupancy(x,y,z)%indx(1) < 0) cycle
 			C0 = C(x,y,z)
             bdry_conc = .false.
@@ -1293,7 +1550,6 @@ do z = 1,NZ
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-!    				if (influx(xx,yy,zz) < 0) cycle
 				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)

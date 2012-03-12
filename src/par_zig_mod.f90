@@ -57,7 +57,6 @@ SUBROUTINE par_zigset( npar, par_jsrseed, grainsize)
    INTEGER  :: i, kpar
 	REAL(DP) dn, tn, de, te
 
-	write(*,*) 'npar, par_jsrseed: ',npar,(par_jsrseed(i),i=0,npar-1)
 	par_n = npar
 	par_step = grainsize
 ! First we need to allocate all the non-volatile arrays with the size npar
@@ -73,7 +72,6 @@ SUBROUTINE par_zigset( npar, par_jsrseed, grainsize)
 do kpar = 0,npar-1
    !  Set the seed
    par_jsr(kpar*par_step) = par_jsrseed(kpar)
-   write(*,*) 'kpar, par_jsr: ',kpar,par_jsr(kpar*par_step)
 
    !  Tables for RNOR
    dn = dn0

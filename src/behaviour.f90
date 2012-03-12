@@ -107,7 +107,8 @@ if (stage == NAIVE) then
 endif
 gen = get_generation(ptr)
 if (gen < 1 .or. gen > BC_MAX_GEN) then
-    write(*,*) 'BClifetime: bad gen: ',gen
+    write(logmsg,*) 'BClifetime: bad gen: ',gen
+    call logger(logmsg)
 !    stop
 endif
 p1 = life_dist(gen)%p1
@@ -321,7 +322,7 @@ read(nfcell,*) Inflammation_days2	        ! End of inflammation
 read(nfcell,*) Inflammation_level	        ! This is the level of inflammation
 !read(nfcell,*) VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
 read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um)
-read(nfcell,*) chemo_K_exit                 ! level of chemotactic influence towards exits
+read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs
 read(nfcell,*) seed(2)						! seed vector(2) for the RNGs
@@ -349,7 +350,7 @@ if (computedoutflow == 1) then
 else
 	computed_outflow = .false.
 endif
-exit_region = EXIT_LOWER_SURFACE
+!exit_region = EXIT_LOWER_SURFACE
 use_portal_egress = .false.
 
 call read_fixed_BCparams(ok)
@@ -358,7 +359,6 @@ if (.not.ok) then
 	call logger(logmsg)
 	return
 endif
-write(*,*) 'BC_RADIUS, BC_FRACTION: ',BC_RADIUS, BC_FRACTION
 
 if (mod(NX,2) /= 0) NX = NX+1					! ensure that NX is even
 if (BC_MAX_GEN > MMAX_GEN) then
@@ -472,9 +472,8 @@ integer :: kcell
 integer :: k, idc, site(3), indx(2), ctype, stype, region
 logical :: cognate
 
-write(*,*) 'Bcell_death: ',kcell
-!write(logmsg,*) 'Bcell_death: ',kcell
-!call logger(logmsg)
+write(logmsg,*) 'Bcell_death: ',kcell
+call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
 if (cognate) then
 	call get_region(cellist(kcell)%cptr,region)
@@ -490,7 +489,8 @@ if (stype == COG_TYPE_TAG) then
 endif
 ngaps = ngaps + 1
 if (ngaps > max_ngaps) then
-    write(*,*) 'Bcell_death: ngaps > max_ngaps'
+    write(logmsg,*) 'Bcell_death: ngaps > max_ngaps'
+    call logger(logmsg)
     stop
 endif
 gaplist(ngaps) = kcell
@@ -520,7 +520,8 @@ endif
 if (use_add_count) then
     nadd_sites = nadd_sites - 1
 else
-    write(*,*) 'Bcell_death: No site removal code, use add count'
+    write(logmsg,*) 'Bcell_death: No site removal code, use add count'
+    call logger(logmsg)
     stop
 endif
 end subroutine
@@ -772,21 +773,22 @@ elseif (stype == COG_TYPE_TAG) then
 !        cell%cptr%cogID = 0
 !    endif
 else
-    write(*,*) 'ERROR: CreateBcell: bad ctype: ',ctype
+    write(logmsg,*) 'ERROR: CreateBcell: bad ctype: ',ctype
+    call logger(logmsg)
     stop
 endif
 ! Interim measure:
 if (use_S1P) then
-    cell%suscept(S1P) = 1
+    cell%suscept(S1P) = 1.0
 endif
 if (use_CCL21) then
-    cell%suscept(CCL21) = 1
+    cell%suscept(CCL21) = 1.0
 endif
 if (use_OXY) then
-    cell%suscept(OXY) = 1
+    cell%suscept(OXY) = 0.4
 endif
 if (use_CXCL13) then
-    cell%suscept(CXCL13) = 1
+    cell%suscept(CXCL13) = 0.4
 endif
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
@@ -830,7 +832,8 @@ if (indx(1) == 0) then
 elseif (indx(2) == 0) then
     indx(2) = kcell
 else
-    write(*,*) 'ERROR: add_Bcell: no free slot: ',site,indx
+    write(logmsg,*) 'ERROR: add_Bcell: no free slot: ',site,indx
+    call logger(logmsg)
     stop
 endif
 occupancy(site(1),site(2),site(3))%indx = indx
@@ -846,7 +849,8 @@ integer :: site(3)
 if (use_add_count) then
     nadd_sites = nadd_sites - 1
 else
-    write(*,*) 'add_site_local: no code to add site, use add count'
+    write(logmsg,*) 'add_site_local: no code to add site, use add count'
+    call logger(logmsg)
     stop
 endif
 end subroutine
@@ -974,7 +978,6 @@ do x = 1,NX
 	    do z = 1,NZ
             occupancy(x,y,z)%indx = 0
             occupancy(x,y,z)%exitnum = 0
-!BDRY            occupancy(x,y,z)%bdry = .false.
             nullify(occupancy(x,y,z)%bdry)
             site = (/x,y,z/)
 			if (.not.insideEllipsoid(site)) then
@@ -985,7 +988,6 @@ do x = 1,NX
         enddo
     enddo
 enddo
-call logger("Defined OUTSIDE sites")
 
 nzlim = NZ
 allocate(permc(nlist))
@@ -1018,8 +1020,6 @@ do x = 1,NX
 					endif
 			    else
                     ctype = select_cell_type(kpar)
-!    ctype = cellist(kcell)%ctype
-!    stype = struct_type(ctype)
                     if (ctype /= NONCOG_TYPE_TAG) then
                         ncogseed = ncogseed + 1
                     endif
@@ -1033,15 +1033,6 @@ do x = 1,NX
                     ntagged = ntagged + 1
                     cellist(k)%ctype = TAGGED_CELL
                 endif
-                if (ctype == COG_TYPE_TAG) then
-					write(*,*) 'COG_TYPE_TAG: ',k
-					if (.not.associated(cellist(k)%cptr)) then
-						write(*,*) 'COG_TYPE_TAG but cptr not associated'
-						stop
-					endif
-				endif
-
-                if (IDTEST == 0 .and. ctype /= NONCOG_TYPE_TAG) IDTEST = cellist(k)%ID
             endif
 	    enddo
 	    if (done) exit
@@ -1057,7 +1048,8 @@ if (.not.ok) return
 write(nfout,*) 'nlist,RESIDENCE_TIME: ',nlist,RESIDENCE_TIME
 nlist = id	! this is already the case for 3D blob
 if (NBcells /= nlist) then
-    write(*,*) 'Error: inconsistent B cell and nlist counts: ', NBcells, nlist
+    write(logmsg,*) 'Error: inconsistent B cell and nlist counts: ', NBcells, nlist
+    call logger(logmsg)
     stop
 endif
 Nsites = NBcells 
@@ -1065,7 +1057,6 @@ NBcells0 = NBcells
 aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
 bRadius = aRadius/ELLIPSE_RATIO
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
-write(*,*) 'ncogseed: ',ncogseed
 end subroutine
 
 !-----------------------------------------------------------------------------
@@ -1710,7 +1701,8 @@ do kcell = 1,nlist
     ncog = ncog + 1
     p => cellist(kcell)%cptr
     if (.not.associated(p)) then
-        write(*,*) 'ERROR: updater: p not associated: ',kcell
+        write(logmsg,*) 'ERROR: updater: p not associated: ',kcell
+	    call logger(logmsg)
         stop
     endif
     call get_region(p,region)

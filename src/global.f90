@@ -495,7 +495,7 @@ type(occupancy_type), allocatable :: occupancy(:,:,:)
 type(cell_type), allocatable, target :: cellist(:)
 integer, allocatable :: cognate_list(:)
 integer, allocatable :: gaplist(:)
-integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry
+integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry, NXcells
 integer :: lastNBcells, k_nonrandom
 integer :: max_nlist, max_ngaps
 integer :: nadd_sites, ndivisions
@@ -576,7 +576,10 @@ logical :: dbug = .false.
 logical :: use_portal_egress			! use fixed exit portals rather than random exit points
 logical :: FIXED_NEXITS = .false.		! the number of exit portals is held fixed
 !real :: base_exit_prob = 0.00097		! prob of exit of cell at bdry site (Tres = 24)
-real :: base_exit_prob = 0.00195		! prob of exit of cell at bdry site (Tres = 12)
+!real :: base_exit_prob = 0.00195		! prob of exit of cell at bdry site (Tres = 12) OK for NO chemotaxis
+!real :: base_exit_prob = 0.0017		! prob of exit of cell at bdry site (Tres = 12) with chemotaxis (all suscept = 0.1)
+!real :: base_exit_prob = 0.0014		! prob of exit of cell at bdry site (Tres = 12) with chemotaxis (all suscept > 0.1)
+real :: base_exit_prob = 0.0014		! testing different chemo_K
 real :: INLET_R_FRACTION = 0.7			! fraction of blob radius within which ingress occurs
 real :: INLET_EXIT_LIMIT = 5			! if RELAX_INLET_EXIT_PROXIMITY, this determines how close an inlet point can be to an exit portal.
 
@@ -733,7 +736,8 @@ case(NONCOG_TYPE_TAG,TAGGED_CELL,RES_TAGGED_CELL)
 case(COG_CD4_TAG,COG_CD8_TAG)
     struct_type = COG_TYPE_TAG
 case default
-    write(*,*) 'ERROR: struct_type: unrecognised cell type: ',ctype
+    write(logmsg,*) 'ERROR: struct_type: unrecognised cell type: ',ctype
+    call logger(logmsg)
     stop
 end select
 end function
@@ -834,7 +838,8 @@ if (stype == COG_TYPE_TAG) then
     kcog = cell_to%cptr%cogID
     cognate_list(kcog) = kcell
 elseif (stype /= NONCOG_TYPE_TAG) then
-    write(*,*) 'ERROR: copycell2cell: istep, ID, ctype, stype: ',istep,cell_from%ID,ctype,stype
+    write(logmsg,*) 'ERROR: copycell2cell: istep, ID, ctype, stype: ',istep,cell_from%ID,ctype,stype
+    call logger(logmsg)
     stop
 endif
 cell_to%ID = cell_from%ID
@@ -842,7 +847,8 @@ cell_to%site = cell_from%site
 cell_to%ctype = cell_from%ctype
 cell_to%lastdir = cell_from%lastdir
 if (cell_from%ctype == 0) then
-    write(*,*) 'ERROR: copycell2cell: ctype = 0'
+    write(logmsg,*) 'ERROR: copycell2cell: ctype = 0'
+    call logger(logmsg)
     stop
 endif
 end subroutine
@@ -1042,12 +1048,16 @@ endif
 
 if (.not.steadystate) then     ! surrogate for modeling an immune response
     call generate_traffic(inflow0)
+!    if (NBcells < NBcells0) then
+!		InflowTotal = InflowTotal*real(NBcells0)/NBcells
+!	endif
 else
     InflowTotal = inflow0
     OutflowTotal = inflow0
 endif
 if (istep == 1 .and. .not.use_TCP) then
-	write(*,'(a,i8,12f8.2)') 'NBcells,Inflow,Outflow: ',NBcells0,InflowTotal,OutflowTotal
+	write(logmsg,'(a,i8,12f8.2)') 'NBcells,Inflow,Outflow: ',NBcells0,InflowTotal,OutflowTotal
+    call logger(logmsg)
 endif
 end subroutine
 
@@ -1213,18 +1223,24 @@ integer :: gen, stage, region
 
 bcell = cellist(kcell)
 if (.not.associated(bcell%cptr)) then
-    write(*,*) 'ERROR: show_cognate_cell: cptr not associated: ',kcell
+    write(logmsg,*) 'ERROR: show_cognate_cell: cptr not associated: ',kcell
+    call logger(logmsg)
     stop
 endif
 p => bcell%cptr
-write(*,*) 'Cognate cell: ',p%cogID,kcell,cellist(kcell)%ID
-write(*,'(a,i10,a,3i4,a,i2)') '  ID: ',bcell%ID,' site: ',bcell%site,' ctype: ',bcell%ctype
+write(logmsg,*) 'Cognate cell: ',p%cogID,kcell,cellist(kcell)%ID
+call logger(logmsg)
+write(logmsg,'(a,i10,a,3i4,a,i2)') '  ID: ',bcell%ID,' site: ',bcell%site,' ctype: ',bcell%ctype
+call logger(logmsg)
 gen = get_generation(p)
 !stage = get_stage(p)
 call get_stage(p,stage,region)
-write(*,'(a,i8,a,i2,a,i2)') '   cogID: ',p%cogID,' gen: ',gen,' stage: ', stage
-write(*,'(a,4f10.2)') '   times: entry,die,div,stage: ',bcell%entrytime,p%dietime,p%dividetime,p%stagetime
-write(*,'(a,3f8.2)') 'avidity, stimulation: ', p%avidity,p%stimulation
+write(logmsg,'(a,i8,a,i2,a,i2)') '   cogID: ',p%cogID,' gen: ',gen,' stage: ', stage
+call logger(logmsg)
+write(logmsg,'(a,4f10.2)') '   times: entry,die,div,stage: ',bcell%entrytime,p%dietime,p%dividetime,p%stagetime
+call logger(logmsg)
+write(logmsg,'(a,3f8.2)') 'avidity, stimulation: ', p%avidity,p%stimulation
+call logger(logmsg)
 
 end subroutine
 
@@ -1475,40 +1491,59 @@ end subroutine
 !--------------------------------------------------------------------------------
 ! Need to compare chemo_probs() with chemo_probs_pre().
 ! Good news!  They are in agreement.
+! Note: originally vsum was the offset vector of the cell from the attracting site.  
+! This has been changed.  Now vsum is the normalised net chemokine gradient vector,
+! and the probabilities of jumps in directions close to the net gradient vector are
+! greatest.  If the angle between a jump direction and the gradient vector exceeds
+! pi/2 (i.e. the dot product (cosine) is negative) the jump probability is set to 0.
 !--------------------------------------------------------------------------------
 subroutine test_chemo
 integer :: k,rv(3)
-real(DP) :: p(MAXRELDIR+1)
+real(DP) :: p0(MAXRELDIR+1), p(MAXRELDIR+1)
 real :: v(3), vsum(3), f
 
 f = 1
-p = 1
+p0 = 1
 
-vsum = (/-1., .5, -.5/)
-rv = -chemo_N*vsum/norm(vsum)
+vsum = (/1., .0, .0/)
 v = vsum/norm(vsum)
+rv = chemo_N*v
+p = p0
 write(*,*) 'chemo_probs_pre'
 call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
 write(*,'(7f8.4)') p
+p = p0
 write(*,*) 'chemo_probs'
 call chemo_probs(p,v,f)
-write(*,'(7f8.4)') p
+!write(*,'(7f8.4)') p
+do k = 1,njumpdirs
+	write(*,'(4i4,f8.4)') k,jumpvec(:,k),p(k)
+enddo
 end subroutine
 
 !--------------------------------------------------------------------------------
+! Original interpretation, in terms of exit chemotaxis:
 ! The chemotactic step probabilities for all possible sites within an exit's
 ! SOI are precomputed.  The array is indexed by the offset of each site from
 ! the attractant site, given by (x,y,z).
 ! Note that the weight given to a jump direction is found from the cosine^2 of
-! the angle between the jump direction and the vector from the site to the
-! attractant site.
+! the angle between the jump direction and the vector from the attractant site to the
+! cell site.  The offset vector is used only to provide direction information.
+! Interpretation in terms of chemokine gradient:
+! The weighting is on jump directions that are closest to the direction of the
+! net chemokine gradient vector (cells move up the chemokine concentration gradient).
+! The vector r provides the gradient vector direction.  In practice the net gradient
+! vector vsum is first normalised, then scaled by chemo_N to yield (x,y,z) that
+! can be used to access the chemo_p lookup table.  Note that only a small fraction
+! of the table entries will ever be accessed - these are those (x,y,z) near the
+! sphere boundary.
 !--------------------------------------------------------------------------------
-subroutine chemo_setup
+subroutine ChemoSetup
 integer :: x, y, z, k, r(3), s(3)
 real :: r2, s2, rmod,smod,cosa
 real, allocatable :: w(:)
 
-write(logmsg,*) 'chemo_setup'
+write(logmsg,*) 'ChemoSetup'
 call logger(logmsg)
 allocate(chemo_r(0:chemo_N,0:chemo_N,0:chemo_N))
 allocate(chemo_p(-chemo_N:chemo_N,-chemo_N:chemo_N,-chemo_N:chemo_N,njumpdirs))
@@ -1527,7 +1562,8 @@ do x = -chemo_N,chemo_N
                 s2 = dot_product(s,s)
                 smod = sqrt(s2)
                 cosa = dot_product(r,s)/(rmod*smod)
-                if (cosa < 0) then
+!                if (cosa < 0) then
+                if (cosa > 0) then
                     w(k) = cosa*cosa/smod
                 endif
             enddo
@@ -1541,6 +1577,7 @@ do x = -chemo_N,chemo_N
 enddo
 deallocate(w)
 !call test_chemo
+!stop
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1592,6 +1629,7 @@ real :: v(3), f
 integer :: k
 real(DP) :: pc(MAXRELDIR+1)
 real :: r(3), r2, rmod, s(3), s2, smod, cosa
+logical :: dbug
 
 if (f == 0) then
     return
@@ -1601,31 +1639,41 @@ if (f > 1) then
 	call logger(logmsg)
 	return
 endif
+!dbug = (sum(p) < 0.001 .and. v(1) == 0)
+dbug = .false.
 p = p/sum(p)
 
-!    pc(1:njumpdirs) = chemo_p(v(1),v(2),v(3),:)    ! was precomputed
-!    r = (/x,y,z/)
-    r = -v
-    r2 = dot_product(r,r)
-    rmod = sqrt(r2)
-    pc = 0
-    do k = 1,njumpdirs
-        if (k == 14) cycle
-        s = jumpvec(:,k)
-        s2 = dot_product(s,s)
-        smod = sqrt(s2)
-        cosa = dot_product(r,s)/(rmod*smod)
-        if (cosa < 0) then
-            pc(k) = cosa*cosa/smod
-        endif
-    enddo
-    pc = pc/sum(pc)
+r = v
+r2 = dot_product(r,r)
+rmod = sqrt(r2)
+pc = 0
+do k = 1,njumpdirs
+    if (k == 14) cycle
+    s = jumpvec(:,k)
+    s2 = dot_product(s,s)
+    smod = sqrt(s2)
+    cosa = dot_product(r,s)/(rmod*smod)
+!    if (cosa < 0) then
+    if (cosa > 0) then
+        pc(k) = cosa*cosa/smod
+    endif
+enddo
+pc = pc/sum(pc)
+if (dbug) then
+	write(*,*) 'pc:'
+	write(*,'(10f7.3)') pc
+endif
     
 do k = 1,njumpdirs
+    if (k == 14) cycle
     if (p(k) > 0) then      ! prevents jumps in disallowed directions
         p(k) = (1-f)*p(k) + f*pc(k)
     endif
 enddo
+if (dbug) then
+	write(*,*) 'p: f: ',f
+	write(*,'(10f7.3)') p
+endif
 end subroutine
 
 

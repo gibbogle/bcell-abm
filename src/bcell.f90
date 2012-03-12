@@ -57,11 +57,9 @@ integer, allocatable :: zig_seed(:)
 integer :: i
 integer :: npar, grainsize = 32
 
-write(*,*) 'Mnodes: ',Mnodes
 npar = Mnodes
-write(*,*) 'npar = ',npar,seed
-!write(logmsg,*) 'npar = ',npar,seed
-!call logger(logmsg)
+write(logmsg,*) 'npar = ',npar,seed
+call logger(logmsg)
 allocate(zig_seed(0:npar-1))
 do i = 0,npar-1
     zig_seed(i) = seed(1)*seed(2)*(i+1)
@@ -171,7 +169,6 @@ call make_reldir
 
 nz_excess = 0
 Centre = (/x0,y0,z0/)   ! now, actually the global centre (units = grids)
-!write(*,*) 'Centre: ',Centre
 ncogseed = 0
 lastcogID = 0
 lastID = 0
@@ -614,43 +611,81 @@ end subroutine
 ! These values are used in jumper() to adjust the jump probabilities.  The probability
 ! of jumps in the -z direction is increased by an increment that is proportional to
 ! nz_excess(k)/nz_sites(k)
-! Need to account for DC sites
+! This version is to quantify the cell distribution in the blob.
 !-----------------------------------------------------------------------------------------
 subroutine scanner
-integer :: x, y, z, ns, nc, nst, nct,excess, indx(2), nextra, i, k, idn, imin=0, nz1, nz2
-!real, allocatable :: eratio(:), nz_sites0(:)    !, nz_totsites(:)
+integer :: x, y, z, ns, nc, nst, nct, indx(2), k
+integer :: yfraction(NY), ynsb(NY), yncb(NY)
+real, allocatable, save :: ysum(:)
+integer, save :: nh = 0
+integer :: excess, nextra, i, idn, imin=0, nz1, nz2
 real :: eratio(NZ), nz_sites0(NZ)
 real :: df, dfmin
+integer :: nsb, ncb, nsbt, ncbt
+type (boundary_type), pointer :: bdry
 
-if (exit_region == EXIT_EVERYWHERE) return
-
-!allocate(eratio(NZ))
-!allocate(nz_sites0(NZ))
-!allocate(nz_totsites(NZ))
-nz_excess = 0
-excess = 0
+if (nh == 0) then
+	allocate(ysum(NY))
+	ysum = 0
+endif
+yfraction = 0
+ynsb = 0
+yncb = 0
 nct = 0
 nst = 0
-do z = NZ,1,-1
+nsbt = 0
+ncbt = 0
+k = 0
+do y = 1,NY
     ns = 0
     nc = 0
-    do y = 1,NY
+	nsb = 0
+	ncb = 0
+    do z = 1,NZ
         do x = 1,NX
             indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle       ! OUTSIDE_TAG or DC site (-idc)
+            if (indx(1) < 0) cycle       ! OUTSIDE_TAG 
             ns = ns+1
             if (indx(1) > 0) nc = nc+1
             if (indx(2) > 0) nc = nc+1
+            bdry => occupancy(x,y,z)%bdry
+            if (associated(bdry)) then
+				if (bdry%exit_OK) then
+		            nsb = nsb + 1
+			        if (indx(1) > 0) ncb = ncb+1
+				    if (indx(2) > 0) ncb = ncb+1
+				endif
+			endif	
         enddo
     enddo
     nst = nst + ns
     nct = nct + nc
-    nz_sites(z) = ns
-    nz_cells(z) = nc
-    excess = excess + nc - ns
-    nz_excess(z) = excess
+    nsbt = nsbt + nsb
+    ncbt = ncbt + ncb
+    if (ns > 0) then
+		k = k+1
+		yfraction(k) = (100.*nc)/(2.*ns) + 0.5
+		ynsb(k) = nsb
+		yncb(k) = ncb
+	endif
+!    nz_sites(z) = ns
+!    nz_cells(z) = nc
+!    excess = excess + nc - ns
+!    nz_excess(z) = excess
 enddo
+nh = nh + 1
+ysum = ysum + yfraction
+write(nfout,'(a,f8.2)') 'Hour: ',istep*DELTA_T/60
+write(nfout,'(25i3)') int(ysum(1:k)/nh)
+write(nfout,'(25i4)') int(ynsb(1:k/2))
+write(nfout,'(25i4)') int(yncb(1:k/2))
+write(nfout,'(a,f8.4)') 'Fraction of exit sites occupied: ',real(ncbt)/(2*nsbt)
+write(nfout,*) 'Total exit sites, exit cells: ',nsbt,ncbt
+NXcells = ncbt
+return
 
+nz_excess = 0
+excess = 0
 nextra = nst - nct
 ! This is the imbalance between number of sites and number of T cells
 ! resulting from (a) DC sites and (b) sites to be added (nadd_sites)
@@ -723,7 +758,10 @@ gen = 1
 k = 0
 do while (k < ninflow)
     call getEntrySite(site,ok)
-    if (.not.ok) return
+    if (.not.ok) then
+		call logger('Error: CellInflux: no entry site found')
+		return
+	endif
     indx = occupancy(site(1),site(2),site(3))%indx
     if (indx(1) < 0) cycle      ! OUTSIDE_TAG
     if (indx(1) == 0 .or. indx(2) == 0) then
@@ -742,7 +780,10 @@ do while (k < ninflow)
             ncogseed = ncogseed + 1
         endif
         call AddBcell(site,ctype,gen,NAIVE,region,kcell,ok)
-        if (.not.ok) return
+        if (.not.ok) then
+			call logger('Error: CellInflux: failed to add B cell')
+			return
+		endif
         k = k+1
         cycle
     endif
@@ -763,33 +804,23 @@ real(DP) :: R, df, prob
 real :: tnow, exit_prob
 logical :: left
 integer :: kpar=0
+integer :: nb, nc, nx
 type (boundary_type), pointer :: bdry
 
 ok = .true.
 !write(*,*) 'traffic'
 tnow = istep*DELTA_T
-exit_prob = base_exit_prob*12/residence_time
 node_inflow = InflowTotal
-!node_outflow = OutflowTotal
-!node_outflow = 0    ! TESTING
 df = InflowTotal - node_inflow
 R = par_uni(kpar)
 if (R < df) then
     node_inflow = node_inflow + 1
 endif
-
-!if (steadystate) then
-!    node_outflow = node_inflow
-!else
-!    df = OutflowTotal - node_outflow
-!    R = par_uni(kpar)
-!    if (dbug) write(nfres,'(a,2f10.6)') 'traffic: out: ',df,R
-!    if (R < df) then
-!        node_outflow = node_outflow + 1
-!    endif
-!endif
-!net_inflow = node_inflow - node_outflow
-!add = 0
+exit_prob = base_exit_prob*12/residence_time
+! To speed attainment of steady state when inflammation_signal = 0
+if (NBcells < NBcells0) then
+	exit_prob = exit_prob*(real(NBcells)/NBcells0)**3
+endif
 
 ! Inflow
 call cellInflux(node_inflow,ok)
@@ -797,42 +828,47 @@ if (.not.ok) return
 nadd_sites = nadd_sites + node_inflow
 
 ! Outflow
-! This needs to traverse the cell list to locate cells near the lower boundary egress surface,
+! Traverse the boundary list to locate cells at bdry sites with %exit_ok, i.e. near the lower boundary egress surface,
 ! and allow some to exit.
 node_outflow = 0
+nb = 0
+nc = 0
+nx = 0
 bdry => bdrylist
 do while ( associated ( bdry )) 
-    if (.not.bdry%exit_ok) cycle
-    site = bdry%site
-    indx = occupancy(site(1),site(2),site(3))%indx
-    do slot = 2,1,-1
-        kcell = indx(slot)
-        if (kcell > 0) then
-            R = par_uni(kpar)
-            if (R < exit_prob) then    ! this cell can leave
-                call CellExit(kcell,slot,site,left)
-                if (.not.left) cycle
-                if (cellist(kcell)%ctype == COG_TYPE_TAG) then
-					write(*,*) 'traffic: cognate cell left: ',kcell
-					stop
+    if (bdry%exit_ok) then
+		nb = nb + 1
+		site = bdry%site
+		indx = occupancy(site(1),site(2),site(3))%indx
+		do slot = 2,1,-1
+			kcell = indx(slot)
+			if (kcell > 0) then
+				nc = nc + 1
+				R = par_uni(kpar)
+				if (R < exit_prob) then    ! this cell can leave
+					call CellExit(kcell,slot,site,left)
+					if (left) then
+						nx = nx + 1
+						node_outflow = node_outflow + 1
+						if (evaluate_residence_time) then
+							if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
+								noutflow_tag = noutflow_tag + 1
+								restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
+								ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
+								Tres_dist(ihr) = Tres_dist(ihr) + 1
+							endif
+						endif
+					endif
 				endif
-                node_outflow = node_outflow + 1
-                if (evaluate_residence_time) then
-                    if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
-                        noutflow_tag = noutflow_tag + 1
-                        restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
-                        ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
-                        Tres_dist(ihr) = Tres_dist(ihr) + 1
-                    endif
-                endif
-            endif
-        endif
-    enddo
+			endif
+		enddo
+	endif
     bdry => bdry%next
 enddo
 nadd_sites = nadd_sites - node_outflow
 if (mod(istep,4*60) == 0) then
-    write(nfout,'(a,4i6)') 'istep,in,out: ',istep,node_inflow,node_outflow,NBcells
+!    write(nfout,'(a,4i6)') 'istep,in,out: ',istep,node_inflow,node_outflow,NBcells
+	write(nfout,*) nb,nc,nx,exit_prob
 endif
 return
 
@@ -872,7 +908,7 @@ do while (k < node_outflow)
     endif
 enddo
 nadd_sites = nadd_sites - node_outflow
-write(*,'(a,4i6)') 'istep,in,out: ',istep,node_inflow,node_outflow,NBcells
+!write(*,'(a,4i6)') 'istep,in,out: ',istep,node_inflow,node_outflow,NBcells
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1055,7 +1091,6 @@ do ipermex = 1,Lastexit
 								restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
 								ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
 								Tres_dist(ihr) = Tres_dist(ihr) + 1
-		!                        write(*,*) 'entry: ',cellist(kcell)%entrytime
 							endif
 						endif
 						if (ne == node_outflow .and. computed_outflow) exit
@@ -1116,7 +1151,7 @@ if (slot == 2) then
 else
     if (occupancy(x,y,z)%indx(2) == 0) then
         occupancy(x,y,z)%indx(1) = 0
-    else    ! shift cell on indx(2) to indx(1)
+    else    ! shift cell in slot 2 to slot 1 (indx(2) to indx(1))
         occupancy(x,y,z)%indx(1) = occupancy(x,y,z)%indx(2)
         occupancy(x,y,z)%indx(2) = 0
     endif
@@ -1130,8 +1165,8 @@ if (cognate) then
 	gaplist(ngaps) = kcell
 	cellist(kcell)%ID = 0
     cognate_list(p%cogID) = 0
-    write(*,*) 'CellExit: cognate cell left: ',kcell
-    stop
+    write(logmsg,*) 'CellExit: cognate cell left: ',kcell
+    call logger(logmsg)
 else
 	ngaps = ngaps + 1
 	gaplist(ngaps) = kcell
@@ -1203,8 +1238,15 @@ if (.not.vary_vascularity) then
     Vascularity = 1.0
     return
 endif
-Nfactor = real(NBcells)/NBcells0
 VEGFsignal = get_inflammation() ! Rate of secretion of VEGF is proportional to inflammation  
+! This is a measure to speed up attainment of steady-state
+if (VEGFsignal == 0 .and. NBcells < NBcells0) then
+	Cvegf = Cvegf0
+	VEGFmass = NBcells0*Cvegf
+    Vascularity = real(NBcells0)/NBcells
+    return
+endif
+!Nfactor = real(NBcells)/NBcells0
 dVEGFdt = VEGFsignal*VEGF_alpha + VEGF_baserate - VEGF_decayrate*VEGFmass
 ! Mass of VEGF is augmented by rate, and is subject to decay
 VEGFmass = VEGFmass + dVEGFdt*DELTA_T
@@ -1405,26 +1447,6 @@ do k = 1,n
 enddo
 !cyt(site0(1),site0(2),site0(3),:) = csum(1:Ncytokines)
 
-end subroutine
-
-!--------------------------------------------------------------------------------
-! Determines the average radius of the blob, which is needed for exitter().
-! Note: this code only applies to the spherical blob case.
-! Get range by averaging over a small number of grid sites near the centre.
-! NOT USED
-!--------------------------------------------------------------------------------
-subroutine sizer(nb,r2list)
-integer :: nb
-real :: r2list(:)
-integer :: k
-real :: rmean
-
-rmean = 0
-do k = 1,nb
-    rmean = rmean + sqrt(r2list(k))
-enddo
-rmean = rmean/nb
-write(*,*) 'sizer: nb,rmean: ',nb,rmean
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1760,6 +1782,8 @@ enddo
 
 end subroutine
 
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine testrnor
 integer :: n = 100000
 integer :: k, j
@@ -2260,7 +2284,7 @@ use, intrinsic :: iso_c_binding
 integer(c_int) :: summaryData(*)
 logical :: ok
 integer :: kcell, ctype, stype, ncog, noncog, ntot, nbnd, stage, region, i, iseq, error
-integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nact
+integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nvasc
 real :: stim(2*STAGELIMIT), IL2sig(2*STAGELIMIT), tgen, tnow, fac, act, cyt_conc, mols_pM
 type (cog_type), pointer :: p
 integer :: nst(FINISHED)
@@ -2299,7 +2323,8 @@ do kcell = 1,nlist
 	if (region == FOLLICLE) then
 	    ntot = ntot + 1
 	else
-		write(*,*) 'kcell, region: ',kcell,region
+		write(logmsg,*) 'kcell, region: ',kcell,region
+		call logger(logmsg)
 		stop
 	endif
     ctype = cellist(kcell)%ctype
@@ -2319,7 +2344,8 @@ do kcell = 1,nlist
     elseif (ctype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
     else
-        write(*,*) 'ERROR: show_snapshot: bad stype: ',ctype,stype
+        write(logmsg,*) 'ERROR: get_summary: bad stype: ',ctype,stype
+        call logger(logmsg)
         stop
     endif
 enddo
@@ -2365,7 +2391,7 @@ totalres%dN_EffCogTC = 0
 totalres%dN_EffCogTCGen = 0
 totalres%dN_Dead = 0
 
-summaryData(1:8) = (/int(tnow/60),istep,ntot,ncogseed,ncog,Ndead,int(InflowTotal*60/DELTA_T), teffgen/)
+summaryData(1:9) = (/int(tnow/60),istep,ntot,ncogseed,ncog,Ndead,int(InflowTotal*60/DELTA_T), int(100*vascularity), teffgen/)
 check_inflow = 0
 check_egress = 0
 end subroutine
@@ -2497,8 +2523,15 @@ subroutine simulate_step(res) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: simulate_step  
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
+real(DP) :: t1, t2, tmover=0, tfields=0
 logical :: ok
+logical, save :: first = .true.
 
+if (first) then
+	first = .false.
+	tmover = 0
+	tfields = 0
+endif
 res = 0
 dbug = .false.
 ok = .true.
@@ -2515,25 +2548,28 @@ if (mod(istep,240) == 0) then
     endif
     total_in = 0
     total_out = 0
+    call scanner
+	call cpu_time(t1)
+    call UpdateFields
+	call cpu_time(t2)
+	tfields = t2 - t1
+!    write(*,'(a,f8.1,a,f8.1)') 'Times: mover: ',tmover,'  fields: ',tfields
+    tmover = 0
+!    call CheckBdryList
 endif
-!if (mod(istep,240*12) == 1) then
-!	call displayExits
+!if (use_cytokines) then
+!    if (use_diffusion) then
+!        call diffuser
+!    else
+!        call molsynch
+!    endif
 !endif
-if (use_cytokines) then
-    if (use_diffusion) then
-        call diffuser
-    else
-        call molsynch
-    endif
-endif
 
-if (use_traffic .and. mod(istep,SCANNER_INTERVAL) == 0) then
-	if (dbug) write(nflog,*) 'call scanner'
-	call scanner
-	if (dbug) write(nflog,*) 'did scanner'
-endif
 if (dbug) write(nflog,*) 'call mover'
+call cpu_time(t1)
 call mover(ok)
+call cpu_time(t2)
+tmover = tmover + t2 - t1
 if (dbug) write(nflog,*) 'did mover'
 if (.not.ok) then
 	call logger("mover returned error")
@@ -2553,7 +2589,7 @@ if (.not.evaluate_residence_time) then
 endif
 
 if (use_traffic) then
-    if (vary_vascularity) then	! There is a problem with this system
+    if (vary_vascularity) then
         call vascular
     endif
     if (use_portal_egress) then
@@ -2568,6 +2604,9 @@ if (use_traffic) then
     else
 		if (dbug) write(nflog,*) 'call traffic'
         call traffic(ok)
+!        if (istep > 4*240) then
+!		    call CheckBdryList
+!		endif
 		if (dbug) write(nflog,*) 'did traffic'
 	    if (.not.ok) then
 			call logger('traffic returned error')
@@ -2726,6 +2765,7 @@ if (.not.ok) return
 
 call CreateBdryList
 
+NXcells = 0
 if (use_portal_egress) then
     call placeExits
 !	call adjustExits
@@ -2738,7 +2778,7 @@ check_egress = 0
 last_portal_update_time = -999
 
 chemo_N = 8
-call chemo_setup
+call ChemoSetup
 
 if (TAGGED_EXIT_CHEMOTAXIS .and. .not.use_chemotaxis) then
 	call logger('ERROR: TAGGED_EXIT_CHEMOTAXIS requires USE_CHEMOTAXIS')
@@ -2758,7 +2798,7 @@ endif
 
 call set_globalvar
 call make_split
-call scanner
+!call scanner
 call init_counters
 if (save_input) then
     call save_inputfile(inputfile)

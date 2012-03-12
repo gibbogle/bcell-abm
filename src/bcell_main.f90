@@ -10,6 +10,7 @@ character*(64) :: travelfile = 'travel_time_dist.out'
 integer :: status, nlen, cnt, i, inbuflen, outbuflen
 integer :: jstep, hour, ntot, ncog, inflow
 character*(128) :: b, c, progname
+real :: vasc
 
 call process_command_line(ncpu,infile,outfile)
 
@@ -76,7 +77,8 @@ do jstep = 1,Nsteps
 		ntot = summaryData(3)
 		ncog = summaryData(5)
 		inflow = summaryData(7)
-		write(*,'(5(a,i6))') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog,' inflow/hr: ',inflow	
+		vasc = summaryData(8)/100.
+		write(*,'(4(a,i6),a,f6.2)') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog,' inflow/hr: ',inflow,' vasc: ',vasc	
 	endif
 enddo
 end
