@@ -170,7 +170,7 @@ integer :: irel,dir1,lastdir1,indx2(2),k,rv(3),id
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
-logical :: chemo
+logical :: ischemo
 
 dbug = .false.
 tnow = istep*DELTA_T
@@ -190,19 +190,19 @@ do k = 1,2
 enddo
 stay_prob = dirprob(0)
 
-chemo = .false.
+ischemo = .false.
 do k = 1,MAX_CHEMO
-    if (cell%suscept(k) > 0) then
-        chemo = .true.
+    if (chemo(k)%used .and. (cell%receptor(k) > 0)) then
+        ischemo = .true.
         exit
     endif
 enddo
 
 vsum = 0
-if (chemo) then
+if (ischemo) then
     do k = 1,MAX_CHEMO
-        if (cell%suscept(k) > 0) then
-            f = cell%suscept(k)*chemo_K(k)
+        if (chemo(k)%used > 0) then
+            f = cell%receptor(k)*chemo(k)%strength
             select case (k)
             case (S1P)
                 v = S1P_grad(:,site1(1),site1(2),site1(3))
@@ -231,7 +231,7 @@ if (chemo) then
 		rv = chemo_N*v
 	else
 		f = 0
-		chemo = .false.
+		ischemo = .false.
 	endif
     stay_prob = dirprob(0)
     stay_prob = (1-f)*stay_prob
@@ -285,7 +285,7 @@ if (sum(p) == 0) then
     return
 endif
 
-if (chemo) then
+if (ischemo) then
 	psave = p
 !	call chemo_probs(p,v,f)
 	call chemo_probs_pre(p,rv,f)     ! this is the precomputed version

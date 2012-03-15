@@ -6,10 +6,27 @@ use bdry_linked_list
 implicit none
 save
 
-logical, parameter :: use_S1P = .true.
-logical, parameter :: use_CXCL13 = .false.
-logical, parameter :: use_CCL21 = .true.
-logical, parameter :: use_OXY = .false.
+type chemo_type
+	character(8) :: name
+	logical :: used
+	real :: bdry_conc
+	real :: diff_coeff
+	real :: halflife
+	real :: decay_rate
+	real :: strength
+	real, allocatable :: conc(:,:,:)
+	real, allocatable :: grad(:,:,:,:)
+end type
+
+integer, parameter :: MAX_BDRY = 20000
+
+type(chemo_type) :: chemo(MAX_CHEMO)
+logical :: use_S1P = .true.
+logical :: use_CXCL13 = .false.
+logical :: use_CCL21 = .true.
+logical :: use_OXY = .false.
+
+! The following are no longer used
 real, parameter :: S1P_KDIFFUSION = 0.001
 real, parameter :: S1P_KDECAY = 0.000005
 real, parameter :: OXY_KDIFFUSION = 0.001
@@ -18,7 +35,6 @@ real, parameter :: CCL21_KDIFFUSION = 0.001
 real, parameter :: CCL21_KDECAY = 0.00001
 real, parameter :: CXCL13_KDIFFUSION = 1.0
 real, parameter :: CXCL13_KDECAY = 1.0
-integer, parameter :: MAX_BDRY = 20000
 
 real :: BdryS1PConc = 1.0
 real :: BdryOXYConc = 1.0
@@ -29,6 +45,7 @@ real, allocatable :: S1P_conc(:,:,:), S1P_grad(:,:,:,:), S1P_influx(:,:,:)
 real, allocatable :: CXCL13_conc(:,:,:), CXCL13_grad(:,:,:,:), CXCL13_influx(:,:,:)
 real, allocatable :: CCL21_conc(:,:,:), CCL21_grad(:,:,:,:), CCL21_influx(:,:,:)
 real, allocatable :: OXY_conc(:,:,:), OXY_grad(:,:,:,:), OXY_influx(:,:,:)
+
 
 contains
 
@@ -85,10 +102,11 @@ do x = 1,NX
                 allocate(bdry)
                 site = (/x,y,z/)
                 bdry%site = site
-                bdry%S1P = .false.
-                bdry%CXCL13 = .false.
-                bdry%CCL21 = .false.
-                bdry%OXY = .false.
+                bdry%chemo_influx = .false.
+!                bdry%S1P = .false.
+!                bdry%CXCL13 = .false.
+!                bdry%CCL21 = .false.
+!                bdry%OXY = .false.
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,bdrylist)
                 call AssignBdryRole(site,bdry)
@@ -119,10 +137,11 @@ do x = 1,NX
                 allocate(bdry)
                 site = (/x,y,z/)
                 bdry%site = site
-                bdry%S1P = .false.
-                bdry%CXCL13 = .false.
-                bdry%CCL21 = .false.
-                bdry%OXY = .false.
+                bdry%chemo_influx = .false.
+!                bdry%S1P = .false.
+!                bdry%CXCL13 = .false.
+!                bdry%CCL21 = .false.
+!                bdry%OXY = .false.
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,checklist)
                 call AssignBdryRole(site,bdry)
@@ -146,20 +165,25 @@ integer :: site(3), dy
 type (boundary_type), pointer :: bdry
 real, parameter :: S1Pfraction = 0.25
 
-bdry%S1P = .false.
-bdry%CCL21 = .false.
-bdry%OXY = .false.
-bdry%CXCL13 = .false.
+bdry%chemo_influx = .false.
+!bdry%S1P = .false.
+!bdry%CCL21 = .false.
+!bdry%OXY = .false.
+!bdry%CXCL13 = .false.
 site = bdry%site
 dy = site(2) - Centre(2)
 if (dy > 0) then
-    bdry%OXY = .true.
-    bdry%S1P = .true.
+	bdry%chemo_influx(S1P) = .true.
+	bdry%chemo_influx(OXY) = .true.
+!    bdry%S1P = .true.
+!    bdry%OXY = .true.
 else
     if (dy > -S1Pfraction*bRadius) then
-        bdry%S1P = .true.
+		bdry%chemo_influx(S1P) = .true.
+!        bdry%S1P = .true.
     else
-	    bdry%CCL21 = .true.
+		bdry%chemo_influx(CCL21) = .true.
+!	    bdry%CCL21 = .true.
     endif
 endif
 if (dy > -ENTRY_ALPHA*bRadius) then
@@ -266,10 +290,11 @@ if (isbdry(site(1),site(2),site(3))) then   ! add it to the bdrylist
     nbdry = nbdry + 1
     allocate(bdry)
     bdry%site = site
-    bdry%S1P = .false.
-    bdry%CXCL13 = .false.
-    bdry%CCL21 = .false.
-    bdry%OXY = .false.
+    bdry%chemo_influx = .false.
+!    bdry%S1P = .false.
+!    bdry%CXCL13 = .false.
+!    bdry%CCL21 = .false.
+!    bdry%OXY = .false.
     nullify(bdry%next)
     call bdrylist_insert(bdry,bdrylist)
     call AssignBdryRole(site,bdry)
@@ -283,20 +308,20 @@ endif
 ok = .true.
 return
 
-cmin = 1.0e10
-cmax = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			if (occupancy(x,y,z)%indx(1) >= 0) then
-				cmin = min(cmin,S1P_conc(x,y,z))
-				cmax = max(cmin,S1P_conc(x,y,z))
-			endif
-		enddo
-	enddo
-enddo
-write(*,*) 'S1P_conc: min, max: ',cmin,cmax
-stop
+!cmin = 1.0e10
+!cmax = 0
+!do x = 1,NX
+!	do y = 1,NY
+!		do z = 1,NZ
+!			if (occupancy(x,y,z)%indx(1) >= 0) then
+!				cmin = min(cmin,S1P_conc(x,y,z))
+!				cmax = max(cmin,S1P_conc(x,y,z))
+!			endif
+!		enddo
+!	enddo
+!enddo
+!write(*,*) 'S1P_conc: min, max: ',cmin,cmax
+!stop
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -422,10 +447,11 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
             nbdry = nbdry + 1
             allocate(bdry)
             bdry%site = site
-            bdry%S1P = .false.
-            bdry%CXCL13 = .false.
-            bdry%CCL21 = .false.
-            bdry%OXY = .false.
+            bdry%chemo_influx = .false.
+!            bdry%S1P = .false.
+!            bdry%CXCL13 = .false.
+!            bdry%CCL21 = .false.
+!            bdry%OXY = .false.
             nullify(bdry%next)
             call bdrylist_insert(bdry,bdrylist)
             call AssignBdryRole(site,bdry)
@@ -553,6 +579,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine SetBdryConcs(site)
 integer :: site(3)
+integer :: i
 type (boundary_type), pointer :: bdry
 real :: cbnd
 
@@ -563,38 +590,49 @@ if (.not.associated(bdry)) then
 	stop
 endif
 
-if (use_S1P) then
-	if (bdry%S1P) then
-		cbnd = BdryS1PConc
-	else
-		cbnd = -1
-	endif 
-	call AverageBdryConc(bdry,S1P_conc,S1P_grad,site,cbnd)
-endif
-if (use_OXY) then
-	if (bdry%OXY) then
-		cbnd = BdryOXYConc
-	else
-		cbnd = -1
-	endif 
-	call AverageBdryConc(bdry,OXY_conc,OXY_grad,site,cbnd)
-endif
-if (use_CCL21) then
-	if (bdry%CCL21) then
-		cbnd = BdryCCL21Conc
-	else
-		cbnd = -1
-	endif 
-	call AverageBdryConc(bdry,CCL21_conc,CCL21_grad,site,cbnd)
-endif
-if (use_CXCL13) then
-	if (bdry%CXCL13) then
-		cbnd = BdryCXCL13Conc
-	else
-		cbnd = -1
-	endif 
-	call AverageBdryConc(bdry,CXCL13_conc,CXCL13_grad,site,cbnd)
-endif
+do i = 1,MAX_CHEMO
+	if (chemo(i)%used) then
+		if (bdry%chemo_influx(i)) then
+			cbnd = chemo(i)%bdry_conc
+		else
+			cbnd = -1
+		endif 
+		call AverageBdryConc(bdry,chemo(i)%conc,chemo(i)%grad,site,cbnd)
+	endif
+enddo
+
+!if (use_S1P) then
+!	if (bdry%S1P) then
+!		cbnd = BdryS1PConc
+!	else
+!		cbnd = -1
+!	endif 
+!	call AverageBdryConc(bdry,S1P_conc,S1P_grad,site,cbnd)
+!endif
+!if (use_OXY) then
+!	if (bdry%OXY) then
+!		cbnd = BdryOXYConc
+!	else
+!		cbnd = -1
+!	endif 
+!	call AverageBdryConc(bdry,OXY_conc,OXY_grad,site,cbnd)
+!endif
+!if (use_CCL21) then
+!	if (bdry%CCL21) then
+!		cbnd = BdryCCL21Conc
+!	else
+!		cbnd = -1
+!	endif 
+!	call AverageBdryConc(bdry,CCL21_conc,CCL21_grad,site,cbnd)
+!endif
+!if (use_CXCL13) then
+!	if (bdry%CXCL13) then
+!		cbnd = BdryCXCL13Conc
+!	else
+!		cbnd = -1
+!	endif 
+!	call AverageBdryConc(bdry,CXCL13_conc,CXCL13_grad,site,cbnd)
+!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -607,19 +645,25 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine SetConcs(site)
 integer :: site(3)
+integer :: i
 
-if (use_S1P) then
-	call AverageConc(S1P_conc,S1P_grad,site)
-endif
-if (use_OXY) then
-	call AverageConc(OXY_conc,OXY_grad,site)
-endif
-if (use_CCL21) then
-	call AverageConc(CCL21_conc,CCL21_grad,site)
-endif
-if (use_CXCL13) then
-	call AverageConc(CXCL13_conc,CXCL13_grad,site)
-endif
+do i = 1,MAX_CHEMO
+	if (chemo(i)%used) then
+		call AverageConc(chemo(i)%conc,chemo(i)%grad,site)
+	endif
+enddo
+!if (use_S1P) then
+!	call AverageConc(S1P_conc,S1P_grad,site)
+!endif
+!if (use_OXY) then
+!	call AverageConc(OXY_conc,OXY_grad,site)
+!endif
+!if (use_CCL21) then
+!	call AverageConc(CCL21_conc,CCL21_grad,site)
+!endif
+!if (use_CXCL13) then
+!	call AverageConc(CXCL13_conc,CXCL13_grad,site)
+!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -789,41 +833,75 @@ end subroutine
 ! by random motion.
 !----------------------------------------------------------------------------------------
 subroutine InitFields
-integer :: i
+integer :: i, x, y, z
+real :: g(3), gamp, gmax
 logical, save :: first = .true.
 
-if (use_S1P) then
-	if (first) then
-		allocate(S1P_conc(NX,NY,NZ))
-		allocate(S1P_grad(3,NX,NY,NZ))
-		S1P_conc = 0
+do i = 1,MAX_CHEMO
+	if (chemo(i)%used) then
+		if (first) then
+			allocate(chemo(i)%conc(NX,NY,NZ))
+			allocate(chemo(i)%grad(3,NX,NY,NZ))
+			chemo(i)%conc = 0
+		endif
+		write(logmsg,*) 'Solving steady-state: ',chemo(i)%name
+		call logger(logmsg)
+		write(*,'(a,i2,2e12.3)') 'diff_coeff, decay_rate: ', i,chemo(i)%diff_coeff,chemo(i)%decay_rate
+		call SolveSteadystate(i,chemo(i)%diff_coeff,chemo(i)%decay_rate,chemo(i)%conc)
+		! Now compute the gradient field.
+		call gradient(chemo(i)%conc,chemo(i)%grad)
+		gmax = 0
+		do x = 1,NX
+			do y = 1,NY
+				do z = 1,NZ
+					g = chemo(i)%grad(:,x,y,z)
+					gamp = sqrt(dot_product(g,g))
+					gmax = max(gamp,gmax)
+				enddo
+			enddo
+		enddo
+		write(logmsg,*) 'Max gradient: ',gmax
+		call logger(logmsg)
 	endif
-	call init_S1P
+enddo
+if (first) then
+	call ShowConcs
 endif
-if (use_OXY) then
-	if (first) then
-		allocate(OXY_conc(NX,NY,NZ))
-		allocate(OXY_grad(3,NX,NY,NZ))
-		OXY_conc = 0
-	endif
-	call init_OXY
-endif
-if (use_CCL21) then
-	if (first) then
-		allocate(CCL21_conc(NX,NY,NZ))
-		allocate(CCL21_grad(3,NX,NY,NZ))
-		CCL21_conc = 0
-	endif
-	call init_CCL21
-endif
-if (use_CXCL13) then
-	if (first) then
-		allocate(CXCL13_conc(NX,NY,NZ))
-		allocate(CXCL13_grad(3,NX,NY,NZ))
-		CXCL13_conc = 0
-	endif
-	call init_CXCL13
-endif
+first = .false.
+return
+
+!if (use_S1P) then
+!	if (first) then
+!		allocate(S1P_conc(NX,NY,NZ))
+!		allocate(S1P_grad(3,NX,NY,NZ))
+!		S1P_conc = 0
+!	endif
+!	call init_S1P
+!endif
+!if (use_OXY) then
+!	if (first) then
+!		allocate(OXY_conc(NX,NY,NZ))
+!		allocate(OXY_grad(3,NX,NY,NZ))
+!		OXY_conc = 0
+!	endif
+!	call init_OXY
+!endif
+!if (use_CCL21) then
+!	if (first) then
+!		allocate(CCL21_conc(NX,NY,NZ))
+!		allocate(CCL21_grad(3,NX,NY,NZ))
+!		CCL21_conc = 0
+!	endif
+!	call init_CCL21
+!endif
+!if (use_CXCL13) then
+!	if (first) then
+!		allocate(CXCL13_conc(NX,NY,NZ))
+!		allocate(CXCL13_grad(3,NX,NY,NZ))
+!		CXCL13_conc = 0
+!	endif
+!	call init_CXCL13
+!endif
 if (first) then
 	call ShowConcs
 endif
@@ -911,198 +989,30 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine ShowConcs
-integer :: x, y, z
+integer :: x, y, z, i
 
 x = NX/2
 z = NZ/2
-write(nfout,*) 'Conc   S1P         CCL21'
-do y = 1,NY
-    if (occupancy(x,y,z)%indx(1) < 0) cycle
-    write(nfout,'(i4,4e12.4)') y,S1P_conc(x,y,z),CCL21_conc(x,y,z) !,OXY_conc(x,y,z)
+do i = 1,MAX_CHEMO
+	if (chemo(i)%used) then
+		write(nfout,'(a,a)') chemo(i)%name,'  conc        gradient' 
+		do y = 1,NY
+			if (occupancy(x,y,z)%indx(1) < 0) cycle
+		    write(nfout,'(i4,4e12.4)') y,chemo(i)%conc(x,y,z),chemo(i)%grad(:,x,y,z)
+		enddo
+	endif
 enddo
-write(nfout,*) 'Grad   S1P                                 CCL21'
-do y = 1,NY
-    if (occupancy(x,y,z)%indx(1) < 0) cycle
-    write(nfout,'(i4,6e12.4)') y,S1P_grad(:,x,y,z),CCL21_grad(:,x,y,z)
-enddo
-end subroutine
-
-!----------------------------------------------------------------------------------------
-! Set up S1P_influx
-! The influx array is used both to flag sites that are within the blob and also
-! to convey chemokine influx rates at the boundary.
-!   influx = -1  outside blob
-!             0  inside blob, no chemokine influx
-!            >0  inside blob, chemokine influx (i.e. a bdry gridcell)
-!----------------------------------------------------------------------------------------
-!subroutine SetupS1P_influx
-!integer :: x, y, z, indx(2), site(3), nc
-!type (boundary_type), pointer :: bdry
-
-!S1P_influx = -1
-!do x = 1,NX
-!    do y = 1,NY
-!        do z = 1,NZ
-!            indx = occupancy(x,y,z)%indx
-!            if (indx(1) < 0) cycle
-!            S1P_influx(x,y,z) = 0
-!        enddo
-!    enddo
+!do y = 1,NY
+!    if (occupancy(x,y,z)%indx(1) < 0) cycle
+!    write(nfout,'(i4,4e12.4)') y,S1P_conc(x,y,z),CCL21_conc(x,y,z) !,OXY_conc(x,y,z)
 !enddo
-!    bdry => bdrylist
-!    do while ( associated ( bdry )) 
-!        site = bdry%site
-!        nc = 0
-!        if (bdry%S1P) then
-!            do k = 1,6
-!                x = site(1) + neumann(1,k)
-!                y = site(2) + neumann(2,k)
-!                z = site(3) + neumann(3,k)
-!                if (outside_xyz(x,y,z)) cycle
-!                if (occupancy(x,y,z)%indx(1) < 0) then
-!                    nc = nc + 1
-!                endif
-!            enddo
-!            S1P_influx(site(1),site(2),site(3)) = nc*S1P_rate
-!        bdry => bdry%next
-!    enddo
-
-!end subroutine
-
-!----------------------------------------------------------------------------------------
-! The flux of S1P into the gridcell (x,y,z) is proportional to influx(x,y,z)
-! The first task is to determine the equilibrium S1P concentration field.
-! One way is to solve the diffusion equation over a time long enough to reach steady-state.
-! S1P both diffuses and decays.
-! Treat the grid spacing as the unit of distance, therefore gridcell volume = 1.
-! Note that with gridcell volume = 1 the mass of S1P = concentration.
-! Note that influx(x,y,z) is used to flag the region of diffusion of S1P,
-! by setting influx(x,y,z) = -1 for gridcells that are not within the follicle or not
-! available for chemokine diffusion for some other reason (e.g. FDC).
-! influx(x,y,z) >= 0 for gridcells within the region.
-!
-! A problem:
-! The set of gridcells (sites) that experience chemokine influx varies as the follicle
-! expands and contracts (for boundary influx) and as chemokine-secreting cells move.
-! For now we consider only boundary influx.
-! We need to maintain a list of boundary sites receiving chemokine influx, for each
-! constituent.  The easiest method is to maintain a list of all boundary sites,
-! with associated info indicating chemokine influx and other data, if required.
-!----------------------------------------------------------------------------------------
-subroutine init_S1P
-integer :: x, y, z, xx, yy, zz, k, nb
-real :: g(3), gamp, gmax
-
-write(logmsg,*) 'Initializing S1P'
-call logger(logmsg)
-
-call SolveSteadystate(S1P,S1P_KDIFFUSION,S1P_KDECAY,S1P_conc)
-! Now compute the gradient field.
-call gradient(S1P_conc,S1P_grad)
-gmax = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			g = S1P_grad(:,x,y,z)
-			gamp = sqrt(dot_product(g,g))
-			gmax = max(gamp,gmax)
-		enddo
-	enddo
-enddo
-write(logmsg,*) 'Max S1P gradient: ',gmax
-call logger(logmsg)
-end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-subroutine init_OXY
-integer :: x, y, z, xx, yy, zz, k, nb
-real :: g(3), gamp, gmax
-
-write(logmsg,*) 'Initializing OXY'
-call logger(logmsg)
-
-call SolveSteadystate(OXY,OXY_KDIFFUSION,OXY_KDECAY,OXY_conc)
-! Now compute the gradient field.
-call gradient(OXY_conc,OXY_grad)
-gmax = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			g = OXY_grad(:,x,y,z)
-			gamp = sqrt(dot_product(g,g))
-			gmax = max(gamp,gmax)
-		enddo
-	enddo
-enddo
-write(logmsg,*) 'Max OXY gradient: ',gmax
-call logger(logmsg)
-end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-subroutine init_CCL21
-integer :: x, y, z, xx, yy, zz, k, nb
-real :: g(3), gamp, gmax
-
-write(logmsg,*) 'Initializing CCL21'
-call logger(logmsg)
-
-call SolveSteadystate(CCL21,CCL21_KDIFFUSION,CCL21_KDECAY,CCL21_conc)
-! Now compute the gradient field.
-call gradient(CCL21_conc,CCL21_grad)
-gmax = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			g = CCL21_grad(:,x,y,z)
-			gamp = sqrt(dot_product(g,g))
-			gmax = max(gamp,gmax)
-		enddo
-	enddo
-enddo
-write(logmsg,*) 'Max CCL21 gradient: ',gmax
-call logger(logmsg)
-end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-subroutine init_CXCL13
-integer :: isignal, site(3), x, y, z, it, nt, isig, iblast
-real :: dt, sum
-real :: g(3), gamp, gmax
-
-write(logmsg,*) 'Initializing CXCL13'
-call logger(logmsg)
-
-call SolveSteadystate(CXCL13,CXCL13_KDIFFUSION,CXCL13_KDECAY,CXCL13_conc)
-call gradient(CXCL13_conc,CXCL13_grad)
-gmax = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			g = CXCL13_grad(:,x,y,z)
-			gamp = sqrt(dot_product(g,g))
-			gmax = max(gamp,gmax)
-		enddo
-	enddo
-enddo
-write(logmsg,*) 'Max CXCL13 gradient: ',gmax
-call logger(logmsg)
-! Testing convergence
-!nt = 10
-!dt = 100*DELTA_T
-!do it = 1,nt
-!	call evolve(CXCL13_influx,CXCL13_KDIFFUSION,CXCL13_KDECAY,CXCL13_conc,dt)
-!	sum = 0
-!	do isig = 1,nsignal
-!		site = signal(isig)%site
-!		sum = sum + CXCL13_conc(site(1),NBY+1,site(3))
-!	enddo
-!	write(logmsg,*) 'Mean patch CXCL13: ',sum/nsignal
-!	call logger(logmsg)
+!write(nfout,*) 'Grad   S1P                                 CCL21'
+!do y = 1,NY
+!    if (occupancy(x,y,z)%indx(1) < 0) cycle
+!    write(nfout,'(i4,6e12.4)') y,S1P_grad(:,x,y,z),CCL21_grad(:,x,y,z)
 !enddo
 end subroutine
+
 
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
@@ -1204,57 +1114,6 @@ do it = 1,nt
 enddo
 end subroutine	
 
-!----------------------------------------------------------------------------------------
-! Note that the array Ctemp() is defined with z:z1-z2, i.e. with
-! a range of n = z2 - z1 + 1 values.  The read accesses of C() and influx() are shared 
-! in this version.  Does this have a big penalty?
-!----------------------------------------------------------------------------------------
-subroutine par_steadystate1(C,Kdiffusion,Kdecay,Ctemp,influx,z1,z2,maxchange,total,nc,kpar)
-real :: C(:,:,:), Ctemp(:,:,:), influx(:,:,:)
-integer :: z1, z2, kpar
-real :: Kdiffusion, Kdecay
-real :: dx2diff, total, maxchange, dC, sum, dV
-real, parameter :: alpha = 0.7
-integer :: x, y, z, xx, yy, zz, nb, nc, k, zpar
-
-dx2diff = DELTA_X**2/Kdiffusion
-dV = DELTA_X**3
-
-maxchange = 0
-total = 0
-nc = 0
-do zpar = 1,z2-z1+1
-	z = zpar + z1-1
-	do y = 1,NY
-		do x = 1,NX
-			if (influx(x,y,z) < 0) cycle
-			if (influx(x,y,z) > 0) then
-				dC = influx(x,y,z)*dx2diff
-			else
-				dC = 0
-			endif
-			sum = 0
-			nb = 0
-			do k = 1,6
-				xx = x + neumann(1,k)
-				yy = y + neumann(2,k)
-				zz = z + neumann(3,k)
-				if (outside_xyz(xx,yy,zz)) cycle
-				if (influx(xx,yy,zz) < 0) cycle
-				nb = nb + 1
-				sum = sum + C(xx,yy,zz)
-			enddo
-!			Ctemp(x,y,z) = alpha*(sum + dC)/(Kdecay*dx2diff + dC + nb) + (1-alpha)*C(x,y,z)
-			Ctemp(x,y,zpar) = alpha*(DELTA_X*Kdiffusion*sum + influx(x,y,z))/(Kdecay*dV + nb*DELTA_X*Kdiffusion) + (1-alpha)*C(x,y,z)
-			dC = abs(Ctemp(x,y,zpar) - C(x,y,z))
-			maxchange = max(dC,maxchange)
-			nc = nc + 1
-			total = total + Ctemp(x,y,zpar)
-		enddo
-	enddo
-enddo
-
-end subroutine
 
 !----------------------------------------------------------------------------------------
 ! A different approach from that used in bone-abm.
@@ -1262,96 +1121,8 @@ end subroutine
 ! chemokine-secreting cells near the boundary) are given a fixed concentration.
 ! All boundaries are no-flux.
 ! This is a simplified approach.  We need only keep track of the boundary.
-! Note: It would speed things up significantly if instead of simply flagging a
-! site as %bdry = .true., we make %bdry a pointer into the bdrylist.  How hard is this?
-! Seems to be OK.
-! The concentrations in a specified-conc bdry site are input parameters.
-!----------------------------------------------------------------------------------------
-subroutine par_steadystate_z(ichemo,C,Kdiffusion,Kdecay,Ctemp,z1,z2,maxchange,total,nc,kpar)
-integer :: ichemo
-real :: C(:,:,:), Ctemp(:,:,:)
-integer :: z1, z2, kpar
-real :: Kdiffusion, Kdecay
-real :: dx2diff, total, maxchange, dC, sum, dV
-real, parameter :: alpha = 0.7
-integer :: x, y, z, xx, yy, zz, nb, nc, k, zpar, indx(2)
-logical :: bdry_conc
-
-!write(*,*) 'par_steadystate: ',ichemo,z1,z2
-dx2diff = DELTA_X**2/Kdiffusion
-dV = DELTA_X**3
-
-maxchange = 0
-total = 0
-nc = 0
-do zpar = 1,z2-z1+1
-	z = zpar + z1-1
-	do y = 1,NY
-		do x = 1,NX
-		    indx = occupancy(x,y,z)%indx
-!			if (influx(x,y,z) < 0) cycle
-            if (indx(1) < 0) cycle      ! outside
-!			if (influx(x,y,z) > 0) then
-!				dC = influx(x,y,z)*dx2diff
-!			else
-!				dC = 0
-!			endif
-            bdry_conc = .false.
-            if (associated(occupancy(x,y,z)%bdry)) then
-                ! Check for S1P bdry site - no change to the concentration at such a site
-                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
-                    C(x,y,zpar) = BdryS1PConc
-                    Ctemp(x,y,zpar) = C(x,y,zpar)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
-                    C(x,y,zpar) = BdryOXYConc
-                    Ctemp(x,y,zpar) = C(x,y,zpar)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
-                    C(x,y,zpar) = BdryCCL21Conc
-                    Ctemp(x,y,zpar) = C(x,y,zpar)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
-                    C(x,y,zpar) = BdryCXCL13Conc
-                    Ctemp(x,y,zpar) = C(x,y,zpar)
-                    bdry_conc = .true.
-                endif
-            endif
-            if (.not.bdry_conc) then
-			    sum = 0
-			    nb = 0
-			    do k = 1,6
-				    xx = x + neumann(1,k)
-				    yy = y + neumann(2,k)
-				    zz = z + neumann(3,k)
-				    if (outside_xyz(xx,yy,zz)) cycle
-!    				if (influx(xx,yy,zz) < 0) cycle
-    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
-				    nb = nb + 1
-				    sum = sum + C(xx,yy,zz)
-			    enddo
-!    			Ctemp(x,y,z) = alpha*(sum + dC)/(Kdecay*dx2diff + dC + nb) + (1-alpha)*C(x,y,z)
-!			    Ctemp(x,y,zpar) = alpha*(DELTA_X*Kdiffusion*sum + influx(x,y,z))/(Kdecay*dV + nb*DELTA_X*Kdiffusion) + (1-alpha)*C(x,y,z)
-			    Ctemp(x,y,zpar) = alpha*(DELTA_X*Kdiffusion*sum)/(Kdecay*dV + nb*DELTA_X*Kdiffusion) + (1-alpha)*C(x,y,z)
-!    if (Ctemp(x,y,zpar) > 0) then
-!        write(*,'(3i4,f8.4)') x,y,zpar,Ctemp(x,y,zpar)
-!    endif
-			    dC = abs(Ctemp(x,y,zpar) - C(x,y,z))
-			    maxchange = max(dC,maxchange)
-			endif
-			nc = nc + 1
-			total = total + Ctemp(x,y,zpar)
-		enddo
-	enddo
-enddo
-!write(*,*) 'maxchange, average: ',maxchange,total/nc
-
-end subroutine
-
-!----------------------------------------------------------------------------------------
+! The concentrations in a specified chemokine influx bdry site are input parameters.
+! Note:  It is only the ratio Kdecay/Kdiffusion that matters.
 !----------------------------------------------------------------------------------------
 subroutine par_steadystate(ichemo,C,Kdiffusion,Kdecay,Ctemp,x1,x2,maxchange,total,nc,kpar)
 integer :: ichemo
@@ -1360,7 +1131,7 @@ integer :: x1, x2, kpar
 real :: Kdiffusion, Kdecay
 real :: dx2diff, total, maxchange, dC, sum, dV
 real, parameter :: alpha = 0.7
-integer :: x, y, z, xx, yy, zz, nb, nc, k, xpar, indx(2)
+integer :: x, y, z, xx, yy, zz, nb, nc, k, xpar, indx(2), i
 logical :: bdry_conc
 
 !write(*,*) 'par_steadystate: ',ichemo,z1,z2
@@ -1379,26 +1150,34 @@ do xpar = 1,x2-x1+1
             bdry_conc = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
                 ! Check for chemo bdry site - no change to the concentration at such a site
-                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
-                    C(x,y,z) = BdryS1PConc
-                    Ctemp(xpar,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
-                    C(x,y,z) = BdryOXYConc
-                    Ctemp(xpar,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
-                    C(x,y,z) = BdryCCL21Conc
-                    Ctemp(xpar,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
-                    C(x,y,z) = BdryCXCL13Conc
-                    Ctemp(xpar,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
+                do i = 1,MAX_CHEMO
+	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
+		                C(x,y,z) = chemo(i)%bdry_conc
+			            Ctemp(xpar,y,z) = C(x,y,z)
+				        bdry_conc = .true.
+					endif
+				enddo
+                
+!                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
+!                    C(x,y,z) = BdryS1PConc
+!                    Ctemp(xpar,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
+!                    C(x,y,z) = BdryOXYConc
+!                    Ctemp(xpar,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
+!                    C(x,y,z) = BdryCCL21Conc
+!                    Ctemp(xpar,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
+!                    C(x,y,z) = BdryCXCL13Conc
+!                    Ctemp(xpar,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
             endif
             if (.not.bdry_conc) then
 			    sum = 0
@@ -1507,7 +1286,7 @@ real :: C(:,:,:)
 real :: Kdiffusion, Kdecay, dt
 real :: dx2diff, total, maxchange, C0, dC, sum, dV, dMdt
 real, parameter :: alpha = 0.99
-integer :: x, y, z, xx, yy, zz, nb, nc, k, it
+integer :: x, y, z, xx, yy, zz, nb, nc, k, it, i
 real, allocatable :: Ctemp(:,:,:)
 logical :: bdry_conc
 
@@ -1521,26 +1300,34 @@ do z = 1,NZ
             bdry_conc = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
                 ! Check for S1P bdry site - no change to the concentration at such a site
-                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
-                    C(x,y,z) = BdryS1PConc
-                    Ctemp(x,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
-                    C(x,y,z) = BdryOXYConc
-                    Ctemp(x,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
-                    C(x,y,z) = BdryCCL21Conc
-                    Ctemp(x,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
-                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
-                    C(x,y,z) = BdryCXCL13Conc
-                    Ctemp(x,y,z) = C(x,y,z)
-                    bdry_conc = .true.
-                endif
+                do i = 1,MAX_CHEMO
+	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
+		                C(x,y,z) = chemo(i)%bdry_conc
+			            Ctemp(x,y,z) = C(x,y,z)
+				        bdry_conc = .true.
+					endif
+				enddo
+
+!                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
+!                    C(x,y,z) = BdryS1PConc
+!                    Ctemp(x,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
+!                    C(x,y,z) = BdryOXYConc
+!                    Ctemp(x,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
+!                    C(x,y,z) = BdryCCL21Conc
+!                    Ctemp(x,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
+!                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
+!                    C(x,y,z) = BdryCXCL13Conc
+!                    Ctemp(x,y,z) = C(x,y,z)
+!                    bdry_conc = .true.
+!                endif
             endif
             if (.not.bdry_conc) then
 			    sum = 0

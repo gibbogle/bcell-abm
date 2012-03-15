@@ -921,35 +921,12 @@ end subroutine
 logical function exitOK(p,ctype)
 type(cog_type), pointer :: p
 integer :: ctype
-integer :: gen, cd4_8
-real :: act
 !integer :: kpar = 0
 
-gen = get_generation(p)
-
-exitOK = .false.
-if (exit_rule == 1) then
-    if (gen >= NGEN_EXIT) then
-        exitOK = .true.
-    endif
-elseif (exit_rule == 2) then
-    if (gen > 1) then
-        act = get_activation(p)
-        cd4_8 = ctype - 1
-        if (act < EXIT_THRESHOLD(cd4_8)) then
-            exitOK = .true.
-        endif
-    endif
-elseif (exit_rule == 3) then
-!    if (p%CD69 == 0) then
-!        exitOK = .true.
-!    else
-!    if (p%CD69 < CD69_threshold) then
-!        R = par_uni(kpar)
-!        if (R < 1 - p%CD69/CD69_threshold) then
-            exitOK = .true.
-!        endif
-!    endif
+!gen = get_generation(p)
+exitOK = .true.
+if (ctype == COG_TYPE_TAG) then
+    exitOK = .false.
 endif
 end function
 
@@ -1073,8 +1050,8 @@ do ipermex = 1,Lastexit
 		do slot = 2,1,-1
 			kcell = indx(slot)
 			if (kcell > 0) then
-				! Determine egress_possible from kcell, will depend on kcell - activated cognate cell is allowed
-				! The idea is that this is used if use_chemotaxis = .false.
+				! Determine egress_possible from kcell, will depend on kcell - activated cognate cell is NOT allowed
+				! The idea is that this is used if use_chemotaxis = .false.				
 				if (par_uni(kpar) < exit_prob) then
 					egress_possible = .true.
 				else
@@ -2382,7 +2359,7 @@ if (use_tcp) then
 		msg = trim(msg)//trim(adjustl(numstr))
 		msg = trim(msg)//')-'
 	enddo
-    call logger(msg)
+!    call logger(msg)	! msg sending is suppressed for now 
 endif
 deallocate(gendist)
 deallocate(div_gendist)

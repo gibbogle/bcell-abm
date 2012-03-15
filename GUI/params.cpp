@@ -47,11 +47,11 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Later division time shape parameter",
 "The time taken for later B cell divisions has a lognormal distribution, described by the median and shape parameters."},
 
-{"MOTILITY_BETA", 0.35, 0.25, 0.5,
+{"MOTILITY_BETA", 0.06, 0.0, 0.0,
 "Motility speed parameter",
 "B cell motility is described by speed and persistence parameters, each in the range 0 - 1. Median B cell speed is roughly proportional to MOTILITY_BETA."},
 
-{"MOTILITY_RHO", 0.76, 0.5, 0.9,
+{"MOTILITY_RHO", 0.76, 0.0, 0.0,
 "Motility persistence parameter",
 "B cell motility is described by speed and persistence parameters, each in the range 0 - 1. MOTILITY_RHO determines the extent to which motion is in the same direction from one time step to the next."},
 
@@ -102,14 +102,95 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Inflammation level",
 "The plateau inflammation signal level."},
 
+{"USE_S1P", 1, 0, 1,
+"Use S1P?",
+"S1P chemotaxis is simulated"},
+
+{"S1P_BDRY_CONC", 1, 0, 0,
+ "S1P boundary conc",
+ "Concentration of S1P at the follicle surface"},
+
+{"S1P_DIFF_COEFF", 1, 0, 0,
+ "S1P diffusion coeff",
+ "S1P diffusion coefficient"},
+
+{"S1P_HALFLIFE", 10, 0, 0,
+ "S1P halflife",
+ "S1P halflife (hours)"},
+
+{"S1P_STRENGTH", 10, 0, 0,
+ "S1P strength",
+ "Relative strength of S1P chemotactic influence"},
+
+{"USE_CCL21", 1, 0, 1,
+"Use CCL21?",
+"CCL21 chemotaxis is simulated"},
+
+{"CCL21_BDRY_CONC", 1, 0, 0,
+ "CCL21 boundary conc",
+ "Concentration of CCL21 at the follicle surface"},
+
+{"CCL21_DIFF_COEFF", 1, 0, 0,
+ "CCL21 diffusion coeff",
+ "CCL21 diffusion coefficient"},
+
+{"CCL21_HALFLIFE", 10, 0, 0,
+ "CCL21 halflife",
+ "CCL21 halflife (hours)"},
+
+{"CCL21_STRENGTH", 10, 0, 0,
+ "CCL21 strength",
+ "Relative strength of CCL21 chemotactic influence"},
+
+{"USE_OXY", 0, 0, 1,
+"Use OXY?",
+"Oxysterol chemotaxis is simulated"},
+
+{"OXY_BDRY_CONC", 1, 0, 0,
+ "OXY boundary conc",
+ "Concentration of Oxysterol at the follicle surface"},
+
+{"OXY_DIFF_COEFF", 1, 0, 0,
+ "OXY diffusion coeff",
+ "Oxysterol diffusion coefficient"},
+
+{"OXY_HALFLIFE", 10, 0, 0,
+ "OXY halflife",
+ "Oxysterol halflife (hours)"},
+
+{"OXY_STRENGTH", 1, 0, 0,
+ "OXY strength",
+ "Relative strength of Oxysterol chemotactic influence"},
+
+{"USE_CXCL13", 0, 0, 1,
+"Use CXCL13?",
+"CXCL13 chemotaxis is simulated"},
+
+{"CXCL13_BDRY_CONC", 1, 0, 0,
+ "CXCL13 boundary conc",
+ "Concentration of CXCL13 at the follicle surface"},
+
+{"CXCL13_DIFF_COEFF", 1, 0, 0,
+ "CXCL13 diffusion coeff",
+ "CXCL13 diffusion coefficient"},
+
+{"CXCL13_HALFLIFE", 10, 0, 0,
+ "CXCL13 halflife",
+ "CXCL13 halflife (hours)"},
+
+{"CXCL13_STRENGTH", 1, 0, 0,
+ "CXCL13 strength",
+ "Relative strength of CXCL13 chemotactic influence"},
+
 {"CHEMO_RADIUS", 60.0, 10.0, 200.0,
 "Radius of chemotactic influence",
 "Range of chemotactic influence of an exit site on B cell motion.  At this distance the influence is reduced to 5% of its maximum value.\n\
 [um]"},
 
-{"CHEMO_K_EXIT", 0.5, 0.0, 1.0,
-"Exit chemotaxis influence parameter",
-"Strength of chemotactic influence on B cell motion towards exits."},
+{"BASE_EXIT_PROB", 0.0063, 0.0, 0.0,
+"Base B cell exit probability",
+"A cell located at a boundary site on the lower exit surface has a probability of egress in a time step.\n\
+The specified probability applies to residence time Tres = 12 hr, and will be scaled appropriately for a different Tres value."},
 
 {"NDAYS", 1.0, 0.0, 30.0,
 "Number of days",

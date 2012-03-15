@@ -45,6 +45,9 @@ padding: 8px
         </property>
         <item>
          <widget class="QTabWidget" name="tabs">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -64,14 +67,17 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
           </property>
-          <widget class="QWidget" name="tab_T">
+          <widget class="QWidget" name="tab_B">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <attribute name="title">
-            <string>T Cell</string>
+            <string>B Cell</string>
            </attribute>
            <widget class="QMyLabel" name="label_BC_AVIDITY_MEDIAN">
             <property name="geometry">
@@ -127,6 +133,9 @@ padding: 8px
             </property>
            </widget>
            <widget class="QLineEdit" name="line_BC_AVIDITY_MEDIAN">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>910</x>
@@ -175,6 +184,9 @@ padding: 8px
             </property>
            </widget>
            <widget class="QLineEdit" name="line_BC_AVIDITY_SHAPE">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>910</x>
@@ -290,6 +302,9 @@ padding: 8px
              </item>
              <item row="1" column="3">
               <widget class="QLineEdit" name="line_BC_STIM_RATE_CONSTANT">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="maximumSize">
                 <size>
                  <width>90</width>
@@ -335,6 +350,9 @@ padding: 8px
              </item>
              <item row="2" column="3">
               <widget class="QLineEdit" name="line_BC_STIM_HALFLIFE">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="maximumSize">
                 <size>
                  <width>90</width>
@@ -728,6 +746,9 @@ padding: 8px
            </widget>
           </widget>
           <widget class="QWidget" name="tab_DC">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <attribute name="title">
             <string>DC</string>
            </attribute>
@@ -740,12 +761,15 @@ padding: 8px
               <height>181</height>
              </rect>
             </property>
-            <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0,0">
+            <layout class="QGridLayout" name="gridLayout_DC" columnstretch="0,0,0,0">
              <property name="leftMargin">
               <number>0</number>
              </property>
              <item row="0" column="0" colspan="2">
               <widget class="QMyLabel" name="label_DC_BIND_DELAY">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
                <property name="mouseTracking">
                 <bool>false</bool>
                </property>
@@ -1097,7 +1121,391 @@ padding: 8px
             </property>
            </widget>
           </widget>
+          <widget class="QWidget" name="tab_chemo">
+           <attribute name="title">
+            <string>Chemokine</string>
+           </attribute>
+           <widget class="QWidget" name="gridLayoutWidget">
+            <property name="geometry">
+             <rect>
+              <x>80</x>
+              <y>50</y>
+              <width>201</width>
+              <height>121</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P">
+             <item row="0" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_BDRY_CONC">
+               <property name="text">
+                <string>label_S1P_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_S1P_BDRY_CONC"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_DIFF_COEFF">
+               <property name="text">
+                <string>label_S1P_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_S1P_DIFF_COEFF"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_HALFLIFE">
+               <property name="text">
+                <string>label_S1P_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_S1P_HALFLIFE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_S1Pconc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_S1Pdiff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_S1Plife">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QLabel" name="label_S1P_STRENGTH">
+               <property name="text">
+                <string>label_S1P_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_S1P_STRENGTH"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_S1P">
+            <property name="geometry">
+             <rect>
+              <x>150</x>
+              <y>20</y>
+              <width>71</width>
+              <height>18</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use S1P?</string>
+            </property>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_2">
+            <property name="geometry">
+             <rect>
+              <x>80</x>
+              <y>250</y>
+              <width>201</width>
+              <height>121</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_2">
+             <item row="0" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CCL21_BDRY_CONC">
+               <property name="text">
+                <string>label_CCL21_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_CCL21_BDRY_CONC"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CCL21_DIFF_COEFF">
+               <property name="text">
+                <string>label_CCL21_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_CCL21_DIFF_COEFF"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CCL21_HALFLIFE">
+               <property name="text">
+                <string>label_CCL21_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_CCL21_HALFLIFE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_CCL21conc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_CCL21diff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_CCL21life">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QLabel" name="label_CCL21_STRENGTH">
+               <property name="text">
+                <string>label_CCL21_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_CCL21_STRENGTH"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_CCL21">
+            <property name="geometry">
+             <rect>
+              <x>150</x>
+              <y>220</y>
+              <width>81</width>
+              <height>18</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use CCL21?</string>
+            </property>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_3">
+            <property name="geometry">
+             <rect>
+              <x>410</x>
+              <y>50</y>
+              <width>201</width>
+              <height>121</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_3">
+             <item row="0" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_BDRY_CONC">
+               <property name="text">
+                <string>label_OXY_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_OXY_BDRY_CONC"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_DIFF_COEFF">
+               <property name="text">
+                <string>label_OXY_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_OXY_DIFF_COEFF"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_HALFLIFE">
+               <property name="text">
+                <string>labelOXYP_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_OXY_HALFLIFE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_OXYconc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_OXYdiff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_OXYlife">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QLabel" name="label_OXY_STRENGTH">
+               <property name="text">
+                <string>label_OXY_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_OXY_STRENGTH"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_4">
+            <property name="geometry">
+             <rect>
+              <x>410</x>
+              <y>250</y>
+              <width>204</width>
+              <height>121</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_4">
+             <item row="0" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_BDRY_CONC">
+               <property name="text">
+                <string>label_CXCL13_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_BDRY_CONC"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_DIFF_COEFF">
+               <property name="text">
+                <string>label_CXCL13_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_DIFF_COEFF"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_HALFLIFE">
+               <property name="text">
+                <string>label_CXCL13_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_HALFLIFE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_CXCL13conc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_CXCL13diff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_CXCL13life">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QLabel" name="label_CXCL13_STRENGTH">
+               <property name="text">
+                <string>label_CXCL13_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_STRENGTH"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_OXY">
+            <property name="geometry">
+             <rect>
+              <x>480</x>
+              <y>20</y>
+              <width>71</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use OXY?</string>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_CXCL13">
+            <property name="geometry">
+             <rect>
+              <x>480</x>
+              <y>220</y>
+              <width>81</width>
+              <height>18</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use CXCL13?</string>
+            </property>
+           </widget>
+          </widget>
           <widget class="QWidget" name="tab_TCR">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <attribute name="title">
             <string>TCR Activation</string>
            </attribute>
@@ -1575,6 +1983,9 @@ padding: 8px
              </item>
              <item row="8" column="0">
               <widget class="QMyLabel" name="label_CHEMO_RADIUS">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="text">
                 <string>label_CHEMO_RADIUS</string>
                </property>
@@ -1595,6 +2006,9 @@ padding: 8px
              </item>
              <item row="8" column="2">
               <widget class="QLineEdit" name="line_CHEMO_RADIUS">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="maximumSize">
                 <size>
                  <width>120</width>
@@ -1607,15 +2021,15 @@ padding: 8px
               </widget>
              </item>
              <item row="9" column="0">
-              <widget class="QMyLabel" name="label_CHEMO_K_EXIT">
+              <widget class="QMyLabel" name="label_BASE_EXIT_PROB">
                <property name="mouseTracking">
                 <bool>false</bool>
                </property>
                <property name="toolTip">
-                <string>level of exit chemotactic influence</string>
+                <string>Base B cell exit probability</string>
                </property>
                <property name="text">
-                <string>label_CHEMO_K_EXIT</string>
+                <string>label_BASE_EXIT_PROB</string>
                </property>
                <property name="wordWrap">
                 <bool>false</bool>
@@ -1636,7 +2050,7 @@ padding: 8px
               </spacer>
              </item>
              <item row="9" column="2">
-              <widget class="QLineEdit" name="line_CHEMO_K_EXIT">
+              <widget class="QLineEdit" name="line_BASE_EXIT_PROB">
                <property name="maximumSize">
                 <size>
                  <width>120</width>
@@ -1925,10 +2339,13 @@ padding: 8px
              </rect>
             </property>
             <property name="text">
-             <string>Display non-cognate T cells </string>
+             <string>Display non-cognate B cells </string>
             </property>
            </widget>
            <widget class="QCheckBox" name="cbox_USE_TRAFFIC">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>450</x>
@@ -1977,6 +2394,9 @@ padding: 8px
             </attribute>
            </widget>
            <widget class="QCheckBox" name="cbox_USE_EXIT_CHEMOTAXIS">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>450</x>
@@ -1990,6 +2410,9 @@ padding: 8px
             </property>
            </widget>
            <widget class="QCheckBox" name="cbox_COMPUTED_OUTFLOW">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>450</x>
@@ -2225,7 +2648,7 @@ padding: 8px
      <x>0</x>
      <y>0</y>
      <width>1319</width>
-     <height>21</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2480,7 +2903,7 @@ padding: 8px
   <tabstop>line_INFLAMM_DAYS2</tabstop>
   <tabstop>line_INFLAMM_LEVEL</tabstop>
   <tabstop>line_CHEMO_RADIUS</tabstop>
-  <tabstop>line_CHEMO_K_EXIT</tabstop>
+  <tabstop>line_BASE_EXIT_PROB</tabstop>
   <tabstop>line_NDAYS</tabstop>
   <tabstop>spin_SEED1</tabstop>
   <tabstop>spin_SEED2</tabstop>

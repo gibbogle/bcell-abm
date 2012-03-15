@@ -56,15 +56,23 @@ integer, parameter :: EXIT_BLOB_PORTALS = 3
 !integer, parameter :: MOL1_TAG   = 29
 !integer, parameter :: MOL2_TAG   = 30
 
-! T cell activation stage
-integer, parameter :: NAIVE      = 1
-integer, parameter :: TRANSIENT  = 2
-integer, parameter :: CLUSTERS   = 3
-integer, parameter :: SWARMS     = 4
-integer, parameter :: DIVIDING   = 5
-integer, parameter :: FINISHED   = 6
-integer, parameter :: STAGELIMIT = 6
-!integer, parameter :: ACTIVATED  = 5   ! NOT USED NOW
+! B cell activation stage
+integer, parameter :: NAIVE		  = 1
+integer, parameter :: ANTIGEN_MET = 2
+integer, parameter :: CCR7_UP     = 3
+integer, parameter :: TCELL_MET   = 4
+integer, parameter :: DIVIDING    = 5
+integer, parameter :: BCL6_UP     = 6
+integer, parameter :: FINISHED    = 7
+integer, parameter :: STAGELIMIT  = 7
+
+real, parameter :: T_CCR7_UP   = 2*60
+real, parameter :: T_CCR7_DOWN = 2*60
+real, parameter :: T_BCL6_UP   = 2*60
+real, parameter :: T_FIRST_DIVISION = 12*60
+real, parameter :: T_DIVISION       = 10*60
+real, parameter :: GCC_PROB = 0.5
+
 
 integer, parameter :: TCP_PORT_0 = 5000		! main communication port (logging) 
 integer, parameter :: TCP_PORT_1 = 5001		! data transfer port (plotting)
@@ -245,7 +253,7 @@ type cog_type
 	real :: dietime			! time that the cell dies
 	real :: dividetime		! time that the cell divides
 	real :: stagetime		! time that a cell can pass to next stage
-	real :: stimrate        ! rate of TCR stimulation
+!	real :: stimrate        ! rate of TCR stimulation
 !	real :: CD69            ! level of CD69 expression
 !	real :: S1P1            ! level of S1P1 expression
 !	real :: CCR7            ! level of CCR7 expression
@@ -253,6 +261,7 @@ type cog_type
 !    real :: IL_statep(CYT_NP)   ! receptor model state variable time derivative values
     integer :: status       ! holds data in bytes: 1=stage, 2=generation
 	integer :: cogID		! index in the list of cognate cells
+	logical :: germinal		! germinal centre B cell
 end type
 
 type cell_type
@@ -263,13 +272,15 @@ type cell_type
     integer(2) :: ctype
 	integer(2) :: lastdir
     real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
-    real :: suscept(MAX_CHEMO)  ! susceptibility to the chemokine signal (0-1)
+    real :: receptor(MAX_CHEMO)  ! susceptibility to the chemokine signal (0-1)
 !    type(cog_type),    pointer :: cptr => NULL()    ! pointer to cognate cell data
     type(cog_type),    pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
 end type
 
 type boundary_type
     integer :: site(3)
+    logical :: chemo_influx(MAX_CHEMO)
+    real :: chemo_rate(MAX_CHEMO)
     logical :: S1P
     real :: S1Prate
     logical :: CXCL13
@@ -425,7 +436,6 @@ real :: BC_life_median2					! median lifetime of activated T cells
 real :: BC_life_shape					! shape parameter for lifetime of T cells
 integer :: NBC_LN = 3.0e07				! number of B cells in a LN
 integer :: NBC_BODY = 1.6e09			! number of circulating B cells in the whole body
-real :: chemo_K(MAX_CHEMO)
 
 ! T cell parameters
 logical :: TCR_splitting = .false.      ! enable sharing of integrated TCR signal between progeny cells

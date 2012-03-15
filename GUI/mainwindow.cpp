@@ -366,6 +366,50 @@ void MainWindow::loadParams()
                         w_c->setCurrentIndex(val);
 					} else if (qsname.startsWith("cbox_")) {
 						QCheckBox *w_cb = (QCheckBox *)w;
+
+						// Chemokines
+						bool use_S1P = qsname.contains("USE_S1P");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_S1P)
+								enableUseS1P();
+						} else {
+							w_cb->setChecked(false);
+							if (use_S1P)
+								disableUseS1P();
+						}
+						bool use_CCL21 = qsname.contains("USE_CCL21");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_CCL21)
+								enableUseCCL21();
+						} else {
+							w_cb->setChecked(false);
+							if (use_CCL21)
+								disableUseCCL21();
+						}
+						bool use_OXY = qsname.contains("USE_OXY");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_OXY)
+								enableUseOXY();
+						} else {
+							w_cb->setChecked(false);
+							if (use_OXY)
+								disableUseOXY();
+						}
+						bool use_CXCL13 = qsname.contains("USE_CXCL13");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_CXCL13)
+								enableUseCXCL13();
+						} else {
+							w_cb->setChecked(false);
+							if (use_CXCL13)
+								disableUseCXCL13();
+						}
+
+						/*
 						bool in_vitro = qsname.contains("IN_VITRO");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
@@ -396,6 +440,7 @@ void MainWindow::loadParams()
 							if (use_traffic)
 								disableUseTraffic();
 						}
+
 						bool use_exit_chemotaxis = qsname.contains("USE_EXIT_CHEMOTAXIS");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
@@ -416,6 +461,7 @@ void MainWindow::loadParams()
 							if (use_DC_chemotaxis)
 								disableUseDCChemotaxis();
 						}
+						*/
 					} else if (qsname.startsWith("rbut_")) {
 						QRadioButton *w_rb = (QRadioButton *)w;
 						if (p.value == rbutton_case) {
@@ -583,6 +629,50 @@ void MainWindow::reloadParams()
                         w_c->setCurrentIndex(val);
 					} else if (qsname.startsWith("cbox_")) {
 						QCheckBox *w_cb = (QCheckBox *)w;
+
+						// Chemokines
+						bool use_S1P = qsname.contains("USE_S1P");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_S1P)
+								enableUseS1P();
+						} else {
+							w_cb->setChecked(false);
+							if (use_S1P)
+								disableUseS1P();
+						}
+						bool use_CCL21 = qsname.contains("USE_CCL21");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_CCL21)
+								enableUseCCL21();
+						} else {
+							w_cb->setChecked(false);
+							if (use_CCL21)
+								disableUseCCL21();
+						}
+						bool use_OXY = qsname.contains("USE_OXY");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_OXY)
+								enableUseOXY();
+						} else {
+							w_cb->setChecked(false);
+							if (use_OXY)
+								disableUseOXY();
+						}
+						bool use_CXCL13 = qsname.contains("USE_CXCL13");
+						if (p.value == 1) {
+							w_cb->setChecked(true);
+							if (use_CXCL13)
+								enableUseCXCL13();
+						} else {
+							w_cb->setChecked(false);
+							if (use_CXCL13)
+								disableUseCXCL13();
+						}
+
+						/*
 						bool in_vitro = qsname.contains("IN_VITRO");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
@@ -633,6 +723,7 @@ void MainWindow::reloadParams()
 							if (use_DC_chemotaxis)
 								disableUseDCChemotaxis();
 						}
+						*/
 					} else if (qsname.startsWith("rbut_")) {
 						QRadioButton *w_rb = (QRadioButton *)w;
 						if (p.value == rbutton_case) {
@@ -1099,7 +1190,7 @@ void MainWindow::runServer()
     action_inputs->setEnabled(true);
     action_VTK->setEnabled(true);
 	action_save_snapshot->setEnabled(false);
-    tab_T->setEnabled(false);
+	tab_B->setEnabled(false);
     tab_DC->setEnabled(false);
     tab_TCR->setEnabled(false);
     tab_run->setEnabled(false);
@@ -1594,9 +1685,9 @@ void MainWindow::postConnection()
     action_pause->setEnabled(false);
     action_stop->setEnabled(false);
 	action_save_snapshot->setEnabled(true);
-    tab_T->setEnabled(true);
-    tab_DC->setEnabled(true);
-    tab_TCR->setEnabled(true);
+	tab_B->setEnabled(true);
+//    tab_DC->setEnabled(true);
+//    tab_TCR->setEnabled(true);
     tab_run->setEnabled(true);
 
 	// Check if a result set of this name is already in the list, if so remove it
@@ -1954,6 +2045,8 @@ void MainWindow::changeParam()
 			}
 		} else if (wname.contains("cbox_")) {
 			QCheckBox *checkBox = (QCheckBox *)w;
+			int v;
+			/*
 			bool in_vitro = wname.contains("IN_VITRO");
 			int v;
 			if (checkBox->isChecked()) {
@@ -1985,26 +2078,70 @@ void MainWindow::changeParam()
 				if (use_traffic)
 					disableUseTraffic();
 			}
-			bool use_exit_chemotaxis = wname.contains("USE_EXIT_CHEMOTAXIS");
+			*/
+
+			// Chemokines
+			bool use_S1P = wname.contains("USE_S1P");
 			if (checkBox->isChecked()) {
 				v = 1;
-				if (use_exit_chemotaxis)
-					enableUseExitChemotaxis();
+				if (use_S1P)
+					enableUseS1P();
 			} else {
 				v = 0;
-				if (use_exit_chemotaxis)
-					disableUseExitChemotaxis();
+				if (use_S1P)
+					disableUseS1P();
 			}
-			bool use_DC_chemotaxis = wname.contains("USE_DC_CHEMOTAXIS");
+			bool use_CCL21 = wname.contains("USE_CCL21");
 			if (checkBox->isChecked()) {
 				v = 1;
-				if (use_DC_chemotaxis)
-					enableUseDCChemotaxis();
+				if (use_CCL21)
+					enableUseCCL21();
 			} else {
 				v = 0;
-				if (use_DC_chemotaxis)
-					disableUseDCChemotaxis();
+				if (use_CCL21)
+					disableUseCCL21();
 			}
+			bool use_OXY = wname.contains("USE_OXY");
+			if (checkBox->isChecked()) {
+				v = 1;
+				if (use_OXY)
+					enableUseOXY();
+			} else {
+				v = 0;
+				if (use_OXY)
+					disableUseOXY();
+			}
+			bool use_CXCL13 = wname.contains("USE_CXCL13");
+			if (checkBox->isChecked()) {
+				v = 1;
+				if (use_CXCL13)
+					enableUseCXCL13();
+			} else {
+				v = 0;
+				if (use_CXCL13)
+					disableUseCXCL13();
+			}
+
+//			bool use_exit_chemotaxis = wname.contains("USE_EXIT_CHEMOTAXIS");
+//			if (checkBox->isChecked()) {
+//				v = 1;
+//				if (use_exit_chemotaxis)
+//					enableUseExitChemotaxis();
+//			} else {
+//				v = 0;
+//				if (use_exit_chemotaxis)
+//					disableUseExitChemotaxis();
+//			}
+//			bool use_DC_chemotaxis = wname.contains("USE_DC_CHEMOTAXIS");
+//			if (checkBox->isChecked()) {
+//				v = 1;
+//				if (use_DC_chemotaxis)
+//					enableUseDCChemotaxis();
+//			} else {
+//				v = 0;
+//				if (use_DC_chemotaxis)
+//					disableUseDCChemotaxis();
+//			}
 
 			QString wtag = wname.mid(5);
 			for (int k=0; k<parm->nParams; k++) {
@@ -2050,6 +2187,104 @@ void MainWindow::changeParam()
 	}
 }
 
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::enableUseS1P()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_S1P")) {
+			w->setEnabled(true);
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::disableUseS1P()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_S1P")) {
+			w->setEnabled(false);
+		}
+	}
+}
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::enableUseCCL21()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_CCL21")) {
+			w->setEnabled(true);
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::disableUseCCL21()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_CCL21")) {
+			w->setEnabled(false);
+		}
+	}
+}//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::enableUseOXY()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_OXY")) {
+			w->setEnabled(true);
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::disableUseOXY()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_OXY")) {
+			w->setEnabled(false);
+		}
+	}
+}//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::enableUseCXCL13()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_CXCL13")) {
+			w->setEnabled(true);
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::disableUseCXCL13()
+{
+	for (int i=0; i<lineEdit_list.length(); i++) {
+		QLineEdit *w = lineEdit_list[i];
+		QString wname = w->objectName();
+		if (wname.contains("line_CXCL13")) {
+			w->setEnabled(false);
+		}
+	}
+}
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::enableInVitro()

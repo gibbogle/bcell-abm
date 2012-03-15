@@ -112,6 +112,16 @@ private:
 	void setupParamList();
 	void loadParams();
 	void reloadParams();
+
+	void enableUseS1P();
+	void disableUseS1P();
+	void enableUseCCL21();
+	void disableUseCCL21();
+	void enableUseOXY();
+	void disableUseOXY();
+	void enableUseCXCL13();
+	void disableUseCXCL13();
+
 	void enableInVitro();
 	void disableInVitro();
 	void enableDCInjection();

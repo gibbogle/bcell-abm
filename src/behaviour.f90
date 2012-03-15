@@ -2,6 +2,7 @@
 module behaviour
 
 use global
+use fields
 use motility
 
 implicit none
@@ -9,7 +10,7 @@ implicit none
 !INTEGER,  PARAMETER  ::  DP=SELECTED_REAL_KIND( 12, 60 )
 
 
-integer, parameter :: POST_DIVISION = SWARMS    ! on division, cells enter SWARMS
+!integer, parameter :: POST_DIVISION = SWARMS    ! on division, cells enter SWARMS
 
 integer, parameter :: NORMAL_DIST      = 1
 integer, parameter :: LOGNORMAL_DIST   = 2
@@ -20,19 +21,6 @@ integer, parameter :: CONSTANT_DIST    = 4
 !real, parameter :: CYTOKINESIS_TIME = 20.0
 
 type(dist_type), allocatable :: stage_dist(:,:,:), life_dist(:), divide_dist(:)
-
-logical, parameter :: USE_STAGETIME(FINISHED) = &
-	(/ .false.,  .true.,    .true.,    .true.,    .true.,   .true. /)
-!       NAIVE   TRANSIENT   CLUSTERS   SWARMS   DIVIDING  FINISHED
-
-! Stage times for generation 1 cells (hours)
-!real :: mean_stagetime_1(6,2) = reshape((/ 0.0,1.0,12.0,2.0,2.0,2.0, 0.0,1.0,12.0,2.0,2.0,2.0 /), (/6,2/))
-real :: mean_stagetime_1(5,2) = reshape((/ 0.0,1.0,12.0,2.0,0.33, 0.0,1.0,12.0,2.0,0.33 /), (/5,2/))
-! Stage times for generation n > 1 cells (hours)
-!real :: mean_stagetime_n(6,2) = reshape((/ 0.0,1.0,3.0,2.0,2.0,2.0, 0.0,1.0,3.0,2.0,2.0,2.0 /), (/6,2/))
-real :: mean_stagetime_n(5,2) = reshape((/ 0.0,1.0,3.0,2.0,0.33, 0.0,1.0,3.0,2.0,0.33 /), (/5,2/))
-
-logical, parameter :: revised_staging = .true.
 
 contains
 
@@ -288,7 +276,7 @@ end subroutine
 subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
-integer :: i, shownoncog, ncpu_dummy
+integer :: i, shownoncog, ncpu_dummy, iuse(MAX_CHEMO)
 integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
 
@@ -320,6 +308,26 @@ read(nfcell,*) RESIDENCE_TIME               ! T cell residence time in hours -> 
 read(nfcell,*) Inflammation_days1	        ! Days of plateau level - parameters for VEGF_MODEL = 1
 read(nfcell,*) Inflammation_days2	        ! End of inflammation
 read(nfcell,*) Inflammation_level	        ! This is the level of inflammation
+read(nfcell,*) iuse(S1P)
+read(nfcell,*) chemo(S1P)%bdry_conc
+read(nfcell,*) chemo(S1P)%diff_coeff
+read(nfcell,*) chemo(S1P)%halflife
+read(nfcell,*) chemo(S1P)%strength
+read(nfcell,*) iuse(CCL21)
+read(nfcell,*) chemo(CCL21)%bdry_conc
+read(nfcell,*) chemo(CCL21)%diff_coeff
+read(nfcell,*) chemo(CCL21)%halflife
+read(nfcell,*) chemo(CCL21)%strength
+read(nfcell,*) iuse(OXY)
+read(nfcell,*) chemo(OXY)%bdry_conc
+read(nfcell,*) chemo(OXY)%diff_coeff
+read(nfcell,*) chemo(OXY)%halflife
+read(nfcell,*) chemo(OXY)%strength
+read(nfcell,*) iuse(CXCL13)
+read(nfcell,*) chemo(CXCL13)%bdry_conc
+read(nfcell,*) chemo(CXCL13)%diff_coeff
+read(nfcell,*) chemo(CXCL13)%halflife
+read(nfcell,*) chemo(CXCL13)%strength
 !read(nfcell,*) VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
 read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um)
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
@@ -331,20 +339,35 @@ read(nfcell,*) NT_GUI_OUT					! interval between GUI outputs (timesteps)
 read(nfcell,*) fixedfile					! file with "fixed" parameter values
 close(nfcell)
 
+! Chemokines
+use_chemotaxis = .true.
+do i = 1,MAX_CHEMO
+	chemo(i)%used = (iuse(i) == 1)
+	chemo(i)%decay_rate = DecayRate(chemo(i)%halflife)
+enddo
+chemo(S1P)%name    = 'S1P'
+chemo(CCL21)%name  = 'CCL21'
+chemo(OXY)%name    = 'OXY'
+chemo(CXCL13)%name = 'CXCL13'
+use_S1P    = chemo(S1P)%used
+use_CCL21  = chemo(CCL21)%used
+use_OXY    = chemo(OXY)%used
+use_CXCL13 = chemo(CXCL13)%used
+
 VEGF_MODEL = 1
 if (usetraffic == 1) then
 	USE_TRAFFIC = .true.
 else
 	USE_TRAFFIC = .false.
 endif
-if (usechemo == 1) then
-	use_chemotaxis = .true.
-	! Interim measure:
-	chemo_K = 1.0
-else
-	use_chemotaxis = .false.
-	chemo_K_exit = 0
-endif
+!if (usechemo == 1) then
+!	use_chemotaxis = .true.
+!	! Interim measure:
+!	chemo_K = 1.0
+!else
+!	use_chemotaxis = .false.
+!	chemo_K_exit = 0
+!endif
 if (computedoutflow == 1) then
 	computed_outflow = .true.
 else
@@ -391,7 +414,8 @@ else
 endif
 
 if (BC_STIM_HALFLIFE > 0) then
-    BCRdecayrate = log(2.0)/(BC_STIM_HALFLIFE*60)    ! rate/min
+!    BCRdecayrate = log(2.0)/(BC_STIM_HALFLIFE*60)    ! rate/min
+    BCRdecayrate = DecayRate(BC_STIM_HALFLIFE)    ! rate/min
 else
     BCRdecayrate = 0
 endif
@@ -411,6 +435,15 @@ call setup_dists
 
 ok = .true.
 end subroutine
+
+!----------------------------------------------------------------------------------------
+! Convert halflife in hours to a decay rate /min
+!----------------------------------------------------------------------------------------
+real function DecayRate(halflife)
+real :: halflife
+
+DecayRate = log(2.0)/(halflife*60)
+end function
 
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
@@ -542,7 +575,10 @@ real :: tnow
 type(cog_type), pointer :: p1, p2
 !real :: IL_state(CYT_NP)
 integer :: kpar = 0
+real(DP) :: R
+logical :: germinal
 
+write(*,*) 'cell_division: ',kcell
 ok = .true.
 tnow = istep*DELTA_T
 !call show_cognate_cell(kcell)
@@ -580,23 +616,33 @@ endif
 cellist(kcell)%lastdir = random_int(1,6,kpar)
 gen = gen + 1
 call set_generation(p1,gen)
-call set_stage(p1,POST_DIVISION)
-if (TCR_splitting) then
-    p1%stimulation = p1%stimulation/2
+germinal = p1%germinal
+if (.not.germinal) then
+	R = par_uni(kpar)	
+	if (R < GCC_PROB) then
+		p1%germinal = .true.
+		call set_stage(p1,BCL6_UP)
+		p1%stagetime = tnow + T_BCL6_UP
+	else
+		call set_stage(p1,DIVIDING)
+		p1%stagetime = tnow + T_DIVISION
+	endif
+else
+	call set_stage(p1,DIVIDING)
+	p1%stagetime = tnow + T_DIVISION
 endif
+!call set_stage(p1,POST_DIVISION)
+!if (TCR_splitting) then
+!    p1%stimulation = p1%stimulation/2
+!endif
 ctype = cellist(kcell)%ctype
 p1%dietime = tnow + BClifetime(p1)
 p1%dividetime = tnow
-if (revised_staging) then
-    p1%stagetime = tnow + dividetime(gen,ctype)
-else
-    p1%stagetime = tnow
-endif
-if (region == FOLLICLE) then
-	site = cellist(kcell)%site
-	indx = occupancy(site(1),site(2),site(3))%indx
-endif
-call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,POST_DIVISION,region,ok)
+p1%stagetime = tnow + dividetime(gen,ctype)
+site = cellist(kcell)%site
+indx = occupancy(site(1),site(2),site(3))%indx
+
+call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,region,ok)
 if (.not.ok) return
 
 p2 => cellist(icnew)%cptr
@@ -604,39 +650,21 @@ p2 => cellist(icnew)%cptr
 p2%stimulation = p1%stimulation
 p2%status = p1%status
 cellist(icnew)%entrytime = tnow
-if (revised_staging) then
-    p2%stagetime = tnow + dividetime(gen,ctype)
+if (.not.germinal) then
+	R = par_uni(kpar)	
+	if (R < GCC_PROB) then
+		p2%germinal = .true.
+		call set_stage(p2,BCL6_UP)
+		p2%stagetime = tnow + T_BCL6_UP
+	else
+		call set_stage(p2,DIVIDING)
+		p2%stagetime = tnow + T_DIVISION
+	endif
 else
-    p2%stagetime = tnow
+	call set_stage(p2,DIVIDING)
+	p2%stagetime = tnow + T_DIVISION
 endif
-
-!if (use_cytokines) then
-!    do iseq = 1,Ncytokines
-!        tag = cyt_tag(iseq)
-!        kfrom = NP_offset(iseq)+1
-!        kto = NP_offset(iseq+1)
-!        select case(tag)
-!        case(IL2_TAG)
-!            call IL2_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        case(IL4_TAG)
-!            call IL4_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        case(IL7_TAG)
-!            call IL7_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        case(IL9_TAG)
-!            call IL9_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        case(IL15_TAG)
-!            call IL15_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        case(IL21_TAG)
-!            call IL21_divide(p1%IL_state(kfrom:kto),p2%IL_state(kfrom:kto),p1%IL_statep(kfrom:kto),p2%IL_statep(kfrom:kto))
-!        end select
-!    enddo
-!    !p2%IL_state = p1%IL_state
-!endif
-!p2%CD69 = p1%CD69       ! for now just assume replication of the CD69 and S1P1 expression
-!p2%S1P1 = p1%S1P1
-
 ndivisions = ndivisions + 1
-
 occupancy(site2(1),site2(2),site2(3))%indx(freeslot) = icnew
 if (use_add_count) then
     nadd_sites = nadd_sites + 1
@@ -743,6 +771,7 @@ elseif (stype == COG_TYPE_TAG) then
         cell%cptr%avidity = rv_lognormal(param1,param2,kpar)
     endif
     cell%cptr%stimulation = 0
+    cell%cptr%germinal = .false.
 !    if (use_cytokines) then
 !        call IL2_init_state(cell%cptr%IL_state,cell%cptr%IL_statep)
 !    endif
@@ -778,18 +807,19 @@ else
     stop
 endif
 ! Interim measure:
-if (use_S1P) then
-    cell%suscept(S1P) = 1.0
-endif
-if (use_CCL21) then
-    cell%suscept(CCL21) = 1.0
-endif
-if (use_OXY) then
-    cell%suscept(OXY) = 0.4
-endif
-if (use_CXCL13) then
-    cell%suscept(CXCL13) = 0.4
-endif
+cell%receptor = 1
+!if (use_S1P) then
+!    cell%receptor(S1P) = 10.0
+!endif
+!if (use_CCL21) then
+!    cell%receptor(CCL21) = 10.0
+!endif
+!if (use_OXY) then
+!    cell%receptor(OXY) = 0.4
+!endif
+!if (use_CXCL13) then
+!    cell%receptor(CXCL13) = 0.4
+!endif
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
 cell%site = site
@@ -1690,14 +1720,16 @@ tnow = istep*DELTA_T
 ! Scaling factor to convert total number of molecules in the region to conc in pM
 !mols_pM = L_um3*M_pM/(NBcells*Vc*Navo)
 
-do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
-    ntot = ntot + 1
-    if (dbg) write(*,*) 'kcell: ',kcell
-    ctype = cellist(kcell)%ctype
-    stype = struct_type(ctype)
-    if (stype /= COG_TYPE_TAG) cycle
+!do kcell = 1,nlist
+!    if (cellist(kcell)%ID == 0) cycle
+!    ntot = ntot + 1
+!    if (dbg) write(*,*) 'kcell: ',kcell
+!    ctype = cellist(kcell)%ctype
+!    stype = struct_type(ctype)
+!    if (stype /= COG_TYPE_TAG) cycle
     ! Only cognate cells considered
+do k = 1,lastcogID
+    kcell = cognate_list(k)
     ncog = ncog + 1
     p => cellist(kcell)%cptr
     if (.not.associated(p)) then
@@ -1711,77 +1743,6 @@ do kcell = 1,nlist
         call Bcell_death(kcell)
         cycle
     endif
-	! TCR stimulation decay
-    p%stimulation = p%stimulation*(1 - TCRdecayrate*DELTA_T)
-
-	if (region == FOLLICLE) then
-
-		site = cellist(kcell)%site
-		if (use_cytokines) then
-			! IL receptor stimulation
-			status = p%status
-!			if (use_diffusion) then
-!				C = cyt(site(1),site(2),site(3),:)
-!			endif
-			S = p%stimulation
-!			do iseq = 1,Ncytokines
-!				tag = cyt_tag(iseq)
-!				kfrom = NP_offset(iseq)+1
-!				kto = NP_offset(iseq+1)
-!				if (use_diffusion) then
-!					cyt_conc = C(iseq)
-!				else
-!					cyt_conc = cyt_mols(iseq)*mols_pM   ! -> conc in pM
-!				endif
-!				ctemp = cyt_conc
-!				select case(tag)
-!				case(IL2_TAG)
-!					producing = IL2_production_status(p,tnow)
-!					if (p%IL_state(kfrom) == 0) then    ! temporary measure to detect first call of IL2_update
-!						first = .true.
-!					else
-!						first = .false.
-!					endif
-!					call IL2_update(p%cogID,ctype,tnow,S,p%IL_state(kfrom:kto),p%IL_statep(kfrom:kto), &
-!						first,producing,cyt_conc,Vc,DELTA_T,mrate(iseq),flag1)
-!				case(IL4_TAG)
-!					call IL4_update(p%IL_state(kfrom:kto))
-!				case(IL7_TAG)
-!					call IL7_update(p%IL_state(kfrom:kto))
-!				case(IL9_TAG)
-!					call IL9_update(p%IL_state(kfrom:kto))
-!				case(IL15_TAG)
-!					call IL15_update(p%IL_state(kfrom:kto))
-!				case(IL21_TAG)
-!					call IL21_update(p%IL_state(kfrom:kto))
-!				end select
-!
-!				if (use_diffusion) then
-!	! Concentration units
-!	! mrate = mass rate of flow in molecules/min
-!	! mrate*L_um3/Vc = molecules/L/min
-!	! mrate*L_um3*DELTA_T/Vc = molecules/L
-!	! mrate*L_um3*DELTA_T/Vc/Navo = moles/L = M
-!	! mrate*L_um3*DELTA_T*M_pM/Vc/Navo = pM
-!	! To convert total number of molecules in the region to conc in pM
-!	! mols * L_um3*M_pM/(NBcells*Vc*Navo)
-!					C(iseq) = cyt_conc
-!	!                C(iseq) = C(iseq) + (mrate(iseq)/Vc)*DELTA_T*M_pM*L_um3/Navo    ! Vc/L_um3 ->free vol in L
-!					if (C(iseq) < 0) then
-!						write(*,'(a,6i6,4f8.4)') 'WARNING: cyt < 0: ',kcell,p%cogID,iseq,site,Ctemp,C(iseq)
-!						C(iseq) = 0
-!					endif
-!				else
-!					! increment total number of molecules of this cytokine
-!					dcyt_mols(iseq) = dcyt_mols(iseq) + (cyt_conc - ctemp)/(mols_pM*NBcells)
-!	!                write(*,*) cyt_mols(iseq),dcyt_mols(iseq),ctemp,cyt_conc
-!				endif
-!			enddo
-!			if (use_diffusion) then
-!				cyt(site(1),site(2),site(3),:) = C
-!			endif
-		endif
-	endif
 
 ! Stage transition
     call updatestage(kcell, tnow, divide_flag)
@@ -1804,104 +1765,59 @@ do kcell = 1,nlist
             if (.not.ok) return
         endif
     endif
-
-    if (flag) then
-        call show_cognate_cell(kcell)
-    endif
-
 enddo
 end subroutine
 
-
-
-!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
 ! Note: USE_STAGETIME(icstage) means use stagetime for the transition from icstage.
 ! p%stagetime = time that the cell is expected to make transition to the next stage.
-! In this simplified version, the sequence is (revised_staging = .true.):
-! NAIVE -> TRANSIENT -> CLUSTERS -> SWARMS -> DIVIDING -> SWARMS
-! On cell division, the stage is set to SWARMS, and the time for the next stage
-! transition (to DIVIDING, provided candivide()) is the division time.
-!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
 subroutine updatestage(kcell,tnow,divide_flag)
 integer :: kcell
 logical :: divide_flag
 real :: tnow
-integer :: stage, region, gen, ctype
+integer :: stage, region, gen, ctype, site(3)
 real :: stagetime
 type(cog_type), pointer :: p
 
 divide_flag = .false.
+site = cellist(kcell)%site
 p => cellist(kcell)%cptr
 !stage = get_stage(p)
 call get_stage(p,stage,region)
-if (stage >= CLUSTERS) then
-!    if (.not.cansurvive(p)) then
-!        write(logmsg,*) 'cell IL2 store too low: ',kcell,p%cogID
-!        call logger(logmsg)
-!        p%dietime = tnow
-!        stage = FINISHED
-!        call set_stage(p,stage)
-!    endif
-endif
 if (stage == FINISHED) return
 ctype = cellist(kcell)%ctype
 stagetime = p%stagetime
 if (tnow > stagetime) then		! time constraint to move to next stage is met
 	! May be possible to make the transition from stage
 	select case(stage)
-	case (NAIVE)        ! possible transition from NAIVE to TRANSIENT
-	    if (p%stimulation > 0) then
-	        gen = get_generation(p)
-            call set_stage(p,TRANSIENT)
-            p%dietime = tnow + BClifetime(p)
-		    if (USE_STAGETIME(TRANSIENT)) then
-			    p%stagetime = tnow + get_stagetime(p,ctype)
-		    else
-			    p%stagetime = 0		! time is not criterion for next transition
-            endif
-        endif
-	case (TRANSIENT)    ! possible transition from TRANSIENT to CLUSTERS
-	    if (reached_IL2_threshold(p)) then
-	        nIL2thresh = nIL2thresh + 1
-	        tIL2thresh = tIL2thresh + (tnow - cellist(kcell)%entrytime)
-!	        write(*,'(a,i6,2f8.1)') '========= Reached IL2 threshold: ',kcell,(tnow - cellist(kcell)%entrytime),p%stimulation
-            call set_stage(p,CLUSTERS)
-		    if (USE_STAGETIME(CLUSTERS)) then
-			    p%stagetime = tnow + get_stagetime(p,ctype)
-		    else
-			    p%stagetime = 0		! time is not criterion for next transition
-		    endif
-        endif
-	case (CLUSTERS)     ! possible transition from CLUSTERS to SWARMS
-	    if (reached_act_threshold(p)) then
-            call set_stage(p,SWARMS)
-            gen = get_generation(p)
-            ctype = cellist(kcell)%ctype
-		    if (USE_STAGETIME(SWARMS)) then
-				p%stagetime = tnow + dividetime(gen,ctype)
-		    else
-			    p%stagetime = 0		! time is not criterion for next transition
-		    endif
-        endif
-	case (SWARMS)       ! possible transition from SWARMS to DIVIDING
+	case (NAIVE)
+		if (AntigenEncounter(site)) then
+	        call set_stage(p,ANTIGEN_MET)
+	        p%stagetime = tnow + T_CCR7_UP		
+		endif		
+	case (ANTIGEN_MET)    ! possible transition from ANTIGEN_MET to CCR7_UP
+        call set_stage(p,CCR7_UP)
+		p%stagetime = tnow
+	case (CCR7_UP)     ! possible transition from CCR7_UP to TCELL_MET
+		if (TCellEncounter(site)) then
+	        call set_stage(p,TCELL_MET)
+	        p%stagetime = tnow + T_CCR7_DOWN		
+		endif
+	case (TCELL_MET)
+		call set_stage(p,DIVIDING)
+        p%stagetime = tnow + max(0.,T_FIRST_DIVISION - T_CCR7_DOWN)
+	case (DIVIDING)	
         gen = get_generation(p)
-        ctype = cellist(kcell)%ctype
-		if (gen == TC_MAX_GEN) then
+		if (gen == BC_MAX_GEN) then
             call set_stage(p,FINISHED)
 			p%stagetime = BIG_TIME
-!			write(logmsg,*) 'updatestage: division limit reached for cell: ',kcell
-!			call logger(logmsg)
-		elseif (candivide(p,ctype)) then
-            call set_stage(p,DIVIDING)
-		    if (USE_STAGETIME(DIVIDING)) then
-!				p%stagetime = tnow + CYTOKINESIS_TIME
-				p%stagetime = tnow + get_stagetime(p,ctype)
-		    else
-			    p%stagetime = 0		! time is not criterion for next transition
-		    endif
+		else
+		    divide_flag = .true.
 		endif
-	case (DIVIDING)
-	    divide_flag = .true.
+	case (BCL6_UP)
+		call set_stage(p,DIVIDING)
+        p%stagetime = tnow + max(0.,T_DIVISION - T_BCL6_UP)		
 	case (FINISHED)
 
     end select
@@ -1909,125 +1825,45 @@ endif
 end subroutine
 
 !--------------------------------------------------------------------------------------
-! The stage time is the time that a cell will spend in a stage (after naive stage).
-! May possibly on cell type (CD4/CD8).  Applies only to cognate cells.
-! Note that the concept of time in a stage is just a surrogate for accurate biological
-! mechanisms that determine stage transitions.
-! We might be able to override time in stage 4 (SWARMS) by use of activation threshold.
+! Check for (probabilistic) encounter of a B cell with antigen, near the upper surface.
 !--------------------------------------------------------------------------------------
-real function get_stagetime(p,ctype)
-type(cog_type), pointer :: p
-integer :: ctype
-integer :: stage, region, gen, cd4_8
+logical function AntigenEncounter(site)
+integer :: site(3)
+integer :: v(3), x, y, z
+real :: r2
 
-!stage = get_stage(p)
-call get_stage(p,stage,region)
-cd4_8 = ctype - 1       ! converts ctype -> 1=CD4, 2=CD8
-gen = get_generation(p)
-if (gen == 1) then
-	if (stage == SWARMS) then	! use 1st division time (only if revised_stagetime = .false.)
-		get_stagetime = dividetime(gen,cd4_8)
-	else
-		get_stagetime = 60*mean_stagetime_1(stage,cd4_8)		! hr -> min
-	endif
-else
-	get_stagetime = 60*mean_stagetime_n(stage,cd4_8)		! hr -> min
+AntigenEncounter = .false.
+v = site - Centre
+x = v(1)
+y = v(2)
+z = v(3)
+if (y < 0) return
+r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
+if (r2 < 0.9) then
+	AntigenEncounter = .true.
+	write(*,*) 'AntigenEncounter: ',site
 endif
 end function
 
-!----------------------------------------------------------------------------------------
-! A cell gets permission to divide when it is in the ACTIVATED stage and the activation
-! (weighted sum of TCR stimulation and CD25/IL2 signal) exceeds a threshold.
-! Note that when optionA = 1, the CD25 signal alone must also exceed a threshold for division,
-! and if CD25_SWITCH is true and gen = 1 failure to reach the thresholds cancels division
-! permanently.
-! In this revised version, the use of a weighted sum of signals for activation (with the
-! parameter TC_STIM_WEIGHT) has been separated from the optionA cases.
-!----------------------------------------------------------------------------------------
-logical function candivide(p,ctype)
-type(cog_type), pointer :: p
-integer :: ctype
-integer :: gen, cd4_8
-real :: div_thresh, act, CD25signal
+!--------------------------------------------------------------------------------------
+! Check for (probabilistic) encounter of a B cell with a T helper cell, near the lower surface.
+!--------------------------------------------------------------------------------------
+logical function TCellEncounter(site)
+integer :: site(3)
+integer :: v(3), x, y, z
+real :: r2
 
-candivide = .true.
-gen = get_generation(p)
-
-end function
-
-!----------------------------------------------------------------------------------------
-! For now base this decision on the cytokine production threshold.
-! This must happen only once for a given cell.(?)
-!----------------------------------------------------------------------------------------
-logical function reached_IL2_threshold(p)
-type(cog_type), pointer :: p
-
-!if (p%stimulation > cytokine(IL2_CYT)%cyt_threshold) then
-if (p%stimulation > IL2_THRESHOLD) then
-	reached_IL2_threshold = .true.
-else
-	reached_IL2_threshold = .false.
+TCellEncounter = .false.
+v = site - Centre
+x = v(1)
+y = v(2)
+z = v(3)
+if (y > 0) return
+r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
+if (r2 < 0.9) then
+	TCellEncounter = .true.
+	write(*,*) 'TCellEncounter: ',site
 endif
-end function
-
-!----------------------------------------------------------------------------------------
-! This must happen only once for a given cell.(?)
-!----------------------------------------------------------------------------------------
-logical function reached_act_threshold(p)
-type(cog_type), pointer :: p
-real :: activation
-
-activation = get_activation(p)
-if (activation > ACTIVATION_THRESHOLD) then
-	reached_act_threshold = .true.
-else
-	reached_act_threshold = .false.
-endif
-end function
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-real function get_activation(p)
-type(cog_type), pointer :: p
-
-get_activation = p%stimulation
-end function
-
-!----------------------------------------------------------------------------------------
-! IL2_production_status is .true. if IL-2 and CD25 are being produced, else .false.
-! OptionB:
-! = 1  IL2 is produced for a maximum period of IL2_PRODUCTION_TIME in gen = 1 only
-! = 2  IL2 is produced in gen = 1 only
-! = 3  IL2 is produced always
-!----------------------------------------------------------------------------------------
-logical function IL2_production_status(p,t)
-type(cog_type), pointer :: p
-real :: t
-integer :: gen, stage, region
-
-IL2_production_status = .false.
-!stage = get_stage(p)
-call get_stage(p,stage,region)
-if (stage == FINISHED) then
-    return
-endif
-gen = get_generation(p)
-select case (optionB)
-case (1)
-    if (t < IL2_PRODUCTION_TIME*60 .and. gen == 1) then
-        IL2_production_status = .true.
-    else
-        IL2_production_status = .false.
-    endif
-case (2)
-    if (gen == 1) then
-        IL2_production_status = .true.
-    else
-        IL2_production_status = .false.
-    endif
-case (3)
-    IL2_production_status = .true.
-end select
 end function
 
 
