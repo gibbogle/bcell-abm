@@ -6,25 +6,35 @@ use bdry_linked_list
 implicit none
 save
 
-type chemo_type
+type receptor_type
 	character(8) :: name
 	logical :: used
+	integer :: chemokine
+	integer :: sign
+	real :: strength
+	real :: level(4)
+end type
+
+type chemokine_type
+	character(8) :: name
+	logical :: used
+!	integer :: receptor_level
 	real :: bdry_conc
 	real :: diff_coeff
 	real :: halflife
 	real :: decay_rate
-	real :: strength
 	real, allocatable :: conc(:,:,:)
 	real, allocatable :: grad(:,:,:,:)
 end type
 
 integer, parameter :: MAX_BDRY = 20000
 
-type(chemo_type) :: chemo(MAX_CHEMO)
-logical :: use_S1P = .true.
-logical :: use_CXCL13 = .false.
-logical :: use_CCL21 = .true.
-logical :: use_OXY = .false.
+type(chemokine_type), target :: chemo(MAX_CHEMO)
+type(receptor_type), target :: receptor(MAX_RECEPTOR)
+!logical :: use_S1P = .true.
+!logical :: use_CXCL13 = .false.
+!logical :: use_CCL21 = .true.
+!logical :: use_OXY = .false.
 
 ! The following are no longer used
 real, parameter :: S1P_KDIFFUSION = 0.001
@@ -68,7 +78,7 @@ logical function isbdry(x,y,z)
 integer :: x, y, z
 integer :: k, xx, yy, zz
 
-if (occupancy(x,y,z)%indx(1) < 0) then
+if (occupancy(x,y,z)%indx(1) < 0) then	! outside or DC
     isbdry = .false.
     return
 endif
@@ -77,7 +87,7 @@ do k = 1,6
 	yy = y + neumann(2,k)
 	zz = z + neumann(3,k)
 	if (outside_xyz(xx,yy,zz)) cycle
-    if (occupancy(xx,yy,zz)%indx(1) < 0) then
+    if (occupancy(xx,yy,zz)%indx(1) == OUTSIDE_TAG) then
         isbdry = .true.
         return
     endif
@@ -408,7 +418,7 @@ dmax = -1.0e10
 kmax = 0
 do k = 1,27
 	site = psite + jumpvec(:,k)
-    if (occupancy(site(1),site(2),site(3))%indx(1) < 0) cycle   ! outside
+    if (occupancy(site(1),site(2),site(3))%indx(1) < 0) cycle   ! outside or DC
     r = site - Centre
     x2 = r(1)**2
     y2 = r(2)**2
@@ -441,7 +451,7 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
     psite = site
     do k = 1,27
 	    site = psite + jumpvec(:,k)
-        if (occupancy(site(1),site(2),site(3))%indx(1) < 0) cycle   ! outside
+        if (occupancy(site(1),site(2),site(3))%indx(1) < 0) cycle   ! outside or DC
         if (associated(occupancy(site(1),site(2),site(3))%bdry)) cycle   ! bdry
         if (isbdry(site(1),site(2),site(3))) then
             nbdry = nbdry + 1
@@ -687,7 +697,7 @@ do i = 2,1,-1
 	        site = csite + r*jumpvec(:,k)
 	        if (outside_xyz(site(1),site(2),site(3))) cycle
 	        indx = occupancy(site(1),site(2),site(3))%indx
-            if (indx(1) < 0) cycle  ! outside
+            if (indx(1) < 0) cycle  ! outside or DC
             if (indx(1) == 0) then  ! use this slot
                 occupancy(site(1),site(2),site(3))%indx(1) = kcell
                 cellist(kcell)%site = site
@@ -734,7 +744,7 @@ do
     do k = 1,27
 	    site = bdry%site + jumpvec(:,k)
 	    indx = occupancy(site(1),site(2),site(3))%indx
-        if (indx(1) < 0) cycle                      ! outside
+        if (indx(1) < 0) cycle                      ! outside or DC
         if (indx(1) == 0 .or. indx(2) == 0) then    ! free slot
             ok = .true.
             return
@@ -766,7 +776,7 @@ do k = 1,27
     y = site(2) + jumpvec(2,k)
     z = site(3) + jumpvec(3,k)
     if (outside_xyz(x,y,z)) cycle
-    if (occupancy(x,y,z)%indx(1) < 0) cycle
+    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
     nave = nave + 1
     cave = cave + C(x,y,z)
     gave = gave + G(:,x,y,z)
@@ -805,7 +815,7 @@ do k = 1,27
     y = site(2) + jumpvec(2,k)
     z = site(3) + jumpvec(3,k)
     if (outside_xyz(x,y,z)) cycle
-    if (occupancy(x,y,z)%indx(1) < 0) cycle
+    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
     nave = nave + 1
     cave = cave + C(x,y,z)
     gave = gave + G(:,x,y,z)
@@ -846,7 +856,7 @@ do i = 1,MAX_CHEMO
 		endif
 		write(logmsg,*) 'Solving steady-state: ',chemo(i)%name
 		call logger(logmsg)
-		write(*,'(a,i2,2e12.3)') 'diff_coeff, decay_rate: ', i,chemo(i)%diff_coeff,chemo(i)%decay_rate
+!		write(*,'(a,i2,2e12.3)') 'diff_coeff, decay_rate: ', i,chemo(i)%diff_coeff,chemo(i)%decay_rate
 		call SolveSteadystate(i,chemo(i)%diff_coeff,chemo(i)%decay_rate,chemo(i)%conc)
 		! Now compute the gradient field.
 		call gradient(chemo(i)%conc,chemo(i)%grad)
@@ -997,7 +1007,7 @@ do i = 1,MAX_CHEMO
 	if (chemo(i)%used) then
 		write(nfout,'(a,a)') chemo(i)%name,'  conc        gradient' 
 		do y = 1,NY
-			if (occupancy(x,y,z)%indx(1) < 0) cycle
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 		    write(nfout,'(i4,4e12.4)') y,chemo(i)%conc(x,y,z),chemo(i)%grad(:,x,y,z)
 		enddo
 	endif
@@ -1146,7 +1156,7 @@ do xpar = 1,x2-x1+1
 	do y = 1,NY
 		do z = 1,NZ
 		    indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle      ! outside
+            if (indx(1) < 0) cycle      ! outside or DC
             bdry_conc = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
                 ! Check for chemo bdry site - no change to the concentration at such a site
@@ -1187,7 +1197,7 @@ do xpar = 1,x2-x1+1
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
+    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)
 			    enddo
@@ -1216,7 +1226,7 @@ grad = 0
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-			if (occupancy(x,y,z)%indx(1) < 0) cycle
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			x1 = x - 1
 			x2 = x + 1
 			if (x1 < 1 .or. x2 > NX) then
@@ -1251,7 +1261,7 @@ enddo
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-			if (occupancy(x,y,z)%indx(1) < 0) cycle
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			do i = 1,3
 				if (grad(i,x,y,z) == MISSING_VAL) then
 					missed = .true.
@@ -1261,7 +1271,7 @@ do z = 1,NZ
 						yy = y + neumann(2,k)
 						zz = z + neumann(3,k)
 						if (outside_xyz(xx,yy,zz)) cycle
-						if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
+						if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
 						if (grad(i,xx,yy,zz) /= MISSING_VAL) then
 							grad(i,x,y,z) = grad(i,xx,yy,zz)
 							missed = .false.
@@ -1295,7 +1305,7 @@ allocate(Ctemp(NX,NY,NZ))
 do z = 1,NZ
 	do y = 1,NY
 		do x = 1,NX
-			if (occupancy(x,y,z)%indx(1) < 0) cycle
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			C0 = C(x,y,z)
             bdry_conc = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
@@ -1337,7 +1347,7 @@ do z = 1,NZ
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle
+				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)
 			    enddo

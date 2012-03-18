@@ -166,7 +166,7 @@ integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
 type (cell_type), pointer :: cell
 integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype
-integer :: irel,dir1,lastdir1,indx2(2),k,rv(3),id
+integer :: irel,dir1,lastdir1,indx2(2),k,rv(3),id, ichemo
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
@@ -191,8 +191,8 @@ enddo
 stay_prob = dirprob(0)
 
 ischemo = .false.
-do k = 1,MAX_CHEMO
-    if (chemo(k)%used .and. (cell%receptor(k) > 0)) then
+do k = 1,MAX_RECEPTOR
+    if (receptor(k)%used .and. (cell%receptor_level(k) > 0)) then
         ischemo = .true.
         exit
     endif
@@ -200,19 +200,21 @@ enddo
 
 vsum = 0
 if (ischemo) then
-    do k = 1,MAX_CHEMO
-        if (chemo(k)%used > 0) then
-            f = cell%receptor(k)*chemo(k)%strength
-            select case (k)
-            case (S1P)
-                v = S1P_grad(:,site1(1),site1(2),site1(3))
-            case (CCL21)
-                v = CCL21_grad(:,site1(1),site1(2),site1(3))
-            case (OXY)
-                v = OXY_grad(:,site1(1),site1(2),site1(3))
-            case (CXCL13)
-                v = CXCL13_grad(:,site1(1),site1(2),site1(3))
-            end select
+    do k = 1,MAX_RECEPTOR
+        if (receptor(k)%used > 0) then
+			ichemo = receptor(k)%chemokine
+            f = receptor(k)%sign*cell%receptor_level(k)*receptor(k)%strength
+!            select case (k)
+!            case (S1P)
+!                v = S1P_grad(:,site1(1),site1(2),site1(3))
+!            case (CCL21)
+!                v = CCL21_grad(:,site1(1),site1(2),site1(3))
+!            case (OXY)
+!                v = OXY_grad(:,site1(1),site1(2),site1(3))
+!            case (CXCL13)
+!                v = CXCL13_grad(:,site1(1),site1(2),site1(3))
+!            end select
+			v = chemo(ichemo)%grad(:,site1(1),site1(2),site1(3))
 !	    	vsum = vsum + (f/norm(v))*v
 	    	vsum = vsum + f*v
 	    endif
@@ -434,7 +436,7 @@ do kcell = 1,nlist
     z = site1(3)
     if (zdomain(z) /= slice) cycle      ! not in the slice for this processor
     indx = occupancy(site1(1),site1(2),site1(3))%indx
-    if (indx(1) < 0) then
+    if (indx(1) < 0) then	! outside or DC
         write(logmsg,*) 'Error: par_mover: OUTSIDE_TAG or DC: ',kcell,site1,indx
 		call logger(logmsg)
         stop
@@ -538,7 +540,7 @@ do kcell = 1,nlist
     xlocal = site1(1)
     if (xlocal < x_lo .or. xlocal > x_hi) cycle      ! not in the slice for this processor
     indx = occupancy(site1(1),site1(2),site1(3))%indx
-    if (indx(1) < 0) then
+    if (indx(1) < 0) then	! outside or DC
         write(*,*) 'stage1: OUTSIDE_TAG: ',kcell,site1,indx
         stop
     endif

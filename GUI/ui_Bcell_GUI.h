@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Wed 14. Mar 11:21:10 2012
+** Created: Sat 17. Mar 11:02:04 2012
 **      by: Qt User Interface Compiler version 4.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -152,9 +152,11 @@ public:
     QLabel *units_S1Pconc;
     QLabel *units_S1Pdiff;
     QLabel *units_S1Plife;
-    QLabel *label_S1P_STRENGTH;
-    QLineEdit *line_S1P_STRENGTH;
-    QCheckBox *cbox_USE_S1P;
+    QLabel *label_S1P_STRENGTH_POS;
+    QLineEdit *line_S1P_STRENGTH_POS;
+    QLabel *label_S1P_STRENGTH_NEG;
+    QLineEdit *line_S1P_STRENGTH_NEG;
+    QCheckBox *cbox_USE_S1PR1;
     QWidget *gridLayoutWidget_2;
     QGridLayout *gridLayout_S1P_2;
     QMyLabel *label_CCL21_BDRY_CONC;
@@ -168,7 +170,7 @@ public:
     QLabel *units_CCL21life;
     QLabel *label_CCL21_STRENGTH;
     QLineEdit *line_CCL21_STRENGTH;
-    QCheckBox *cbox_USE_CCL21;
+    QCheckBox *cbox_USE_CCR7;
     QWidget *gridLayoutWidget_3;
     QGridLayout *gridLayout_S1P_3;
     QMyLabel *label_OXY_BDRY_CONC;
@@ -195,8 +197,9 @@ public:
     QLabel *units_CXCL13life;
     QLabel *label_CXCL13_STRENGTH;
     QLineEdit *line_CXCL13_STRENGTH;
-    QCheckBox *cbox_USE_OXY;
-    QCheckBox *cbox_USE_CXCL13;
+    QCheckBox *cbox_USE_EBI2;
+    QCheckBox *cbox_USE_CXCR5;
+    QCheckBox *cbox_USE_S1PR2;
     QWidget *tab_TCR;
     QWidget *layoutWidget_2;
     QGridLayout *gridLayout_3;
@@ -807,7 +810,7 @@ public:
         tab_chemo->setObjectName(QString::fromUtf8("tab_chemo"));
         gridLayoutWidget = new QWidget(tab_chemo);
         gridLayoutWidget->setObjectName(QString::fromUtf8("gridLayoutWidget"));
-        gridLayoutWidget->setGeometry(QRect(80, 50, 201, 121));
+        gridLayoutWidget->setGeometry(QRect(80, 50, 207, 126));
         gridLayout_S1P = new QGridLayout(gridLayoutWidget);
         gridLayout_S1P->setObjectName(QString::fromUtf8("gridLayout_S1P"));
         gridLayout_S1P->setContentsMargins(0, 0, 0, 0);
@@ -856,19 +859,29 @@ public:
 
         gridLayout_S1P->addWidget(units_S1Plife, 2, 3, 1, 1);
 
-        label_S1P_STRENGTH = new QLabel(gridLayoutWidget);
-        label_S1P_STRENGTH->setObjectName(QString::fromUtf8("label_S1P_STRENGTH"));
+        label_S1P_STRENGTH_POS = new QLabel(gridLayoutWidget);
+        label_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_POS"));
 
-        gridLayout_S1P->addWidget(label_S1P_STRENGTH, 3, 0, 1, 2);
+        gridLayout_S1P->addWidget(label_S1P_STRENGTH_POS, 3, 0, 1, 2);
 
-        line_S1P_STRENGTH = new QLineEdit(gridLayoutWidget);
-        line_S1P_STRENGTH->setObjectName(QString::fromUtf8("line_S1P_STRENGTH"));
+        line_S1P_STRENGTH_POS = new QLineEdit(gridLayoutWidget);
+        line_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_POS"));
 
-        gridLayout_S1P->addWidget(line_S1P_STRENGTH, 3, 2, 1, 1);
+        gridLayout_S1P->addWidget(line_S1P_STRENGTH_POS, 3, 2, 1, 1);
 
-        cbox_USE_S1P = new QCheckBox(tab_chemo);
-        cbox_USE_S1P->setObjectName(QString::fromUtf8("cbox_USE_S1P"));
-        cbox_USE_S1P->setGeometry(QRect(150, 20, 71, 18));
+        label_S1P_STRENGTH_NEG = new QLabel(gridLayoutWidget);
+        label_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_NEG"));
+
+        gridLayout_S1P->addWidget(label_S1P_STRENGTH_NEG, 4, 0, 1, 1);
+
+        line_S1P_STRENGTH_NEG = new QLineEdit(gridLayoutWidget);
+        line_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_NEG"));
+
+        gridLayout_S1P->addWidget(line_S1P_STRENGTH_NEG, 4, 2, 1, 1);
+
+        cbox_USE_S1PR1 = new QCheckBox(tab_chemo);
+        cbox_USE_S1PR1->setObjectName(QString::fromUtf8("cbox_USE_S1PR1"));
+        cbox_USE_S1PR1->setGeometry(QRect(80, 20, 81, 18));
         gridLayoutWidget_2 = new QWidget(tab_chemo);
         gridLayoutWidget_2->setObjectName(QString::fromUtf8("gridLayoutWidget_2"));
         gridLayoutWidget_2->setGeometry(QRect(80, 250, 201, 121));
@@ -930,9 +943,9 @@ public:
 
         gridLayout_S1P_2->addWidget(line_CCL21_STRENGTH, 3, 2, 1, 1);
 
-        cbox_USE_CCL21 = new QCheckBox(tab_chemo);
-        cbox_USE_CCL21->setObjectName(QString::fromUtf8("cbox_USE_CCL21"));
-        cbox_USE_CCL21->setGeometry(QRect(150, 220, 81, 18));
+        cbox_USE_CCR7 = new QCheckBox(tab_chemo);
+        cbox_USE_CCR7->setObjectName(QString::fromUtf8("cbox_USE_CCR7"));
+        cbox_USE_CCR7->setGeometry(QRect(150, 220, 81, 18));
         gridLayoutWidget_3 = new QWidget(tab_chemo);
         gridLayoutWidget_3->setObjectName(QString::fromUtf8("gridLayoutWidget_3"));
         gridLayoutWidget_3->setGeometry(QRect(410, 50, 201, 121));
@@ -1055,12 +1068,15 @@ public:
 
         gridLayout_S1P_4->addWidget(line_CXCL13_STRENGTH, 3, 2, 1, 1);
 
-        cbox_USE_OXY = new QCheckBox(tab_chemo);
-        cbox_USE_OXY->setObjectName(QString::fromUtf8("cbox_USE_OXY"));
-        cbox_USE_OXY->setGeometry(QRect(480, 20, 71, 21));
-        cbox_USE_CXCL13 = new QCheckBox(tab_chemo);
-        cbox_USE_CXCL13->setObjectName(QString::fromUtf8("cbox_USE_CXCL13"));
-        cbox_USE_CXCL13->setGeometry(QRect(480, 220, 81, 18));
+        cbox_USE_EBI2 = new QCheckBox(tab_chemo);
+        cbox_USE_EBI2->setObjectName(QString::fromUtf8("cbox_USE_EBI2"));
+        cbox_USE_EBI2->setGeometry(QRect(480, 20, 71, 21));
+        cbox_USE_CXCR5 = new QCheckBox(tab_chemo);
+        cbox_USE_CXCR5->setObjectName(QString::fromUtf8("cbox_USE_CXCR5"));
+        cbox_USE_CXCR5->setGeometry(QRect(480, 220, 81, 18));
+        cbox_USE_S1PR2 = new QCheckBox(tab_chemo);
+        cbox_USE_S1PR2->setObjectName(QString::fromUtf8("cbox_USE_S1PR2"));
+        cbox_USE_S1PR2->setGeometry(QRect(190, 20, 81, 18));
         tabs->addTab(tab_chemo, QString());
         tab_TCR = new QWidget();
         tab_TCR->setObjectName(QString::fromUtf8("tab_TCR"));
@@ -1770,8 +1786,9 @@ public:
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_S1Plife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
-        label_S1P_STRENGTH->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH", 0, QApplication::UnicodeUTF8));
-        cbox_USE_S1P->setText(QApplication::translate("MainWindow", "Use S1P?", 0, QApplication::UnicodeUTF8));
+        label_S1P_STRENGTH_POS->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_POS", 0, QApplication::UnicodeUTF8));
+        label_S1P_STRENGTH_NEG->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_NEG", 0, QApplication::UnicodeUTF8));
+        cbox_USE_S1PR1->setText(QApplication::translate("MainWindow", "Use S1PR1?", 0, QApplication::UnicodeUTF8));
         label_CCL21_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_CCL21_BDRY_CONC", 0, QApplication::UnicodeUTF8));
         label_CCL21_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_CCL21_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
         label_CCL21_HALFLIFE->setText(QApplication::translate("MainWindow", "label_CCL21_HALFLIFE", 0, QApplication::UnicodeUTF8));
@@ -1787,7 +1804,7 @@ public:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CCL21life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CCL21_STRENGTH->setText(QApplication::translate("MainWindow", "label_CCL21_STRENGTH", 0, QApplication::UnicodeUTF8));
-        cbox_USE_CCL21->setText(QApplication::translate("MainWindow", "Use CCL21?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_CCR7->setText(QApplication::translate("MainWindow", "Use CCR7?", 0, QApplication::UnicodeUTF8));
         label_OXY_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_OXY_BDRY_CONC", 0, QApplication::UnicodeUTF8));
         label_OXY_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_OXY_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
         label_OXY_HALFLIFE->setText(QApplication::translate("MainWindow", "labelOXYP_HALFLIFE", 0, QApplication::UnicodeUTF8));
@@ -1818,8 +1835,9 @@ public:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CXCL13life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CXCL13_STRENGTH->setText(QApplication::translate("MainWindow", "label_CXCL13_STRENGTH", 0, QApplication::UnicodeUTF8));
-        cbox_USE_OXY->setText(QApplication::translate("MainWindow", "Use OXY?", 0, QApplication::UnicodeUTF8));
-        cbox_USE_CXCL13->setText(QApplication::translate("MainWindow", "Use CXCL13?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_EBI2->setText(QApplication::translate("MainWindow", "Use EBI2?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_CXCR5->setText(QApplication::translate("MainWindow", "Use CXCR5?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_S1PR2->setText(QApplication::translate("MainWindow", "Use S1PR2?", 0, QApplication::UnicodeUTF8));
         tabs->setTabText(tabs->indexOf(tab_chemo), QApplication::translate("MainWindow", "Chemokine", 0, QApplication::UnicodeUTF8));
         label_IL2_THRESHOLD->setText(QApplication::translate("MainWindow", "label_IL2_THRESHOLD", 0, QApplication::UnicodeUTF8));
         label_ACTIVATION_THRESHOLD->setText(QApplication::translate("MainWindow", "label_ACTIVATION_THRESHOLD", 0, QApplication::UnicodeUTF8));

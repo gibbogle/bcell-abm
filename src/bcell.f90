@@ -42,6 +42,7 @@
 module main_mod
 use global
 use behaviour
+use FDC
 use fields
 use winsock
 !use aviewer 
@@ -156,8 +157,6 @@ allocate(nz_sites(NZ))
 allocate(nz_totsites(NZ))
 allocate(nz_cells(NZ))
 allocate(nz_excess(NZ))
-!allocate(globalvar%Inflow(0:Mnodes-1))
-!allocate(globalvar%Outflow(0:Mnodes-1))
 allocate(cognate_list(MAX_COG))
 
 do k = 1,max_nlist
@@ -644,7 +643,7 @@ do y = 1,NY
     do z = 1,NZ
         do x = 1,NX
             indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle       ! OUTSIDE_TAG 
+            if (indx(1) < 0) cycle       ! OUTSIDE_TAG or DC
             ns = ns+1
             if (indx(1) > 0) nc = nc+1
             if (indx(2) > 0) nc = nc+1
@@ -763,7 +762,7 @@ do while (k < ninflow)
 		return
 	endif
     indx = occupancy(site(1),site(2),site(3))%indx
-    if (indx(1) < 0) cycle      ! OUTSIDE_TAG
+    if (indx(1) < 0) cycle      ! OUTSIDE_TAG or DC
     if (indx(1) == 0 .or. indx(2) == 0) then
         if (evaluate_residence_time) then
             ! This is for measuring residence time
@@ -1606,7 +1605,7 @@ if (use_tcp) then
 !    if (.not.awp_1%is_open) then
 !        call logger("in show_snapshot: awp_1 is not open")
 !    endif
-!    write(msg,'(2(i6,f8.0),5i8)') istep,tnow,globalvar%NDCalive,act,ntot,ncogseed,ncog,Ndead,teffgen
+!    write(msg,'(2(i6,f8.0),5i8)') istep,tnow,NDCalive,act,ntot,ncogseed,ncog,Ndead,teffgen
 !    call winsock_send(awp_1,msg,len_trim(msg),error)
     msg = ''
     do i = 1,ngens
@@ -2382,31 +2381,84 @@ use, intrinsic :: iso_c_binding
 !real(c_float) :: cap_list(*), pit_list(*), clast_list(*)
 integer(c_int) :: nDC_list, nTC_list, nbond_list, DC_list(*), TC_list(*), bond_list(*)
 integer :: k, kc, kcell, site(3), j, jb, idc, dcsite(3)
+integer :: x, y, z
 real :: dcstate
 integer :: idcstate, itcstate, stype, ctype, stage, region
 real :: bcell_diam = 0.9
 real :: DC_diam = 1.8
 integer :: gen, bnd(2)
 
-	! T cell section
-	k = 0
-	do kc = 1,lastcogID
-		kcell = cognate_list(kc)
-		if (kcell > 0) then
-			call get_stage(cellist(kcell)%cptr,stage,region)
-			if (region /= FOLLICLE) cycle
-			k = k+1
-			j = 5*(k-1)
-			site = cellist(kcell)%site
-			gen = get_generation(cellist(kcell)%cptr)
-			itcstate = gen
-			! Need tcstate to convey non-activated status, i.e. 0 = non-activated
-			TC_list(j+1) = kc-1
-			TC_list(j+2:j+4) = site
-			TC_list(j+5) = itcstate
-		endif
-	enddo
-    nTC_list = k
+k = 0
+! Need some markers to delineate the follicle extent
+itcstate = 0
+do k = 1,7
+	select case (k)
+	case (1)
+		x = Centre(1) + 0.5
+		y = Centre(2) + 0.5
+		z = Centre(3) + 0.5
+		site = (/x, y, z/)
+	case (2)
+		x = Centre(1) - aRadius - 2
+		y = Centre(2) + 0.5
+		z = Centre(3) + 0.5
+		site = (/x, y, z/)
+	case (3)
+		x = Centre(1) + aRadius + 2
+		y = Centre(2) + 0.5
+		z = Centre(3) + 0.5
+		site = (/x, y, z/)
+	case (4)
+		x = Centre(1) + 0.5
+		y = Centre(2) - bRadius - 2
+		z = Centre(3) + 0.5
+		site = (/x, y, z/)
+	case (5)
+		x = Centre(1) + 0.5
+		y = Centre(2) + bRadius + 2
+		z = Centre(3) + 0.5
+		site = (/x, y, z/)
+	case (6)
+		x = Centre(1) + 0.5
+		y = Centre(2) + 0.5
+		z = Centre(3) - bRadius - 2
+		site = (/x, y, z/)
+	case (7)
+		x = Centre(1) + 0.5
+		y = Centre(2) + 0.5
+		z = Centre(3) + bRadius + 2
+		site = (/x, y, z/)
+	end select
+	j = 5*(k-1)
+	TC_list(j+1) = k-1
+!	write(logmsg,*) 'cell list #: ',j+1,k-1,site
+!	call logger(logmsg)
+	TC_list(j+2:j+4) = site
+	TC_list(j+5) = itcstate
+enddo
+k = k-1
+
+! T cell section
+do kc = 1,lastcogID
+	kcell = cognate_list(kc)
+	if (kcell > 0) then
+		call get_stage(cellist(kcell)%cptr,stage,region)
+		if (region /= FOLLICLE) cycle
+		k = k+1
+		j = 5*(k-1)
+		site = cellist(kcell)%site
+		gen = get_generation(cellist(kcell)%cptr)
+		itcstate = gen
+		! Need tcstate to convey non-activated status, i.e. 0 = non-activated
+		TC_list(j+1) = kc-1 + 7
+!	write(logmsg,*) 'cell list #: ',j+1,kc-1+7,site
+!	call logger(logmsg)
+		TC_list(j+2:j+4) = site
+		TC_list(j+5) = itcstate
+	endif
+enddo
+
+nTC_list = k
 
 
 end subroutine
@@ -2484,8 +2536,6 @@ do i = 1, cnt
 end do
 
 end subroutine
-
-
 
 !-----------------------------------------------------------------------------------------
 ! Until I find a time function in gfortran
@@ -2770,7 +2820,7 @@ endif
 if (vary_vascularity) then
 	call initialise_vascularity
 endif
-!write(*,*) 'NBcells, NDCalive, NTsites: ',NBcells, globalvar%NDCalive, Nsites
+!write(*,*) 'NBcells, NDCalive, NTsites: ',NBcells, NDCalive, Nsites
 !write(*,*) 'nlist: ',nlist
 
 call set_globalvar
@@ -2859,6 +2909,7 @@ integer(c_int) :: res
 character*(8), parameter :: quit = '__EXIT__'
 integer :: error, i
 
+call logger('terminate_run')
 call SaveGenDist
 if (evaluate_residence_time) then
 	call write_Tres_dist

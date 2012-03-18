@@ -102,9 +102,13 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Inflammation level",
 "The plateau inflammation signal level."},
 
-{"USE_S1P", 1, 0, 1,
-"Use S1P?",
-"S1P chemotaxis is simulated"},
+{"USE_S1PR1", 1, 0, 1,
+"Use S1PR1?",
+"S1P chemotactic attraction is simulated"},
+
+{"USE_S1PR2", 0, 0, 1,
+"Use S1PR2?",
+"S1P chemotactic repulsion is simulated"},
 
 {"S1P_BDRY_CONC", 1, 0, 0,
  "S1P boundary conc",
@@ -118,12 +122,16 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P halflife",
  "S1P halflife (hours)"},
 
-{"S1P_STRENGTH", 10, 0, 0,
- "S1P strength",
- "Relative strength of S1P chemotactic influence"},
+{"S1P_STRENGTH_POS", 10, 0, 0,
+ "S1P pos strength",
+ "Relative strength of S1P chemotactic attraction (S1PR1)"},
 
-{"USE_CCL21", 1, 0, 1,
-"Use CCL21?",
+{"S1P_STRENGTH_NEG", 10, 0, 0,
+ "S1P neg strength",
+ "Relative strength of S1P chemotactic repulsion (S1PR2)"},
+
+{"USE_CCR7", 1, 0, 1,
+"Use CCR7?",
 "CCL21 chemotaxis is simulated"},
 
 {"CCL21_BDRY_CONC", 1, 0, 0,
@@ -142,8 +150,8 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CCL21 strength",
  "Relative strength of CCL21 chemotactic influence"},
 
-{"USE_OXY", 0, 0, 1,
-"Use OXY?",
+{"USE_EBI2", 0, 0, 1,
+"Use EBI2?",
 "Oxysterol chemotaxis is simulated"},
 
 {"OXY_BDRY_CONC", 1, 0, 0,
@@ -162,8 +170,8 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY strength",
  "Relative strength of Oxysterol chemotactic influence"},
 
-{"USE_CXCL13", 0, 0, 1,
-"Use CXCL13?",
+{"USE_CXCR5", 0, 0, 1,
+"Use CXCR5?",
 "CXCL13 chemotaxis is simulated"},
 
 {"CXCL13_BDRY_CONC", 1, 0, 0,

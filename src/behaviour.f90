@@ -137,6 +137,16 @@ end select
 !endif
 end function
 
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+real function DivisionTime()
+integer :: kpar = 0
+real, parameter :: rndfraction = 0.2
+real(DP) :: R
+
+R = par_uni(kpar)
+DivisionTime = T_DIVISION*(1 + rndfraction*(2*R-1))
+end function
 
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
@@ -276,7 +286,7 @@ end subroutine
 subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
-integer :: i, shownoncog, ncpu_dummy, iuse(MAX_CHEMO)
+integer :: i, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR)
 integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
 
@@ -308,26 +318,28 @@ read(nfcell,*) RESIDENCE_TIME               ! T cell residence time in hours -> 
 read(nfcell,*) Inflammation_days1	        ! Days of plateau level - parameters for VEGF_MODEL = 1
 read(nfcell,*) Inflammation_days2	        ! End of inflammation
 read(nfcell,*) Inflammation_level	        ! This is the level of inflammation
-read(nfcell,*) iuse(S1P)
+read(nfcell,*) iuse(S1PR1)
+read(nfcell,*) iuse(S1PR2)
 read(nfcell,*) chemo(S1P)%bdry_conc
 read(nfcell,*) chemo(S1P)%diff_coeff
 read(nfcell,*) chemo(S1P)%halflife
-read(nfcell,*) chemo(S1P)%strength
-read(nfcell,*) iuse(CCL21)
+read(nfcell,*) receptor(S1PR1)%strength
+read(nfcell,*) receptor(S1PR2)%strength
+read(nfcell,*) iuse(CCR7)
 read(nfcell,*) chemo(CCL21)%bdry_conc
 read(nfcell,*) chemo(CCL21)%diff_coeff
 read(nfcell,*) chemo(CCL21)%halflife
-read(nfcell,*) chemo(CCL21)%strength
-read(nfcell,*) iuse(OXY)
+read(nfcell,*) receptor(CCR7)%strength
+read(nfcell,*) iuse(EBI2)
 read(nfcell,*) chemo(OXY)%bdry_conc
 read(nfcell,*) chemo(OXY)%diff_coeff
 read(nfcell,*) chemo(OXY)%halflife
-read(nfcell,*) chemo(OXY)%strength
-read(nfcell,*) iuse(CXCL13)
+read(nfcell,*) receptor(EBI2)%strength
+read(nfcell,*) iuse(CXCR5)
 read(nfcell,*) chemo(CXCL13)%bdry_conc
 read(nfcell,*) chemo(CXCL13)%diff_coeff
 read(nfcell,*) chemo(CXCL13)%halflife
-read(nfcell,*) chemo(CXCL13)%strength
+read(nfcell,*) receptor(CXCR5)%strength
 !read(nfcell,*) VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
 read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um)
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
@@ -341,18 +353,36 @@ close(nfcell)
 
 ! Chemokines
 use_chemotaxis = .true.
-do i = 1,MAX_CHEMO
-	chemo(i)%used = (iuse(i) == 1)
-	chemo(i)%decay_rate = DecayRate(chemo(i)%halflife)
-enddo
 chemo(S1P)%name    = 'S1P'
 chemo(CCL21)%name  = 'CCL21'
 chemo(OXY)%name    = 'OXY'
 chemo(CXCL13)%name = 'CXCL13'
-use_S1P    = chemo(S1P)%used
-use_CCL21  = chemo(CCL21)%used
-use_OXY    = chemo(OXY)%used
-use_CXCL13 = chemo(CXCL13)%used
+receptor(S1PR1)%name = 'S1PR1'
+receptor(CCR7)%name = 'CCR7'
+receptor(EBI2)%name = 'EBI2'
+receptor(CXCR5)%name = 'CXCR5'
+receptor(S1PR2)%name = 'S1PR2'
+receptor(S1PR1)%chemokine = S1P
+receptor(CCR7)%chemokine = CCL21
+receptor(EBI2)%chemokine = OXY
+receptor(CXCR5)%chemokine = CXCL13
+receptor(S1PR2)%chemokine = S1P
+chemo(:)%used = .false.
+do i = 1,MAX_RECEPTOR
+	receptor(i)%used = (iuse(i) == 1)		! interim measure
+	if (receptor(i)%used .or. chemo(receptor(i)%chemokine)%used) then
+		chemo(receptor(i)%chemokine)%used = .true.
+	endif
+	receptor(i)%level = receptor_level(i,:)
+	if (i == S1PR2) then
+		receptor(i)%sign = -1
+	else
+		receptor(i)%sign = 1
+	endif
+enddo
+do i = 1,MAX_CHEMO
+	chemo(i)%decay_rate = DecayRate(chemo(i)%halflife)
+enddo
 
 VEGF_MODEL = 1
 if (usetraffic == 1) then
@@ -395,6 +425,8 @@ DELTA_X = (4*PI/(3*BC_FRACTION))**0.33333*BC_RADIUS
 open(nfout,file=outputfile,status='replace')
 write(logmsg,*) 'Opened nfout: ',outputfile
 call logger(logmsg)
+write(nfout,*) iuse
+call ShowChemokines
 
 chemo_radius = chemo_radius/DELTA_X				! convert from um to lattice grids
 chemo_N = max(3,int(chemo_radius + 0.5))	    ! convert from um to lattice grids
@@ -495,6 +527,43 @@ write(nfout,*) 'avidity_step: ',avidity_step
 
 end subroutine
 
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+subroutine ShowChemokines
+integer :: i
+character*(8) :: usage
+type(receptor_type), pointer :: p=>null()
+type(chemokine_type), pointer :: q=>null()
+
+write(nfout,'(a)') 'Receptors:'
+do i = 1,MAX_RECEPTOR
+	p => receptor(i)
+	if (p%used) then
+		usage = 'USED'
+	else
+		usage = 'NOT USED'
+	endif
+	write(nfout,'(a,i2,2x,a,a,a,4x,a)') 'Receptor: ',i,p%name,'  chemokine: ',chemo(p%chemokine)%name,usage
+	write(nfout,'(a,f8.2)') 'relative strength: ',p%sign*p%strength
+	write(nfout,'(a,4f6.1)') 'stage levels: ',p%level
+enddo
+write(nfout,'(a)') 'Chemokines:'
+do i = 1,MAX_CHEMO
+	q => chemo(i)
+	if (q%used) then
+		usage = 'USED'
+	else
+		usage = 'NOT USED'
+	endif
+	write(nfout,'(a,i2,2x,a,4x,a)') 'Chemokine: ',i,q%name,usage
+	write(nfout,'(a,f8.1)') 'Boundary conc: ',q%bdry_conc
+	write(nfout,'(a,f8.1)') 'Diffusion coeff: ',q%diff_coeff
+	write(nfout,'(a,f8.1)') 'Halflife: ',q%halflife
+	write(nfout,'(a,f8.4)') 'Decay rate: ',q%decay_rate
+enddo
+	
+end subroutine
+
 !-----------------------------------------------------------------------------------------
 ! When a T cell dies it is removed from the cell list (%ID -> 0)
 ! and removed from occupancy()%indx()
@@ -578,7 +647,7 @@ integer :: kpar = 0
 real(DP) :: R
 logical :: germinal
 
-write(*,*) 'cell_division: ',kcell
+!write(*,*) 'cell_division: ',kcell
 ok = .true.
 tnow = istep*DELTA_T
 !call show_cognate_cell(kcell)
@@ -621,29 +690,31 @@ if (.not.germinal) then
 	R = par_uni(kpar)	
 	if (R < GCC_PROB) then
 		p1%germinal = .true.
-		call set_stage(p1,BCL6_UP)
-		p1%stagetime = tnow + T_BCL6_UP
+		call set_stage(p1,GCC_COMMIT)
+		p1%stagetime = tnow
 	else
 		call set_stage(p1,DIVIDING)
-		p1%stagetime = tnow + T_DIVISION
+		p1%stagetime = tnow + DivisionTime()
 	endif
 else
 	call set_stage(p1,DIVIDING)
-	p1%stagetime = tnow + T_DIVISION
+	p1%stagetime = tnow + DivisionTime()
 endif
 !call set_stage(p1,POST_DIVISION)
 !if (TCR_splitting) then
 !    p1%stimulation = p1%stimulation/2
 !endif
 ctype = cellist(kcell)%ctype
-p1%dietime = tnow + BClifetime(p1)
-p1%dividetime = tnow
-p1%stagetime = tnow + dividetime(gen,ctype)
+!p1%dietime = tnow + BClifetime(p1)
+!p1%dividetime = tnow
+!p1%stagetime = tnow + dividetime(gen,ctype)
 site = cellist(kcell)%site
 indx = occupancy(site(1),site(2),site(3))%indx
 
 call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,region,ok)
 if (.not.ok) return
+
+!write(*,*) 'New cell: ',icnew
 
 p2 => cellist(icnew)%cptr
 
@@ -654,15 +725,15 @@ if (.not.germinal) then
 	R = par_uni(kpar)	
 	if (R < GCC_PROB) then
 		p2%germinal = .true.
-		call set_stage(p2,BCL6_UP)
-		p2%stagetime = tnow + T_BCL6_UP
+		call set_stage(p2,GCC_COMMIT)
+		p2%stagetime = tnow
 	else
 		call set_stage(p2,DIVIDING)
-		p2%stagetime = tnow + T_DIVISION
+		p2%stagetime = tnow + DivisionTime()
 	endif
 else
 	call set_stage(p2,DIVIDING)
-	p2%stagetime = tnow + T_DIVISION
+	p2%stagetime = tnow + DivisionTime()
 endif
 ndivisions = ndivisions + 1
 occupancy(site2(1),site2(2),site2(3))%indx(freeslot) = icnew
@@ -781,9 +852,10 @@ elseif (stype == COG_TYPE_TAG) then
     ! to chemotaxis and exit until it has received enough TCR signal to drive CD69 high.
 !    cell%cptr%CD69 = 0
 !    cell%cptr%S1P1 = 0
-    cell%cptr%dietime = tnow + BClifetime(cell%cptr)
-    cell%cptr%dividetime = tnow
-    cell%cptr%stagetime = BIG_TIME
+!    cell%cptr%dietime = tnow + BClifetime(cell%cptr)
+    cell%cptr%dietime = BIG_TIME
+    cell%cptr%dividetime = BIG_TIME
+    cell%cptr%stagetime = 0
 
 ! Maintain cognate_list at start or if we are running on a single node
 ! Otherwise cogID and cognate_list is maintained by make_cognate_list
@@ -807,7 +879,7 @@ else
     stop
 endif
 ! Interim measure:
-cell%receptor = 1
+cell%receptor_level = receptor%level(NAIVE_TAG)
 !if (use_S1P) then
 !    cell%receptor(S1P) = 10.0
 !endif
@@ -1671,7 +1743,32 @@ write(logmsg,*) msg,': Min exit spacing: ',im1,im2,dmin
 call logger(logmsg)
 end subroutine
 
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+subroutine ReceptorLevel(kcell,ifrom,ito,t,t1,t2,level)
+integer :: kcell, ifrom, ito
+real :: t, t1, t2, level(:)
+real :: alpha, rfrom, rto
+integer :: ireceptor
 
+if (t < t1) then
+	write(logmsg,'(a,i6,3f8.2)') 'Error: ReceptorLevel: t<t1: ',kcell,t,t1,t2
+	call logger(logmsg)
+	stop
+endif
+if (t > t2) then
+	alpha = 1
+else
+	alpha = (t-t1)/(t2-t1)
+endif
+do ireceptor = 1,MAX_CHEMO
+	if (receptor(ireceptor)%used) then
+		rfrom = receptor(ireceptor)%level(ifrom)
+		rto = receptor(ireceptor)%level(ito)
+		level(ireceptor) = (1-alpha)*rfrom + alpha*rto
+	endif
+enddo
+end subroutine
 
 !--------------------------------------------------------------------------------------
 ! Motility behaviour
@@ -1701,10 +1798,12 @@ end subroutine
 !---------------------------------------------------------------------
 subroutine updater(ok)
 logical :: ok
-integer :: kcell, ctype, stype, region, iseq, tag, kfrom, kto, k, ncog, ntot
+integer :: kcell, stage, region, iseq, tag, kfrom, kto, k, ncog, ntot
 integer :: site(3), site2(3), freeslot, indx(2), status, DC(2), idc
+integer :: tmplastcogID
 !real :: C(N_CYT), mrate(N_CYT)
 real :: tnow, dstim, S, cyt_conc, mols_pM, Ctemp, dstimrate, stimrate
+real :: t1, t2
 logical :: divide_flag, producing, first, dbg, unbound, flag, flag1
 !logical, save :: first = .true.
 type (cog_type), pointer :: p
@@ -1728,7 +1827,8 @@ tnow = istep*DELTA_T
 !    stype = struct_type(ctype)
 !    if (stype /= COG_TYPE_TAG) cycle
     ! Only cognate cells considered
-do k = 1,lastcogID
+tmplastcogID = lastcogID
+do k = 1,tmplastcogID
     kcell = cognate_list(k)
     ncog = ncog + 1
     p => cellist(kcell)%cptr
@@ -1743,12 +1843,28 @@ do k = 1,lastcogID
         call Bcell_death(kcell)
         cycle
     endif
-
+	call get_stage(p,stage,region)
+	if (stage == ANTIGEN_MET) then
+		t2 = p%stagetime
+		t1 = t2 - T_CCR7_UP
+!		write(*,*) 'updater: tnow,t1,t2: ',kcell,tnow,t1,t2
+		call ReceptorLevel(kcell,NAIVE_TAG,ANTIGEN_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+	elseif (stage == TCELL_MET) then
+		t2 = p%stagetime
+		t1 = t2 - T_EBI2_UP
+		call ReceptorLevel(kcell,ANTIGEN_TAG,ACTIVATED_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+	elseif (stage == GCC_COMMIT) then
+		t2 = p%stagetime
+		t1 = t2 - T_BCL6_UP
+		call ReceptorLevel(kcell,ACTIVATED_TAG,GCC_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+	endif
+	
 ! Stage transition
     call updatestage(kcell, tnow, divide_flag)
 
 ! Cell division
     if (divide_flag) then
+		site = cellist(kcell)%site
 		indx = occupancy(site(1),site(2),site(3))%indx
 		freeslot = 0
 		if (indx(1) == 0) then
@@ -1769,7 +1885,7 @@ enddo
 end subroutine
 
 !--------------------------------------------------------------------------------------
-! Note: USE_STAGETIME(icstage) means use stagetime for the transition from icstage.
+! stage is the current stage of the cell, 
 ! p%stagetime = time that the cell is expected to make transition to the next stage.
 !--------------------------------------------------------------------------------------
 subroutine updatestage(kcell,tnow,divide_flag)
@@ -1792,22 +1908,24 @@ if (tnow > stagetime) then		! time constraint to move to next stage is met
 	! May be possible to make the transition from stage
 	select case(stage)
 	case (NAIVE)
-		if (AntigenEncounter(site)) then
+		if (AntigenEncounter(kcell,site)) then
 	        call set_stage(p,ANTIGEN_MET)
-	        p%stagetime = tnow + T_CCR7_UP		
+	        p%stagetime = tnow + T_CCR7_UP	
+	        write(logmsg,'(a,i6,2f8.2)') 'updatestage: -> ANTIGEN_MET: ',kcell,tnow,p%stagetime	
+	        call logger(logmsg)
 		endif		
 	case (ANTIGEN_MET)    ! possible transition from ANTIGEN_MET to CCR7_UP
         call set_stage(p,CCR7_UP)
 		p%stagetime = tnow
 	case (CCR7_UP)     ! possible transition from CCR7_UP to TCELL_MET
-		if (TCellEncounter(site)) then
+		if (TCellEncounter(kcell,site)) then
 	        call set_stage(p,TCELL_MET)
-	        p%stagetime = tnow + T_CCR7_DOWN		
+	        p%stagetime = tnow + T_EBI2_UP		
 		endif
 	case (TCELL_MET)
 		call set_stage(p,DIVIDING)
-        p%stagetime = tnow + max(0.,T_FIRST_DIVISION - T_CCR7_DOWN)
-	case (DIVIDING)	
+        p%stagetime = tnow + max(0.,T_FIRST_DIVISION - T_EBI2_UP)
+	case (DIVIDING)		! the next stage for DIVIDING cells is set in cell_division(), call triggered by divide_flag
         gen = get_generation(p)
 		if (gen == BC_MAX_GEN) then
             call set_stage(p,FINISHED)
@@ -1815,9 +1933,12 @@ if (tnow > stagetime) then		! time constraint to move to next stage is met
 		else
 		    divide_flag = .true.
 		endif
+	case (GCC_COMMIT)
+        call set_stage(p,BCL6_UP)
+		p%stagetime = tnow + T_BCL6_UP
 	case (BCL6_UP)
 		call set_stage(p,DIVIDING)
-        p%stagetime = tnow + max(0.,T_DIVISION - T_BCL6_UP)		
+        p%stagetime = tnow + max(0.,DivisionTime() - T_BCL6_UP)		
 	case (FINISHED)
 
     end select
@@ -1827,10 +1948,12 @@ end subroutine
 !--------------------------------------------------------------------------------------
 ! Check for (probabilistic) encounter of a B cell with antigen, near the upper surface.
 !--------------------------------------------------------------------------------------
-logical function AntigenEncounter(site)
-integer :: site(3)
+logical function AntigenEncounter(kcell,site)
+integer :: kpar = 0
+integer :: kcell,site(3)
 integer :: v(3), x, y, z
 real :: r2
+real :: encounter_prob = 0.1
 
 AntigenEncounter = .false.
 v = site - Centre
@@ -1839,19 +1962,22 @@ y = v(2)
 z = v(3)
 if (y < 0) return
 r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
-if (r2 < 0.9) then
+if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	AntigenEncounter = .true.
-	write(*,*) 'AntigenEncounter: ',site
+	write(logmsg,*) 'AntigenEncounter: ',kcell,site
+	call logger(logmsg)
 endif
 end function
 
 !--------------------------------------------------------------------------------------
 ! Check for (probabilistic) encounter of a B cell with a T helper cell, near the lower surface.
 !--------------------------------------------------------------------------------------
-logical function TCellEncounter(site)
-integer :: site(3)
+logical function TCellEncounter(kcell,site)
+integer :: kcell,site(3)
+integer :: kpar = 0
 integer :: v(3), x, y, z
 real :: r2
+real :: encounter_prob = 0.1
 
 TCellEncounter = .false.
 v = site - Centre
@@ -1860,9 +1986,10 @@ y = v(2)
 z = v(3)
 if (y > 0) return
 r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
-if (r2 < 0.9) then
+if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	TCellEncounter = .true.
-	write(*,*) 'TCellEncounter: ',site
+	write(logmsg,*) 'TCellEncounter: ',kcell,site
+	call logger(logmsg)
 endif
 end function
 

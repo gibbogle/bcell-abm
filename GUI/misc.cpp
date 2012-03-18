@@ -90,7 +90,7 @@ void SocketHandler::processor()
 	ba.resize(1024);
 	while (true) {
 		if (stopped) {
-			LOG_MSG("Stopped!");
+			LOG_MSG("SocketHandler::processor: stopped!");
 			break;
 		}
 		socket->waitForReadyRead(100);
@@ -181,8 +181,10 @@ void ExecThread::run()
 		}
 		if (stopped) break;
 	}
+	LOG_MSG("ExecThread::run: stopped");
 	snapshot();
 	Sleep(10);
+	LOG_MSG("ExecThread::run: call terminate_run");
 	terminate_run(&res);
 
 	return;
@@ -215,6 +217,7 @@ void ExecThread::snapshot()
 void ExecThread::stop()
 {
 	stopped = true;
+	LOG_MSG("ExecThread::stop: stopped");
 }
 
 	//-----------------------------------------------------------------------------------------

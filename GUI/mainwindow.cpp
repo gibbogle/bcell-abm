@@ -368,17 +368,17 @@ void MainWindow::loadParams()
 						QCheckBox *w_cb = (QCheckBox *)w;
 
 						// Chemokines
-						bool use_S1P = qsname.contains("USE_S1P");
+						bool use_S1P = qsname.contains("USE_S1PR1") || qsname.contains("USE_S1PR2");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_S1P)
 								enableUseS1P();
-						} else {
-							w_cb->setChecked(false);
-							if (use_S1P)
-								disableUseS1P();
-						}
-						bool use_CCL21 = qsname.contains("USE_CCL21");
+						} // else {
+//							w_cb->setChecked(false);
+//							if (use_S1P)
+//								disableUseS1P();
+//						}
+						bool use_CCL21 = qsname.contains("USE_CCR7");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_CCL21)
@@ -388,7 +388,7 @@ void MainWindow::loadParams()
 							if (use_CCL21)
 								disableUseCCL21();
 						}
-						bool use_OXY = qsname.contains("USE_OXY");
+						bool use_OXY = qsname.contains("USE_EBI2");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_OXY)
@@ -398,7 +398,7 @@ void MainWindow::loadParams()
 							if (use_OXY)
 								disableUseOXY();
 						}
-						bool use_CXCL13 = qsname.contains("USE_CXCL13");
+						bool use_CXCL13 = qsname.contains("USE_CXCR5");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_CXCL13)
@@ -631,17 +631,17 @@ void MainWindow::reloadParams()
 						QCheckBox *w_cb = (QCheckBox *)w;
 
 						// Chemokines
-						bool use_S1P = qsname.contains("USE_S1P");
+						bool use_S1P = qsname.contains("USE_S1PR1") || qsname.contains("USE_S1PR2");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_S1P)
 								enableUseS1P();
-						} else {
-							w_cb->setChecked(false);
-							if (use_S1P)
-								disableUseS1P();
-						}
-						bool use_CCL21 = qsname.contains("USE_CCL21");
+						} // else {
+//							w_cb->setChecked(false);
+//							if (use_S1P)
+//								disableUseS1P();
+//						}
+						bool use_CCL21 = qsname.contains("USE_CCR7");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_CCL21)
@@ -651,7 +651,7 @@ void MainWindow::reloadParams()
 							if (use_CCL21)
 								disableUseCCL21();
 						}
-						bool use_OXY = qsname.contains("USE_OXY");
+						bool use_OXY = qsname.contains("USE_EBI2");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_OXY)
@@ -661,7 +661,7 @@ void MainWindow::reloadParams()
 							if (use_OXY)
 								disableUseOXY();
 						}
-						bool use_CXCL13 = qsname.contains("USE_CXCL13");
+						bool use_CXCL13 = qsname.contains("USE_CXCR5");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_CXCL13)
@@ -1746,6 +1746,7 @@ void MainWindow::pauseServer()
 }
 
 //--------------------------------------------------------------------------------------------------------
+// Need to check that DLL has completed.
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::stopServer()
 {
@@ -1753,7 +1754,7 @@ void MainWindow::stopServer()
 		vtk->stop();
 		LOG_MSG("Stopped the player");
 	} else {
-		LOG_MSG("stop ordered");
+		LOG_MSG("MainWindow::stopServer: stop requested");
 		if (paused) {
 			LOG_MSG("was paused, runServer before stopping");
 			runServer();
@@ -1761,11 +1762,11 @@ void MainWindow::stopServer()
 		exthread->snapshot();
 		exthread->stop();
 		sleep(1);		// delay for Fortran to wrap up (does this help?)
-		if (use_CPORT1) {
-			sthread1->quit();
-			sthread1->terminate();
-		}
-		sthread0->stop();
+//		if (use_CPORT1) {
+//			sthread1->quit();
+//			sthread1->terminate();
+//		}
+//		sthread0->stop();
 		newR->nsteps = step+1;
 	}
     action_run->setEnabled(true); 
@@ -2081,17 +2082,17 @@ void MainWindow::changeParam()
 			*/
 
 			// Chemokines
-			bool use_S1P = wname.contains("USE_S1P");
+			bool use_S1P = wname.contains("USE_S1PR1") || wname.contains("USE_S1PR2");
 			if (checkBox->isChecked()) {
 				v = 1;
 				if (use_S1P)
 					enableUseS1P();
-			} else {
-				v = 0;
-				if (use_S1P)
-					disableUseS1P();
-			}
-			bool use_CCL21 = wname.contains("USE_CCL21");
+			} // else {
+//				v = 0;
+//				if (use_S1P)
+//					disableUseS1P();
+//			}
+			bool use_CCL21 = wname.contains("USE_CCR7");
 			if (checkBox->isChecked()) {
 				v = 1;
 				if (use_CCL21)
@@ -2101,7 +2102,7 @@ void MainWindow::changeParam()
 				if (use_CCL21)
 					disableUseCCL21();
 			}
-			bool use_OXY = wname.contains("USE_OXY");
+			bool use_OXY = wname.contains("USE_EBI2");
 			if (checkBox->isChecked()) {
 				v = 1;
 				if (use_OXY)
@@ -2111,7 +2112,7 @@ void MainWindow::changeParam()
 				if (use_OXY)
 					disableUseOXY();
 			}
-			bool use_CXCL13 = wname.contains("USE_CXCL13");
+			bool use_CXCL13 = wname.contains("USE_CXCR5");
 			if (checkBox->isChecked()) {
 				v = 1;
 				if (use_CXCL13)

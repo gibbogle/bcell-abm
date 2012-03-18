@@ -161,6 +161,8 @@ void MyVTK::get_cell_positions(bool fast)
 		cp.state = TC_list[j+4];
 		cp.diameter = TC_diam;
 		TCpos_list.append(cp);
+//		sprintf(msg,"T cell: %d: tag: %d pos: %d %d %d state: %lf",i,cp.tag,cp.x,cp.y,cp.z,cp.state);
+//		LOG_MSG(msg);
 	}
 	for (int i=0; i<nDC_list; i++) {
 		int j = 5*i;

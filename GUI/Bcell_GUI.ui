@@ -1130,8 +1130,8 @@ padding: 8px
              <rect>
               <x>80</x>
               <y>50</y>
-              <width>201</width>
-              <height>121</height>
+              <width>207</width>
+              <height>126</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_S1P">
@@ -1195,28 +1195,38 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
              <item row="3" column="0" colspan="2">
-              <widget class="QLabel" name="label_S1P_STRENGTH">
+              <widget class="QLabel" name="label_S1P_STRENGTH_POS">
                <property name="text">
-                <string>label_S1P_STRENGTH</string>
+                <string>label_S1P_STRENGTH_POS</string>
                </property>
               </widget>
              </item>
              <item row="3" column="2">
-              <widget class="QLineEdit" name="line_S1P_STRENGTH"/>
+              <widget class="QLineEdit" name="line_S1P_STRENGTH_POS"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_S1P_STRENGTH_NEG">
+               <property name="text">
+                <string>label_S1P_STRENGTH_NEG</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QLineEdit" name="line_S1P_STRENGTH_NEG"/>
              </item>
             </layout>
            </widget>
-           <widget class="QCheckBox" name="cbox_USE_S1P">
+           <widget class="QCheckBox" name="cbox_USE_S1PR1">
             <property name="geometry">
              <rect>
-              <x>150</x>
+              <x>80</x>
               <y>20</y>
-              <width>71</width>
+              <width>81</width>
               <height>18</height>
              </rect>
             </property>
             <property name="text">
-             <string>Use S1P?</string>
+             <string>Use S1PR1?</string>
             </property>
            </widget>
            <widget class="QWidget" name="gridLayoutWidget_2">
@@ -1300,7 +1310,7 @@ p, li { white-space: pre-wrap; }
              </item>
             </layout>
            </widget>
-           <widget class="QCheckBox" name="cbox_USE_CCL21">
+           <widget class="QCheckBox" name="cbox_USE_CCR7">
             <property name="geometry">
              <rect>
               <x>150</x>
@@ -1310,7 +1320,7 @@ p, li { white-space: pre-wrap; }
              </rect>
             </property>
             <property name="text">
-             <string>Use CCL21?</string>
+             <string>Use CCR7?</string>
             </property>
            </widget>
            <widget class="QWidget" name="gridLayoutWidget_3">
@@ -1475,7 +1485,7 @@ p, li { white-space: pre-wrap; }
              </item>
             </layout>
            </widget>
-           <widget class="QCheckBox" name="cbox_USE_OXY">
+           <widget class="QCheckBox" name="cbox_USE_EBI2">
             <property name="geometry">
              <rect>
               <x>480</x>
@@ -1485,10 +1495,10 @@ p, li { white-space: pre-wrap; }
              </rect>
             </property>
             <property name="text">
-             <string>Use OXY?</string>
+             <string>Use EBI2?</string>
             </property>
            </widget>
-           <widget class="QCheckBox" name="cbox_USE_CXCL13">
+           <widget class="QCheckBox" name="cbox_USE_CXCR5">
             <property name="geometry">
              <rect>
               <x>480</x>
@@ -1498,7 +1508,20 @@ p, li { white-space: pre-wrap; }
              </rect>
             </property>
             <property name="text">
-             <string>Use CXCL13?</string>
+             <string>Use CXCR5?</string>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_S1PR2">
+            <property name="geometry">
+             <rect>
+              <x>190</x>
+              <y>20</y>
+              <width>81</width>
+              <height>18</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use S1PR2?</string>
             </property>
            </widget>
           </widget>

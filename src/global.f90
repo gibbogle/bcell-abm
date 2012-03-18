@@ -62,12 +62,13 @@ integer, parameter :: ANTIGEN_MET = 2
 integer, parameter :: CCR7_UP     = 3
 integer, parameter :: TCELL_MET   = 4
 integer, parameter :: DIVIDING    = 5
-integer, parameter :: BCL6_UP     = 6
-integer, parameter :: FINISHED    = 7
-integer, parameter :: STAGELIMIT  = 7
+integer, parameter :: GCC_COMMIT  = 6
+integer, parameter :: BCL6_UP     = 7
+integer, parameter :: FINISHED    = 8
+integer, parameter :: STAGELIMIT  = 8
 
 real, parameter :: T_CCR7_UP   = 2*60
-real, parameter :: T_CCR7_DOWN = 2*60
+real, parameter :: T_EBI2_UP = 2*60
 real, parameter :: T_BCL6_UP   = 2*60
 real, parameter :: T_FIRST_DIVISION = 12*60
 real, parameter :: T_DIVISION       = 10*60
@@ -99,6 +100,15 @@ integer, parameter :: S1P    = 1
 integer, parameter :: CCL21  = 2
 integer, parameter :: OXY    = 3
 integer, parameter :: CXCL13 = 4
+integer, parameter :: MAX_RECEPTOR = 5
+integer, parameter :: S1PR1    = 1		! S1P
+integer, parameter :: CCR7     = 2		! CCL21
+integer, parameter :: EBI2     = 3		! OXY
+integer, parameter :: CXCR5    = 4		! CXCL13
+integer, parameter :: S1PR2    = 5		! S1P (negative)
+
+!real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,1.,0., .2,3.,1.,1.,0., .2,0.,3.,1.,0., 0.,0.,0.,1.,2. /), (/5,4/)) ! my guess
+real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,1.,0., .2,2.,2.,1.,0., .2,.5,2.,1.,0., 0.,0.,.2,1.,2. /), (/5,4/))	! Taka
 
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
@@ -108,7 +118,12 @@ integer, parameter :: COG_CD8_TAG  = 3
 integer, parameter :: TAGGED_CELL = 100
 integer, parameter :: RES_TAGGED_CELL = 101
 !integer, parameter :: OUTSIDE_TAG = -BIG_INT + 1
-integer, parameter :: OUTSIDE_TAG = -1
+integer, parameter :: OUTSIDE_TAG = -9999
+
+integer, parameter :: NAIVE_TAG = 1
+integer, parameter :: ANTIGEN_TAG = 2
+integer, parameter :: ACTIVATED_TAG = 3
+integer, parameter :: GCC_TAG = 3
 
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 integer, parameter :: jumpvec2D(3,8) = reshape((/ 1,0,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, -1,-1,0, 0,-1,0, 1,-1,0 /), (/3,8/))
@@ -120,6 +135,8 @@ integer, parameter :: SCANNER_INTERVAL = 100
 real, parameter :: DELTA_T = 0.25       ! minutes
 logical, parameter :: use_add_count = .true.    ! keep count of sites to add/remove, do the adjustment at regular intervals 
 logical, parameter :: save_input = .true.
+integer, parameter :: MAX_DC = 1000
+integer, parameter :: DCDIM = 4         ! MUST be an even number
 
 ! Diffusion parameters
 logical, parameter :: use_cytokines = .false.
@@ -135,7 +152,7 @@ integer, parameter :: NGEN_EXIT = 8     ! minimum non-NAIVE T cell generation pe
 real, parameter :: CHEMO_MIN = 0.05		! minimum level of chemotactic influence (at r = chemo_radius)
 integer :: exit_rule = 1                ! 1 = use NGEN_EXIT, 2 = use EXIT_THRESHOLD, 3 = use S1P1
 logical :: COMPUTE_OUTFLOW = .false.
-real, parameter :: exit_prox = 4
+!real, parameter :: exit_prox = 4
 
 ! B cell region
 integer, parameter :: FOLLICLE = 1
@@ -225,6 +242,9 @@ integer :: NBcells
 integer :: Nsites
 integer :: Nexits
 integer :: Lastexit
+integer :: NDC
+integer :: NDCalive
+real :: DCRadius
 real :: aRadius
 real :: bRadius
 real :: InflowTotal
@@ -272,9 +292,23 @@ type cell_type
     integer(2) :: ctype
 	integer(2) :: lastdir
     real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
-    real :: receptor(MAX_CHEMO)  ! susceptibility to the chemokine signal (0-1)
+    real :: receptor_level(MAX_RECEPTOR)  ! level of receptor (susceptibility to the chemokine signal)
 !    type(cog_type),    pointer :: cptr => NULL()    ! pointer to cognate cell data
     type(cog_type),    pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
+end type
+
+type DC_type
+    sequence
+    integer :: ID               ! unique ID number
+    integer :: site(3)          ! DC location
+    integer :: nsites
+    integer :: nbound           ! current number of bound T cells
+    integer :: ncogbound        ! current number of bound cognate T cells
+    real :: density             ! current antigen density
+    real :: dietime             ! time DC will die
+    real :: stimulation         ! amount of stimulation provided by a DC
+    logical :: capable          ! can DC deliver TCR stimulation?
+    logical :: alive            ! is DC alive?
 end type
 
 type boundary_type
@@ -295,9 +329,8 @@ type boundary_type
     type (boundary_type), pointer :: next
 end type
 
-
 type occupancy_type
-!    integer(2) :: DC(0:DCDIM-1)     ! DC(0) = number of near DCs, DC(k) = ID of kth near DC
+    integer(2) :: DC(0:DCDIM-1)     ! DC(0) = number of near DCs, DC(k) = ID of kth near DC
 !    integer(2) :: cDC(0:DCDIM-1)   ! cDC(0) = number of DCs within chemo_radius, cDC(k) = ID of kth DC
     integer :: indx(2)
     integer :: exitnum          ! > 0 => index of closest exit, = 0 => no close exit, < 0 => an exit
@@ -454,6 +487,17 @@ real :: K2_S1P1 = 0.05
 real :: K1_CD69 = 0.04
 real :: K2_CD69 = 0.01
 
+! DC parameters
+logical, parameter :: DC_motion = .false.
+logical, parameter :: RANDOM_DCFLUX = .false.
+!integer, parameter :: cDCDIM = 4        ! MUST be an even number
+integer, parameter :: NDCsites = 7		! Number of lattice sites occupied by the DC core (soma). In fact DC vol = 1400 = 5.6*250
+!integer, parameter :: NDCcore = 7      ! In fact DC vol = 1400 = 5.6*250
+real, parameter :: DC_DCprox = 1.3      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
+real, parameter :: bdry_DCprox = 0.5	! closest placement of DC to bdry, units DC_RADIUS
+real, parameter :: exit_DCprox = 4.0    ! closest placement of DC to exit, units sites
+real, parameter :: exit_prox = 4.0      ! closest placement of exit to exit, units chemo_radius
+
 ! Egress parameters
 real :: exit_fraction = 1.0/1000.       ! number of exits as a fraction of T cell population
 real :: Ksurfaceportal = 40			! calibration factor for number of surface portals
@@ -486,6 +530,7 @@ integer :: jumpvec(3,27)    ! 14 is no-jump case (0,0,0)
 !integer :: jumpvec2D(3,8)
 integer :: reldir(6,MAXRELDIR)
 real(DP) :: dirprob(0:MAXRELDIR)
+integer :: DCoffset(3,NDCsites)
 
 integer :: nreldir2D, njumpdirs2D
 integer :: reldir2D(8,8)
@@ -505,6 +550,7 @@ type(occupancy_type), allocatable :: occupancy(:,:,:)
 type(cell_type), allocatable, target :: cellist(:)
 integer, allocatable :: cognate_list(:)
 integer, allocatable :: gaplist(:)
+type(DC_type), allocatable :: DClist(:)
 integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry, NXcells
 integer :: lastNBcells, k_nonrandom
 integer :: max_nlist, max_ngaps
@@ -893,7 +939,7 @@ blobNeighbours = 0
 if (x<1 .or. x>NX) return
 if (y<1 .or. y>NY) return
 if (z<1 .or. z>NZ) return
-if (occupancy(x,y,z)%indx(1) < 0) return
+if (occupancy(x,y,z)%indx(1) < 0) return	! outside or DC
 do k = 1,27
 	if (k == 14) cycle
 	xx = x + jumpvec(1,k)
@@ -2062,7 +2108,7 @@ do k = 1,2
             write(*,'(a,a,8i6)') msg,' checkslots: site error: ',k,xyz,site
             stop
         endif
-    elseif (indx(1) < 0) then
+    elseif (indx(1) < 0) then	! outside or DC
         write(*,*) msg,' checkslots: indx: ',xyz,indx
         stop
     endif
