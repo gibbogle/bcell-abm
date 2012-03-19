@@ -3,6 +3,7 @@ module behaviour
 
 use global
 use fields
+use FDC
 use motility
 
 implicit none
@@ -439,6 +440,12 @@ sigma = log(divide_shape2)
 divide_dist2%p1 = log(60*divide_mean2/exp(sigma*sigma/2))
 divide_dist2%p2 = sigma
 
+!sigma = log(DC_ANTIGEN_SHAPE)
+!DC_ANTIGEN_MEDIAN = DC_ANTIGEN_MEAN/exp(sigma*sigma/2)
+!sigma = log(DC_LIFETIME_SHAPE)
+!DC_LIFETIME_MEDIAN = DC_LIFETIME_MEAN/exp(sigma*sigma/2)
+
+
 if (BC_COGNATE_FRACTION == 0) then
     use_cognate = .false.
 else
@@ -749,59 +756,6 @@ NBcells = NBcells + 1
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! Locate a free slot in a site adjacent to site1: site2 (freeslot)
-! Returns freeslot = 0 if there is no free space in an adjacent site.
-! The occupancy array occ() can be either occupancy() or big_occupancy(), hence
-! the need for xlim (= NXX or NX)
-!-----------------------------------------------------------------------------------------
-subroutine get_free_slot(occ,xlim,site1,site2,freeslot)
-type(occupancy_type) :: occ(:,:,:)
-integer :: xlim, site1(3), site2(3), freeslot
-logical :: Lwall, Rwall
-integer :: i, indx2(2)
-
-if (site1(1) == 1) then
-    Lwall = .true.
-else
-    Lwall = .false.
-endif
-if (site1(1) == xlim) then
-    Rwall = .true.
-else
-    Rwall = .false.
-endif
-
-if (site1(1) < 1) then
-    write(logmsg,*) 'get_free_slot: bad site1: ',site1
-	call logger(logmsg)
-    stop
-endif
-do i = 1,27
-    if (i == 14) cycle       ! i = 14 corresponds to the no-jump case
-	site2 = site1 + jumpvec(:,i)
-    if (Lwall .and. site2(1) < 1) then
-        cycle
-    endif
-    if (Rwall .and. site2(1) > xlim) then
-        cycle
-    endif
-    if (site2(2) < 1 .or. site2(2) > NY .or. site2(3) < 1 .or. site2(3) > NZ) cycle
-	indx2 = occ(site2(1),site2(2),site2(3))%indx
-	if (indx2(1) >= 0) then         ! not OUTSIDE_TAG or DC
-	    if (indx2(1) == 0) then     ! slot 1 is free
-	        freeslot = 1
-            return
-	    elseif (indx2(2) == 0) then ! slot 2 is free
-	        freeslot = 2
-            return
-        endif
-    endif
-enddo
-freeslot = 0
-end subroutine
-
-
-!-----------------------------------------------------------------------------------------
 ! Create a new B cell at site
 ! We could give a progeny cell (the result of cell division) the same ID as its parent.
 !-----------------------------------------------------------------------------------------
@@ -1044,7 +998,6 @@ write(*,*) 'mean = ',sum/N
 sum = 0
 write(*,*) 'start'
 do i = 1,N
-!	call random_number(R)
 	R = par_uni(kpar)
 	R = -log(R)
 	write(*,'(i6,f12.8)') i,R
@@ -1091,6 +1044,107 @@ do x = 1,NX
     enddo
 enddo
 
+!
+! Note: For T cells, needed to account for DCs with cognate and non-cognate antigen.
+!
+NDC = 0
+NDCalive = 0
+if (BC_TO_DC > 0) then   ! DC placement needs to be checked to account for SOI overlap
+    NDC = nlist/real(BC_TO_DC)
+!    NDCtotal = NDC
+    if (NDC > MAX_DC) then
+        write(logmsg,'(a,i6)') 'Error: placeCells: NDC exceeds MAX_DC: ',MAX_DC
+        call logger(logmsg)
+		ok = .false.
+        return
+    endif
+    p1 = log(DC_ANTIGEN_MEDIAN)
+    p2 = log(DC_ANTIGEN_SHAPE)
+    do idc = 1,NDC
+        do
+            R = par_uni(kpar)
+            x = 1 + R*NX
+            R = par_uni(kpar)
+            y = 1 + R*NY
+            R = par_uni(kpar)
+	        z = 1 + R*NZ
+            site = (/x,y,z/)
+            if (occupancy(x,y,z)%indx(1) < 0) cycle     ! OUTSIDE_TAG or DC
+            kdc = idc-1
+            if (tooNearDC(site,kdc,DC_DCprox*DCRadius)) cycle
+            prox = bdry_DCprox*DCRadius
+            if (.not.tooNearBdry(site,prox)) then
+                exit
+            endif
+        enddo
+        DClist(idc)%ID = idc
+        DClist(idc)%site = site
+        DClist(idc)%nsites = 1
+!	    DClist(idc)%dietime = tnow + DClifetime(kpar)
+	    DClist(idc)%alive = .true.
+	    DClist(idc)%stimulation = 0
+	    DClist(idc)%capable = .true.
+!        DClist(idc)%density = DCdensity(kpar)
+		write(logmsg,*) 'DC site: ',idc,site
+		call logger(logmsg)
+    enddo
+    NDCalive = NDC
+    do idc = 1,NDC
+		call assignDCsites(idc,nassigned,ok)
+		if (.not.ok) return
+        DClist(idc)%nsites = nassigned
+        nlist = nlist - nassigned
+!		site = DClist(idc)%site
+!		xdc = site(1)
+!		ydc = site(2)
+!		zdc = site(3)
+!		xmin = xdc - DCRadius
+!        xmax = xdc + DCRadius
+!        ymin = ydc - DCRadius
+!        ymax = ydc + DCRadius
+!        zmin = zdc - DCRadius
+!        zmax = zdc + DCRadius
+!        xmin = max(1,xmin)
+!        xmax = min(NX,xmax)
+!        ymin = max(1,ymin)
+!        ymax = min(NY,ymax)
+!        zmin = max(1,zmin)
+!        zmax = min(NZ,zmax)
+!        do x = xmin,xmax
+!	        x2 = (x-xdc)*(x-xdc)
+!	        do y = ymin,ymax
+!		        y2 = (y-ydc)*(y-ydc)
+!		        do z = zmin,zmax
+!			        z2 = (z-zdc)*(z-zdc)
+!			        d2 = x2 + y2 + z2
+!			        added = .false.
+!					! The following procedure is correct only if DCRadius <= chemo_radius
+!			        if (d2 <= DCRadius*DCRadius) then
+!			            kdc = occupancy(x,y,z)%DC(0)
+!				        if (kdc < 0) cycle   ! don't touch a DC site
+!			            if (kdc < DCDIM-1) then     ! can add to the list
+!			                kdc = kdc + 1
+!			                occupancy(x,y,z)%DC(0) = kdc
+!			                occupancy(x,y,z)%DC(kdc) = idc
+!			                added = .true.
+!				        endif
+!				    endif
+!!			        if (.not.added .and. (d2 <= chemo_radius*chemo_radius)) then
+!!			            kdc = occupancy(x,y,z)%cDC(0)
+!!			            if (kdc == cDCDIM-1) cycle     ! can add no more to the list
+!!		                kdc = kdc + 1
+!!		                occupancy(x,y,z)%cDC(0) = kdc
+!!		                occupancy(x,y,z)%cDC(kdc) = idc
+!!			        endif
+!		        enddo
+!	        enddo
+!        enddo
+    enddo
+    call check_DCproximity
+endif
+write(logmsg,'(a,2i6)') 'Number of DCs, B cells: ',NDC,nlist
+call logger(logmsg)
+
 nzlim = NZ
 allocate(permc(nlist))
 do k = 1,nlist
@@ -1135,6 +1189,10 @@ do x = 1,NX
                     ntagged = ntagged + 1
                     cellist(k)%ctype = TAGGED_CELL
                 endif
+                if (id == nlist) then
+					done = .true.
+					exit
+				endif
             endif
 	    enddo
 	    if (done) exit
@@ -1874,7 +1932,7 @@ do k = 1,tmplastcogID
 			site2 = site
 			freeslot = 2
 		else
-			call get_free_slot(occupancy,NX,site,site2,freeslot)
+			call get_free_slot(NX,site,site2,freeslot)
 		endif
         if (freeslot /= 0) then     ! there is a free slot at site2 (which may be = site)
             call cell_division(kcell,site2,freeslot,ok)

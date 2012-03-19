@@ -150,6 +150,7 @@ bRadius = aRadius/ELLIPSE_RATIO
 
 max_nlist = 1.5*NX*NY*NZ
 
+allocate(DClist(MAX_DC))
 allocate(occupancy(NX,NY,NZ))
 allocate(cellist(max_nlist))
 allocate(gaplist(max_ngaps))
@@ -2457,9 +2458,29 @@ do kc = 1,lastcogID
 		TC_list(j+5) = itcstate
 	endif
 enddo
-
 nTC_list = k
 
+! DC section
+nDC_list = 0
+if (NDC > 0) then
+	k = 0
+    do kcell = 1,NDC
+        if (DClist(kcell)%alive) then
+			k = k+1
+			j = 5*(k-1)
+            site = DClist(kcell)%site
+!            dcstate = min(1.0,DClist(kcell)%density/DC_ANTIGEN_MEDIAN)
+			dcstate = 0.5
+            idcstate = 100*dcstate
+            ! Need dcstate to convey antigen density level (normalized to 0-1)
+!            write(nfpos,'(a2,i4,3i4,f4.1,f5.2)') 'D ',k-1, site, DC_diam, dcstate
+			DC_list(j+1) = kcell-1
+			DC_list(j+2:j+4) = site
+			DC_list(j+5) = idcstate
+        endif
+    enddo
+    nDC_list = k
+endif
 
 end subroutine
 
@@ -2857,6 +2878,7 @@ if (allocated(zdomain)) deallocate(zdomain)
 if (allocated(occupancy)) deallocate(occupancy)
 if (allocated(Tres_dist)) deallocate(Tres_dist)
 if (allocated(cellist)) deallocate(cellist,stat=ierr)
+if (allocated(DClist)) deallocate(DClist,stat=ierr)
 if (ierr /= 0) then
     write(*,*) 'cellist deallocate error: ',ierr
     stop

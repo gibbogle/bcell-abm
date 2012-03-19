@@ -137,6 +137,7 @@ logical, parameter :: use_add_count = .true.    ! keep count of sites to add/rem
 logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
 integer, parameter :: DCDIM = 4         ! MUST be an even number
+real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the lattice, NOT the ROI
 
 ! Diffusion parameters
 logical, parameter :: use_cytokines = .false.
@@ -244,7 +245,6 @@ integer :: Nexits
 integer :: Lastexit
 integer :: NDC
 integer :: NDCalive
-real :: DCRadius
 real :: aRadius
 real :: bRadius
 real :: InflowTotal
@@ -375,7 +375,7 @@ real :: BC_AVIDITY_SHAPE = 1.2			! shape -> 1 gives normal dist with small varia
 real :: BC_COGNATE_FRACTION = 0.0001	! fraction of T cells that are cognate initially
 real :: BC_STIM_RATE_CONSTANT = 0.83	! rate const for BCR stimulation (-> molecules/min)
 real :: BC_STIM_HALFLIFE = 24			! hours
-integer :: BC_MAX_GEN = 20              ! maximum number of TC generations
+integer :: BC_MAX_GEN = 10              ! maximum number of TC generations
 
 real :: TC_AVIDITY_MEDIAN = 1.0			! median T cell avidity
 real :: TC_AVIDITY_SHAPE = 1.2			! shape -> 1 gives normal dist with small variance
@@ -387,8 +387,9 @@ real :: TC_STIM_WEIGHT = 0.1			! contribution of stimulation to act level
 real :: TC_STIM_HALFLIFE = 24			! hours
 integer :: TC_MAX_GEN = 20              ! maximum number of TC generations
 
-!real :: DC_ANTIGEN_MEAN = 10			! mean DC antigen density
-!real :: DC_ANTIGEN_SHAPE = 1.2			! DC antigen density shape param
+real :: DC_ANTIGEN_MEAN = 10			! mean DC antigen density
+real :: DC_ANTIGEN_SHAPE = 1.2			! DC antigen density shape param
+real :: DC_ANTIGEN_MEDIAN				! median DC antigen density
 !real :: DC_LIFETIME_MEAN = 3.5			! days
 !real :: DC_LIFETIME_SHAPE  = 1.2		! days
 !real :: DC_ACTIV_TAPER = 12				! time (hours) over which DC activity decays to zero
@@ -469,6 +470,7 @@ real :: BC_life_median2					! median lifetime of activated T cells
 real :: BC_life_shape					! shape parameter for lifetime of T cells
 integer :: NBC_LN = 3.0e07				! number of B cells in a LN
 integer :: NBC_BODY = 1.6e09			! number of circulating B cells in the whole body
+integer :: BC_TO_DC = 1000				! ratio of B cells to FDCs
 
 ! T cell parameters
 logical :: TCR_splitting = .false.      ! enable sharing of integrated TCR signal between progeny cells
@@ -493,8 +495,8 @@ logical, parameter :: RANDOM_DCFLUX = .false.
 !integer, parameter :: cDCDIM = 4        ! MUST be an even number
 integer, parameter :: NDCsites = 7		! Number of lattice sites occupied by the DC core (soma). In fact DC vol = 1400 = 5.6*250
 !integer, parameter :: NDCcore = 7      ! In fact DC vol = 1400 = 5.6*250
-real, parameter :: DC_DCprox = 1.3      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
-real, parameter :: bdry_DCprox = 0.5	! closest placement of DC to bdry, units DC_RADIUS
+real, parameter :: DC_DCprox = 2.0      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
+real, parameter :: bdry_DCprox = 2.0	! closest placement of DC to bdry, units DC_RADIUS
 real, parameter :: exit_DCprox = 4.0    ! closest placement of DC to exit, units sites
 real, parameter :: exit_prox = 4.0      ! closest placement of exit to exit, units chemo_radius
 
@@ -951,33 +953,62 @@ blobNeighbours = nb
 end function
 
 !-----------------------------------------------------------------------------------------
-! prox is the minimum distance from the boundary (sites)
+! Is site near a DC?
+! The criterion for a DC site might be different from an exit site.
+! prox = DC_DCprox*DC_RADIUS for DC - DC
+!-----------------------------------------------------------------------------------------
+logical function tooNearDC(site,kdc,prox)
+integer :: site(3), kdc
+real :: prox
+integer :: idc
+real :: r(3), d
+
+if (kdc == 0) then
+    tooNearDC = .false.
+    return
+endif
+do idc = 1,kdc
+    if (.not.DClist(idc)%alive) cycle
+    r = site - DClist(idc)%site
+    d = norm(r)     ! units sites
+    if (d < prox) then
+        tooNearDC = .true.
+        return
+    endif
+enddo
+tooNearDC = .false.
+end function
+
+!-----------------------------------------------------------------------------------------
+! Distance from the centre to the ellipsoid surface (approx) in the direction given by r(:)
+! v(:) = (x,y,z) is a point on the surface if x^2/a^2 + (y^2 + z^2)/b^2 = 1
+! Let v(:) = beta*r(:), then
+! r(1)^2/a^2 + (r(2)^2 + r(3)^2)/b^2 = 1/beta^2
+! The "radius" in the specified direction is then beta*|r| = beta*norm(r)
+!-----------------------------------------------------------------------------------------
+real function EllipsoidRadius(r)
+real :: r(3)
+real :: beta
+
+beta = 1./sqrt(r(1)*r(1)/(aRadius*aRadius) + (r(2)*r(2) + r(3)*r(3))/(bRadius*bRadius))
+EllipsoidRadius = beta*norm(r)
+end function
+
+!-----------------------------------------------------------------------------------------
+! prox is the minimum distance from the ellipsoid boundary (sites)
 !-----------------------------------------------------------------------------------------
 logical function tooNearBdry(site,prox)
 integer :: site(3)
 real :: prox
-real :: d, dmin
+real :: d, r(3), eradius
 
-if (use_blob) then
-    d = cdistance(site)
-    if (aRadius - d < prox) then
-        tooNearBdry = .true.
-        return
-    endif
-!    write(*,*) 'tooNearBdry: ',aRadius,d,dmin
-else
-    if (site(1) < dmin .or. (NX - site(1)) < dmin) then
-        tooNearBdry = .true.
-        return
-    endif
-    if (site(2) < dmin .or. (NY - site(2)) < dmin) then
-        tooNearBdry = .true.
-        return
-    endif
-    if (site(3) < dmin .or. (NZ - site(3)) < dmin) then
-        tooNearBdry = .true.
-        return
-    endif
+r = site - Centre
+eradius = EllipsoidRadius(r)
+d = cdistance(site)
+if (eradius - d < prox) then
+    tooNearBdry = .true.
+!	write(*,'(a,3i4,3f8.1)') 'tooNearBdry: ',site,prox,eradius,d
+    return
 endif
 tooNearBdry = .false.
 end function
@@ -1006,6 +1037,58 @@ do iexit = 1,Lastexit
 enddo
 tooNearExit = .false.
 end function
+
+!-----------------------------------------------------------------------------------------
+! Locate a free slot in a site adjacent to site1: site2 (freeslot)
+! Returns freeslot = 0 if there is no free space in an adjacent site.
+! The occupancy array occ() can be either occupancy() or big_occupancy(), hence
+! the need for xlim (= NXX or NX)
+!-----------------------------------------------------------------------------------------
+subroutine get_free_slot(xlim,site1,site2,freeslot)
+!type(occupancy_type) :: occ(:,:,:)
+integer :: xlim, site1(3), site2(3), freeslot
+logical :: Lwall, Rwall
+integer :: i, indx2(2)
+
+if (site1(1) == 1) then
+    Lwall = .true.
+else
+    Lwall = .false.
+endif
+if (site1(1) == xlim) then
+    Rwall = .true.
+else
+    Rwall = .false.
+endif
+
+if (site1(1) < 1) then
+    write(logmsg,*) 'get_free_slot: bad site1: ',site1
+	call logger(logmsg)
+    stop
+endif
+do i = 1,27
+    if (i == 14) cycle       ! i = 14 corresponds to the no-jump case
+	site2 = site1 + jumpvec(:,i)
+    if (Lwall .and. site2(1) < 1) then
+        cycle
+    endif
+    if (Rwall .and. site2(1) > xlim) then
+        cycle
+    endif
+    if (site2(2) < 1 .or. site2(2) > NY .or. site2(3) < 1 .or. site2(3) > NZ) cycle
+	indx2 = occupancy(site2(1),site2(2),site2(3))%indx
+	if (indx2(1) >= 0) then         ! not OUTSIDE_TAG or DC
+	    if (indx2(1) == 0) then     ! slot 1 is free
+	        freeslot = 1
+            return
+	    elseif (indx2(2) == 0) then ! slot 2 is free
+	        freeslot = 2
+            return
+        endif
+    endif
+enddo
+freeslot = 0
+end subroutine
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
