@@ -313,6 +313,9 @@ void MyVTK::process_Tcells()
 	double TC_MAX_GEN = 15;
 	CELL_POS cp;
 	vtkActor *actor;
+	int axis_centre = -2;	// identifies the ellipsoid centre
+	int axis_end    = -3;	// identifies the ellipsoid extent in 5 directions
+	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 	double TCColor[] = {0.0, 0.0, 1.0};
 
     int na = T_Actor_list.length();
@@ -345,6 +348,12 @@ void MyVTK::process_Tcells()
 		}
 		if (cp.state == -1) {	// non-cognate
 			r = 0.5; g = 0.5; b = 0.5;
+		} else if (cp.state == axis_centre) {
+			r = 1; g = 1; b = 1;
+		} else if (cp.state == axis_end) {
+			r = 1; g = 0; b = 1;
+		} else if (cp.state == axis_bottom) {
+			r = 1; g = 1; b = 1;
 		} else if (cp.state == 0) {
 			r = 0; g = 0; b = 1;
 		} else if (cp.state <= TC_MAX_GEN) {

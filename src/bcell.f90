@@ -2388,10 +2388,12 @@ integer :: idcstate, itcstate, stype, ctype, stage, region
 real :: bcell_diam = 0.9
 real :: DC_diam = 1.8
 integer :: gen, bnd(2)
+integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
+integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
+integer, parameter :: axis_bottom = -4	! identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 
 k = 0
 ! Need some markers to delineate the follicle extent
-itcstate = 0
 do k = 1,7
 	select case (k)
 	case (1)
@@ -2399,36 +2401,43 @@ do k = 1,7
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
+		itcstate = axis_centre
 	case (2)
 		x = Centre(1) - aRadius - 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
+		itcstate = axis_end
 	case (3)
 		x = Centre(1) + aRadius + 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
+		itcstate = axis_end
 	case (4)
 		x = Centre(1) + 0.5
 		y = Centre(2) - bRadius - 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
+		itcstate = axis_bottom
 	case (5)
 		x = Centre(1) + 0.5
 		y = Centre(2) + bRadius + 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
+		itcstate = axis_end
 	case (6)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) - bRadius - 2
 		site = (/x, y, z/)
+		itcstate = axis_end
 	case (7)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) + bRadius + 2
 		site = (/x, y, z/)
+		itcstate = axis_end
 	end select
 	j = 5*(k-1)
 	TC_list(j+1) = k-1
