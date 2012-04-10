@@ -63,17 +63,19 @@ integer, parameter :: CCR7_UP     = 3
 integer, parameter :: TCELL_MET   = 4
 integer, parameter :: DIVIDING    = 5
 integer, parameter :: GCC_COMMIT  = 6
-integer, parameter :: BCL6_UP     = 7
-integer, parameter :: FINISHED    = 8
-integer, parameter :: STAGELIMIT  = 8
+integer, parameter :: PLASMA      = 7
+integer, parameter :: BCL6_UP     = 8
+integer, parameter :: FINISHED    = 9
+integer, parameter :: STAGELIMIT  = 9
+
+integer, parameter :: BCL6_LO = 1
+integer, parameter :: BCL6_HI = GCC_COMMIT
 
 real, parameter :: T_CCR7_UP   = 2*60
 real, parameter :: T_EBI2_UP = 2*60
 real, parameter :: T_BCL6_UP   = 2*60
 real, parameter :: T_FIRST_DIVISION = 12*60
 real, parameter :: T_DIVISION       = 10*60
-real, parameter :: GCC_PROB = 0.5
-
 
 integer, parameter :: TCP_PORT_0 = 5000		! main communication port (logging) 
 integer, parameter :: TCP_PORT_1 = 5001		! data transfer port (plotting)
@@ -128,7 +130,7 @@ integer, parameter :: GCC_TAG = 3
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 integer, parameter :: jumpvec2D(3,8) = reshape((/ 1,0,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, -1,-1,0, 0,-1,0, 1,-1,0 /), (/3,8/))
 integer, parameter :: nfcell = 10, nfout = 11, nfvec = 12, nfpath = 13, nfres = 14, nfdcbind = 15, &
-						nftraffic = 16, nfrun = 17, nftravel = 18, nfcmgui = 19, nfpos = 20, nflog=21, nfchemo=22, nfDC=23
+						nftraffic = 16, nfrun = 17, nftravel = 18, nfcmgui = 19, nfpos = 20, nflog=21, nfchemo=22
 real, parameter :: BIG_TIME = 100000
 real, parameter :: BALANCER_INTERVAL = 10
 integer, parameter :: SCANNER_INTERVAL = 100
@@ -136,8 +138,10 @@ real, parameter :: DELTA_T = 0.25       ! minutes
 logical, parameter :: use_add_count = .true.    ! keep count of sites to add/remove, do the adjustment at regular intervals 
 logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
+integer, parameter :: MAX_FDC = 1000
 integer, parameter :: DCDIM = 4         ! MUST be an even number
 real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the lattice, NOT the ROI
+real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the lattice, NOT the ROI
 
 ! Diffusion parameters
 logical, parameter :: use_cytokines = .false.
@@ -160,6 +164,9 @@ integer, parameter :: FOLLICLE = 1
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
+
+! Differentiation probabilities
+real, parameter :: PLASMA_PROB = 0.4
 
 ! GUI parameters
 character*(12), parameter :: stopfile = 'stop_dll'
@@ -245,6 +252,8 @@ integer :: Nexits
 integer :: Lastexit
 integer :: NDC
 integer :: NDCalive
+integer :: NFDC
+integer :: NFDCalive
 real :: aRadius
 real :: bRadius
 real :: InflowTotal
@@ -279,9 +288,12 @@ type cog_type
 !	real :: CCR7            ! level of CCR7 expression
 !    real :: IL_state(CYT_NP)    ! receptor model state variable values
 !    real :: IL_statep(CYT_NP)   ! receptor model state variable time derivative values
-    integer :: status       ! holds data in bytes: 1=stage, 2=generation
+	integer(2) :: generation
+	integer(2) :: stage
+	integer(2) :: region
+	integer(2) :: status	! BCL6_LO, BCL6_HI, PLASMA
+!    integer :: status       ! holds data in bytes: 1=stage, 2=generation
 	integer :: cogID		! index in the list of cognate cells
-	logical :: germinal		! germinal centre B cell
 end type
 
 type cell_type
@@ -309,6 +321,20 @@ type DC_type
     real :: stimulation         ! amount of stimulation provided by a DC
     logical :: capable          ! can DC deliver TCR stimulation?
     logical :: alive            ! is DC alive?
+end type
+
+type FDC_type
+    sequence
+    integer :: ID               ! unique ID number
+    integer :: site(3)          ! FDC location
+    integer :: nsites
+!    integer :: nbound           ! current number of bound T cells
+!    integer :: ncogbound        ! current number of bound cognate T cells
+!    real :: density             ! current antigen density
+!    real :: dietime             ! time DC will die
+!    real :: stimulation         ! amount of stimulation provided by a DC
+!    logical :: capable          ! can DC deliver TCR stimulation?
+    logical :: alive            ! is FDC alive?
 end type
 
 type boundary_type
@@ -470,7 +496,8 @@ real :: BC_life_median2					! median lifetime of activated T cells
 real :: BC_life_shape					! shape parameter for lifetime of T cells
 integer :: NBC_LN = 3.0e07				! number of B cells in a LN
 integer :: NBC_BODY = 1.6e09			! number of circulating B cells in the whole body
-integer :: BC_TO_DC = 1000				! ratio of B cells to FDCs
+integer :: BC_TO_DC = 1000				! ratio of B cells to DCs
+integer :: BC_TO_FDC = 600				! ratio of B cells to FDCs
 
 ! T cell parameters
 logical :: TCR_splitting = .false.      ! enable sharing of integrated TCR signal between progeny cells
@@ -497,8 +524,9 @@ integer, parameter :: NDCsites = 7		! Number of lattice sites occupied by the DC
 !integer, parameter :: NDCcore = 7      ! In fact DC vol = 1400 = 5.6*250
 real, parameter :: DC_DCprox = 2.0      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
 real, parameter :: bdry_DCprox = 2.0	! closest placement of DC to bdry, units DC_RADIUS
-real, parameter :: exit_DCprox = 4.0    ! closest placement of DC to exit, units sites
-real, parameter :: exit_prox = 4.0      ! closest placement of exit to exit, units chemo_radius
+real, parameter :: bdry_FDCprox = 4.0	! closest placement of DC to bdry, units DC_RADIUS
+!real, parameter :: exit_DCprox = 4.0    ! closest placement of DC to exit, units sites
+!real, parameter :: exit_prox = 4.0      ! closest placement of exit to exit, units chemo_radius
 
 ! Egress parameters
 real :: exit_fraction = 1.0/1000.       ! number of exits as a fraction of T cell population
@@ -553,10 +581,12 @@ type(cell_type), allocatable, target :: cellist(:)
 integer, allocatable :: cognate_list(:)
 integer, allocatable :: gaplist(:)
 type(DC_type), allocatable :: DClist(:)
+type(FDC_type), allocatable :: FDClist(:)
 integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry, NXcells
 integer :: lastNBcells, k_nonrandom
 integer :: max_nlist, max_ngaps
 integer :: nadd_sites, ndivisions
+real :: Kdeath_lo(MMAX_GEN), Kdeath_hi(MMAX_GEN)
 real :: lastbalancetime
 real :: scale_factor	! scaling from model to one (or more) whole LNs
 real :: Fcognate		! fraction of T cells in circulation that are cognate
@@ -844,7 +874,8 @@ do
         call copycell2cell(cellist(last),cellist(k),k)
 !        cellist(k) = cellist(last)
 		if (associated(cellist(last)%cptr)) then
-			call get_region(cellist(last)%cptr,region)
+!			call get_region(cellist(last)%cptr,region)
+			region = get_region(cellist(last)%cptr)
 		else
 			region = FOLLICLE
 		endif
@@ -953,30 +984,30 @@ blobNeighbours = nb
 end function
 
 !-----------------------------------------------------------------------------------------
-! Is site near a DC?
-! The criterion for a DC site might be different from an exit site.
-! prox = DC_DCprox*DC_RADIUS for DC - DC
+! Is site near a FDC?
+! The criterion for a FDC site might be different from an exit site.
+! prox = DC_DCprox*FDC_RADIUS for DC - DC
 !-----------------------------------------------------------------------------------------
-logical function tooNearDC(site,kdc,prox)
+logical function tooNearFDC(site,kdc,prox)
 integer :: site(3), kdc
 real :: prox
 integer :: idc
 real :: r(3), d
 
 if (kdc == 0) then
-    tooNearDC = .false.
+    tooNearFDC = .false.
     return
 endif
 do idc = 1,kdc
-    if (.not.DClist(idc)%alive) cycle
-    r = site - DClist(idc)%site
+    if (.not.FDClist(idc)%alive) cycle
+    r = site - FDClist(idc)%site
     d = norm(r)     ! units sites
     if (d < prox) then
-        tooNearDC = .true.
+        tooNearFDC = .true.
         return
     endif
 enddo
-tooNearDC = .false.
+tooNearFDC = .false.
 end function
 
 !-----------------------------------------------------------------------------------------
@@ -1108,8 +1139,6 @@ do k = 1,27
 enddo
 neighbourhoodCount = count
 end function
-
-
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -1243,110 +1272,72 @@ else
 endif
 end function
 
-
 !--------------------------------------------------------------------------------------
-! Interim
 !--------------------------------------------------------------------------------------
 subroutine set_stage(p,stage)
 type(cog_type), pointer :: p
 integer :: stage
-integer :: status, oldstage, region
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
 
-call get_stage(p,oldstage,region)
-status = p%status
-!statusbyte(STAGE_BYTE) = stage
-statusbyte(STAGE_BYTE) = stage + (region-1)*STAGELIMIT
+p%stage = stage
+end subroutine
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+integer function get_stage(p)
+type(cog_type), pointer :: p
+
+get_stage = p%stage
+end function
+
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+subroutine set_status(p,status)
+type(cog_type), pointer :: p
+integer :: status
+
 p%status = status
 end subroutine
 
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
-subroutine set_stage_region(p,stage,region)
+integer function get_status(p)
 type(cog_type), pointer :: p
-integer :: stage, region
-integer :: status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
 
-status = p%status
-statusbyte(STAGE_BYTE) = stage + (region-1)*STAGELIMIT
-p%status = status
-end subroutine
-
-!----------------------------------------------------------------------------------------
-! Interim
-!----------------------------------------------------------------------------------------
-integer function old_get_stage(p)
-type(cog_type), pointer :: p
-integer :: status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
-
-status = p%status
-old_get_stage = statusbyte(STAGE_BYTE)
+get_status = p%status
 end function
 
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
-subroutine get_stage(p,stage,region)
-type(cog_type), pointer :: p
-integer :: stage, region
-integer :: status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
-
-status = p%status
-stage = statusbyte(STAGE_BYTE)
-region = FOLLICLE
-if (stage > STAGELIMIT) then
-	stage = stage - STAGELIMIT
-endif
-!write(logmsg,*) 'get_stage: ',stage,region
-!call logger(logmsg)
-end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-subroutine get_region(p,region)
+subroutine set_region(p,region)
 type(cog_type), pointer :: p
 integer :: region
-integer :: stage, status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
 
-status = p%status
-stage = statusbyte(STAGE_BYTE)
-region = FOLLICLE
+p%region = region
 end subroutine
 
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+integer function get_region(p)
+type(cog_type), pointer :: p
+
+get_region = p%region
+end function
+
 !--------------------------------------------------------------------------------------
-! Interim
 !--------------------------------------------------------------------------------------
 subroutine set_generation(p,gen)
 type(cog_type), pointer :: p
 integer :: gen
-integer :: status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
 
-status = p%status
-statusbyte(GENERATION_BYTE) = gen
-p%status = status
+p%generation = gen
 end subroutine
 
 !----------------------------------------------------------------------------------------
-! Interim
 !----------------------------------------------------------------------------------------
 integer function get_generation(p)
 type(cog_type), pointer :: p
-integer :: status
-integer(1) :: statusbyte(4)
-equivalence (status,statusbyte)
 
-status = p%status
-get_generation = statusbyte(GENERATION_BYTE)
+get_generation = p%generation
 end function
 
 !-----------------------------------------------------------------------------------------
@@ -1371,9 +1362,10 @@ write(logmsg,*) 'Cognate cell: ',p%cogID,kcell,cellist(kcell)%ID
 call logger(logmsg)
 write(logmsg,'(a,i10,a,3i4,a,i2)') '  ID: ',bcell%ID,' site: ',bcell%site,' ctype: ',bcell%ctype
 call logger(logmsg)
-gen = get_generation(p)
-!stage = get_stage(p)
-call get_stage(p,stage,region)
+!gen = get_generation(p)
+gen = p%generation
+!call get_stage(p,stage,region)
+stage = get_stage(p)
 write(logmsg,'(a,i8,a,i2,a,i2)') '   cogID: ',p%cogID,' gen: ',gen,' stage: ', stage
 call logger(logmsg)
 write(logmsg,'(a,4f10.2)') '   times: entry,die,div,stage: ',bcell%entrytime,p%dietime,p%dividetime,p%stagetime
@@ -1497,10 +1489,12 @@ endif
 	do k = 1,lastcogID
 		kcell = cognate_list(k)
 		if (kcell > 0) then
-			call get_stage(cellist(kcell)%cptr,stage,region)
+!			call get_stage(cellist(kcell)%cptr,stage,region)
+			region = get_region(cellist(kcell)%cptr)
 			if (region /= FOLLICLE) cycle
 			site = cellist(kcell)%site
-			gen = get_generation(cellist(kcell)%cptr)
+!			gen = get_generation(cellist(kcell)%cptr)
+			gen = cellist(kcell)%cptr%generation
 			itcstate = gen
 			! Need tcstate to convey non-activated status, i.e. 0 = non-activated
 			write(nfpos,'(a2,i6,3i4,f4.1,i3)') 'T ',k-1, site, bcell_diam, itcstate
@@ -1547,11 +1541,14 @@ write(nfcmgui,*) '    value.'
 do k = 1,lastcogID
     kcell = cognate_list(k)
     if (kcell > 0) then
-		call get_stage(cellist(kcell)%cptr,stage,region)
+!		call get_stage(cellist(kcell)%cptr,stage,region)
+		stage = get_stage(cellist(kcell)%cptr)
+		region = get_region(cellist(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
         nd = nd+1
         site = cellist(kcell)%site
-        gen = get_generation(cellist(kcell)%cptr)
+!        gen = get_generation(cellist(kcell)%cptr)
+		gen = cellist(kcell)%cptr%generation
         tcstate = (gen-1.0)/(BC_MAX_GEN-1.0)*spectrum_max*spectrum_freefraction
 !        write(nfcmgui,'(a,i8,3i4,f4.1,i3,i2)') 'Node: ',nd, site, bcell_diam, gen, tcbound
         write(nfcmgui,'(a,i8,3i4,f4.1,f6.2)') 'Node: ',nd, site, bcell_diam, tcstate

@@ -151,6 +151,7 @@ bRadius = aRadius/ELLIPSE_RATIO
 max_nlist = 1.5*NX*NY*NZ
 
 allocate(DClist(MAX_DC))
+allocate(FDClist(MAX_FDC))
 allocate(occupancy(NX,NY,NZ))
 allocate(cellist(max_nlist))
 allocate(gaplist(max_ngaps))
@@ -798,14 +799,15 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine traffic(ok)
 logical :: ok
-integer :: x, y, z, k, kcell, indx(2), ctype, gen, stage, region, site(3), n, slot
+integer :: x, y, z, k, kcell, indx(2), ctype, gen, stage, region, status, site(3), n, slot
 integer :: node_inflow, node_outflow, add(3), net_inflow, ihr
 real(DP) :: R, df, prob
-real :: tnow, exit_prob
-logical :: left
+real :: tnow, noncog_exit_prob
+logical :: can_leave, left
 integer :: kpar=0
 integer :: nb, nc, nx
 type (boundary_type), pointer :: bdry
+type (cog_type), pointer :: p
 
 ok = .true.
 !write(*,*) 'traffic'
@@ -816,10 +818,10 @@ R = par_uni(kpar)
 if (R < df) then
     node_inflow = node_inflow + 1
 endif
-exit_prob = base_exit_prob*12/residence_time
+noncog_exit_prob = base_exit_prob*12/residence_time
 ! To speed attainment of steady state when inflammation_signal = 0
 if (NBcells < NBcells0) then
-	exit_prob = exit_prob*(real(NBcells)/NBcells0)**3
+	noncog_exit_prob = noncog_exit_prob*(real(NBcells)/NBcells0)**3
 endif
 
 ! Inflow
@@ -843,20 +845,29 @@ do while ( associated ( bdry ))
 		do slot = 2,1,-1
 			kcell = indx(slot)
 			if (kcell > 0) then
-				nc = nc + 1
-				R = par_uni(kpar)
-				if (R < exit_prob) then    ! this cell can leave
-					call CellExit(kcell,slot,site,left)
-					if (left) then
-						nx = nx + 1
-						node_outflow = node_outflow + 1
-						if (evaluate_residence_time) then
-							if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
-								noutflow_tag = noutflow_tag + 1
-								restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
-								ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
-								Tres_dist(ihr) = Tres_dist(ihr) + 1
-							endif
+				can_leave = .false.
+				p => cellist(kcell)%cptr
+				if (associated(p)) then
+					status = get_status(p)
+					if (status == PLASMA) then
+						can_leave = .true.
+					endif
+				else
+					R = par_uni(kpar)
+					if (R < noncog_exit_prob) then    ! this cell can leave
+						can_leave = .true.
+					endif
+				endif
+				if (can_leave) then
+					call CellExit(kcell,slot,site)
+					nx = nx + 1
+					node_outflow = node_outflow + 1
+					if (evaluate_residence_time) then
+						if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
+							noutflow_tag = noutflow_tag + 1
+							restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
+							ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
+							Tres_dist(ihr) = Tres_dist(ihr) + 1
 						endif
 					endif
 				endif
@@ -867,11 +878,11 @@ do while ( associated ( bdry ))
 enddo
 nadd_sites = nadd_sites - node_outflow
 if (mod(istep,4*60) == 0) then
-!    write(nfout,'(a,4i6)') 'istep,in,out: ',istep,node_inflow,node_outflow,NBcells
-	write(nfout,*) nb,nc,nx,exit_prob
+	write(nfout,*) nb,nx,noncog_exit_prob
 endif
 return
 
+! Unused code follows
 k = 0
 do while (k < node_outflow)
     R = par_uni(kpar)
@@ -894,8 +905,8 @@ do while (k < node_outflow)
     endif
     kcell = indx(slot)
     site = (/x,y,z/)
-    call CellExit(kcell,slot,site,left)
-    if (.not.left) cycle
+    call CellExit(kcell,slot,site)
+!    if (.not.left) cycle
     k = k+1
 
     if (evaluate_residence_time) then
@@ -921,9 +932,7 @@ end subroutine
 logical function exitOK(p,ctype)
 type(cog_type), pointer :: p
 integer :: ctype
-!integer :: kpar = 0
 
-!gen = get_generation(p)
 exitOK = .true.
 if (ctype == COG_TYPE_TAG) then
     exitOK = .false.
@@ -950,6 +959,8 @@ end function
 ! the exit region can be expanded to some neighbourhood of the portal site, e.g.
 ! the Moore27 neighbourhood.  Any cell within the expanded region that meets a
 ! specified criterion (e.g. generation > 4) has the possibility of egress.
+!
+! NOT USED FOR B CELLS
 !-----------------------------------------------------------------------------------------
 subroutine portal_traffic(ok)
 logical :: ok
@@ -1058,8 +1069,8 @@ do ipermex = 1,Lastexit
 					egress_possible = .false.
 				endif				
 				if (egress_possible) then	
-					call CellExit(kcell,slot,esite,left)
-					if (left) then
+					call CellExit(kcell,slot,esite)
+!					if (left) then
 						ne = ne + 1
 						check_egress(iexit) = check_egress(iexit) + 1
 						if (evaluate_residence_time) then
@@ -1071,7 +1082,7 @@ do ipermex = 1,Lastexit
 							endif
 						endif
 						if (ne == node_outflow .and. computed_outflow) exit
-					endif
+!					endif
 				endif
 			endif
 		enddo
@@ -1094,28 +1105,29 @@ end subroutine
 ! left = .true.
 ! Currently, when a T cell exits the LN its ID is set to 0, and a gap is recorded in cellist(:).
 !-----------------------------------------------------------------------------------------
-subroutine CellExit(kcell,slot,esite,left)
+subroutine CellExit(kcell,slot,esite)
 integer :: kcell, slot, esite(3)
-logical :: left
+!logical :: left
 integer :: x, y, z, ctype, gen, stage, region
 real :: tnow
 logical :: cognate, activated
 type(cog_type), pointer :: p
 
 tnow = istep*DELTA_T
-left = .false.
+!left = .false.
 if (evaluate_residence_time) then
     cognate = .false.
 elseif (associated(cellist(kcell)%cptr)) then
     cognate = .true.
     p => cellist(kcell)%cptr
-	call get_stage(p,stage,region)
+!	call get_stage(p,stage,region)
+	stage = get_stage(p)
     gen = get_generation(p)
     ctype = cellist(kcell)%ctype
-    if (.not.exitOK(p,ctype)) then
+!    if (.not.exitOK(p,ctype)) then
 !        write(*,*) 'cell_exit: cognate exit suppressed: ',kcell
-        return
-    endif
+!        return
+!    endif
 else
     cognate = .false.
 endif
@@ -1149,7 +1161,7 @@ else
 	gaplist(ngaps) = kcell
 	cellist(kcell)%ID = 0
 endif
-left = .true.
+!left = .true.
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1507,8 +1519,8 @@ do kcell = 1,nlist
     stype = struct_type(ctype)
     if (stype == COG_TYPE_TAG) then
         ncog = ncog + 1
-!        stage = get_stage(p)
-		call get_stage(p,stage,region)
+!		call get_stage(p,stage,region)
+        stage = get_stage(p)
         nst(stage) = nst(stage) + 1
         stim(stage) = stim(stage) + p%stimulation
 !        IL2sig(stage) = IL2sig(stage) + get_IL2store(p)
@@ -2057,7 +2069,7 @@ maxg = 0
 do k = 1,lastcogID
 	kcell = cognate_list(k)
 	if (kcell > 0) then
-		call get_stage(cellist(kcell)%cptr,stage,region)
+!		call get_stage(cellist(kcell)%cptr,stage,region)
 !		if (region /= FOLLICLE) cycle 
 		gen = get_generation(cellist(kcell)%cptr)
 		maxg = max(maxg,gen)
@@ -2123,7 +2135,9 @@ do kcell = 1,nlist
     if (cellist(kcell)%ID == 0) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
-		call get_stage(p,stage,region)
+!		call get_stage(p,stage,region)
+		stage = get_stage(p)
+		region = get_region(p)
 	else
 		stage = 0
 		region = FOLLICLE
@@ -2292,7 +2306,9 @@ do kcell = 1,nlist
     if (cellist(kcell)%ID == 0) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
-		call get_stage(p,stage,region)
+!		call get_stage(p,stage,region)
+		stage = get_stage(p)
+		region = get_region(p)
 	else
 		stage = 0
 		region = FOLLICLE
@@ -2452,7 +2468,9 @@ k = k-1
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
 	if (kcell > 0) then
-		call get_stage(cellist(kcell)%cptr,stage,region)
+!		call get_stage(cellist(kcell)%cptr,stage,region)
+		stage = get_stage(cellist(kcell)%cptr)
+		region = get_region(cellist(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
 		k = k+1
 		j = 5*(k-1)
@@ -2816,7 +2834,7 @@ if (log_traffic) then
     open(nftraffic,file='traffic.out',status='replace')
 endif
 
-call placeCells(ok)
+call PlaceCells(ok)
 call logger('did placeCells')
 if (.not.ok) return
 

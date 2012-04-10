@@ -428,7 +428,9 @@ do kcell = 1,nlist
     cell => cellist(kcell)
     if (cell%ID == 0) cycle             ! skip gaps in the list
     if (associated(cell%cptr)) then
-		call get_stage(cell%cptr,stage,region)
+!		call get_stage(cell%cptr,stage,region)
+		stage = get_stage(cell%cptr)
+		region = get_region(cell%cptr)
 		if (region /= FOLLICLE) cycle
 	endif
     if (cell%step == istep) cycle

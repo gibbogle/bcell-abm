@@ -81,15 +81,15 @@ end subroutine
 !--------------------------------------------------------------------------------------
 real function BClifetime(ptr)
 type (cog_type), pointer :: ptr
-integer :: gen, stage, region
+integer :: gen, stage
 real :: p1, p2
 integer :: kpar = 0
 
 BClifetime = BIG_TIME
 return
 
-!stage = get_stage(ptr)
-call get_stage(ptr,stage,region)
+!call get_stage(ptr,stage,region)
+stage = get_stage(ptr)
 if (stage == NAIVE) then
     BClifetime = BIG_TIME
     return
@@ -576,16 +576,17 @@ end subroutine
 ! and removed from occupancy()%indx()
 ! The count of sites to add is decremented, for later adjustment of the blob size.
 !-----------------------------------------------------------------------------------------
-subroutine Bcell_death(kcell)
+subroutine BcellDeath(kcell)
 integer :: kcell
 integer :: k, idc, site(3), indx(2), ctype, stype, region
 logical :: cognate
 
-write(logmsg,*) 'Bcell_death: ',kcell
+write(logmsg,*) 'BcellDeath: ',kcell
 call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
 if (cognate) then
-	call get_region(cellist(kcell)%cptr,region)
+!	call get_region(cellist(kcell)%cptr,region)
+	region = get_region(cellist(kcell)%cptr)
 endif
 
 cellist(kcell)%ID = 0
@@ -598,7 +599,7 @@ if (stype == COG_TYPE_TAG) then
 endif
 ngaps = ngaps + 1
 if (ngaps > max_ngaps) then
-    write(logmsg,*) 'Bcell_death: ngaps > max_ngaps'
+    write(logmsg,*) 'BcellDeath: ngaps > max_ngaps'
     call logger(logmsg)
     stop
 endif
@@ -613,7 +614,7 @@ if (indx(1) == kcell) then
 elseif (indx(2) == kcell) then
     occupancy(site(1),site(2),site(3))%indx(2) = 0
 else
-    write(logmsg,*) 'ERROR: Bcell_death: cell not at site: ',kcell,site,indx
+    write(logmsg,*) 'ERROR: BcellDeath: cell not at site: ',kcell,site,indx
     call logger(logmsg)
     stop
 endif
@@ -629,7 +630,7 @@ endif
 if (use_add_count) then
     nadd_sites = nadd_sites - 1
 else
-    write(logmsg,*) 'Bcell_death: No site removal code, use add count'
+    write(logmsg,*) 'BcellDeath: No site removal code, use add count'
     call logger(logmsg)
     stop
 endif
@@ -645,14 +646,13 @@ end subroutine
 subroutine cell_division(kcell,site2,freeslot,ok)
 integer :: kcell, site2(3), freeslot
 logical :: ok
-integer :: icnew, ctype, gen, region, site(3), indx(2)
+integer :: icnew, ctype, gen, region, status, site(3), indx(2)
 integer :: iseq, tag, kfrom, kto
-real :: tnow
+real :: tnow, prob_gcc, prob_plasma
 type(cog_type), pointer :: p1, p2
 !real :: IL_state(CYT_NP)
 integer :: kpar = 0
 real(DP) :: R
-logical :: germinal
 
 !write(*,*) 'cell_division: ',kcell
 ok = .true.
@@ -660,7 +660,8 @@ tnow = istep*DELTA_T
 !call show_cognate_cell(kcell)
 p1 => cellist(kcell)%cptr
 gen = get_generation(p1)
-call get_region(p1,region)
+!call get_region(p1,region)
+region = get_region(p1)
 !write(*,*) 'cell_division: ',kcell,gen,istep,tnow
 if (gen == BC_MAX_GEN) then
     write(logmsg,*) 'cell_division: reached maximum generation: ',kcell
@@ -692,16 +693,22 @@ endif
 cellist(kcell)%lastdir = random_int(1,6,kpar)
 gen = gen + 1
 call set_generation(p1,gen)
-germinal = p1%germinal
-if (.not.germinal) then
+status = get_status(p1)
+if (status == BCL6_LO) then
+	prob_gcc = get_GccProb(gen)
+	prob_plasma = get_PlasmaProb(gen) 
 	R = par_uni(kpar)	
-	if (R < GCC_PROB) then
-		p1%germinal = .true.
+	if (R > prob_gcc + prob_plasma) then
+		call set_stage(p1,DIVIDING)
+		p1%stagetime = tnow + DivisionTime()
+	elseif (R < prob_gcc) then
+		call set_status(p1,BCL6_HI)
 		call set_stage(p1,GCC_COMMIT)
 		p1%stagetime = tnow
 	else
-		call set_stage(p1,DIVIDING)
-		p1%stagetime = tnow + DivisionTime()
+		call set_status(p1,PLASMA)
+		call set_stage(p1,PLASMA)
+		p1%stagetime = tnow
 	endif
 else
 	call set_stage(p1,DIVIDING)
@@ -726,19 +733,27 @@ if (.not.ok) return
 p2 => cellist(icnew)%cptr
 
 p2%stimulation = p1%stimulation
-p2%status = p1%status
+p2%generation = p1%generation
+p2%region = p1%region
 cellist(icnew)%entrytime = tnow
-if (.not.germinal) then
+if (status == BCL6_LO) then
+	prob_gcc = get_GccProb(gen)
+	prob_plasma = get_PlasmaProb(gen) 
 	R = par_uni(kpar)	
-	if (R < GCC_PROB) then
-		p2%germinal = .true.
+	if (R > prob_gcc + prob_plasma) then
+		call set_stage(p2,DIVIDING)
+		p2%stagetime = tnow + DivisionTime()
+	elseif (R < prob_gcc) then
+		call set_status(p2,BCL6_HI)
 		call set_stage(p2,GCC_COMMIT)
 		p2%stagetime = tnow
 	else
-		call set_stage(p2,DIVIDING)
-		p2%stagetime = tnow + DivisionTime()
+		call set_status(p2,PLASMA)
+		call set_stage(p2,PLASMA)
+		p2%stagetime = tnow
 	endif
 else
+	call set_status(p2,status)
 	call set_stage(p2,DIVIDING)
 	p2%stagetime = tnow + DivisionTime()
 endif
@@ -785,9 +800,11 @@ elseif (stype == COG_TYPE_TAG) then
     endif
     param1 = log(BC_AVIDITY_MEDIAN)
     param2 = log(BC_AVIDITY_SHAPE)
-    cell%cptr%status = 0
+!    cell%cptr%status = 0
     call set_generation(cell%cptr,gen)
-    call set_stage_region(cell%cptr,stage,region)
+!    call set_stage_region(cell%cptr,stage,region)
+	call set_stage(cell%cptr,stage)
+	call set_region(cell%cptr,region)
     if (fix_avidity) then
         i = mod(navid,avidity_nlevels)
         navid = navid + 1
@@ -796,7 +813,7 @@ elseif (stype == COG_TYPE_TAG) then
         cell%cptr%avidity = rv_lognormal(param1,param2,kpar)
     endif
     cell%cptr%stimulation = 0
-    cell%cptr%germinal = .false.
+    cell%cptr%status = BCL6_LO	! default
 !    if (use_cytokines) then
 !        call IL2_init_state(cell%cptr%IL_state,cell%cptr%IL_statep)
 !    endif
@@ -979,6 +996,31 @@ if (dbug) write(*,'(a,7i6)') 'site, vacant site: ',site,newsite
 
 end subroutine
 
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+real function get_GccProb(gen)
+integer :: gen
+
+if (gen <= 2) then
+	get_GccProb = 0
+elseif (gen == 3) then
+	get_GccProb = 0.1
+else
+	get_GccProb = 0.3
+endif
+end function
+
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+real function get_PlasmaProb(gen)
+integer :: gen
+
+if (gen <= 3) then
+	get_PlasmaProb = 0
+else
+	get_PlasmaProb = PLASMA_PROB
+endif
+end function
 
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
@@ -1009,7 +1051,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 ! Initial cell position data is loaded into occupancy() and cellist().
 !-----------------------------------------------------------------------------------------
-subroutine placeCells(ok)
+subroutine PlaceCells(ok)
 logical :: ok
 integer :: id, cogid, x, y, z, site(3), ctype
 integer :: idc, kdc, k, x2, y2, z2, gen, stage, region
@@ -1047,20 +1089,22 @@ enddo
 !
 ! Note: For T cells, needed to account for DCs with cognate and non-cognate antigen.
 !
-NDC = 0
-NDCalive = 0
-if (BC_TO_DC > 0) then   ! DC placement needs to be checked to account for SOI overlap
-    NDC = nlist/real(BC_TO_DC)
+NFDC = 0
+NFDCalive = 0
+if (BC_TO_FDC > 0) then   ! DC placement needs to be checked to account for SOI overlap
+    NFDC = nlist/real(BC_TO_FDC)
+    write(*,*) 'PlaceCells: nlist,BC_TO_FDC,NFDC: ',nlist,BC_TO_FDC,NFDC
+    
 !    NDCtotal = NDC
-    if (NDC > MAX_DC) then
-        write(logmsg,'(a,i6)') 'Error: placeCells: NDC exceeds MAX_DC: ',MAX_DC
+    if (NFDC > MAX_FDC) then
+        write(logmsg,'(a,i6)') 'Error: placeCells: NFDC exceeds MAX_FDC: ',MAX_FDC
         call logger(logmsg)
 		ok = .false.
         return
     endif
     p1 = log(DC_ANTIGEN_MEDIAN)
     p2 = log(DC_ANTIGEN_SHAPE)
-    do idc = 1,NDC
+    do idc = 1,NFDC
         do
             R = par_uni(kpar)
             x = 1 + R*NX
@@ -1069,30 +1113,31 @@ if (BC_TO_DC > 0) then   ! DC placement needs to be checked to account for SOI o
             R = par_uni(kpar)
 	        z = 1 + R*NZ
             site = (/x,y,z/)
-            if (occupancy(x,y,z)%indx(1) < 0) cycle     ! OUTSIDE_TAG or DC
+            if (occupancy(x,y,z)%indx(1) < 0) cycle     ! OUTSIDE_TAG or FDC
             kdc = idc-1
-            if (tooNearDC(site,kdc,DC_DCprox*DCRadius)) cycle
-            prox = bdry_DCprox*DCRadius
+            if (tooNearFDC(site,kdc,DC_DCprox*FDCRadius)) cycle
+            prox = bdry_FDCprox*FDCRadius
             if (.not.tooNearBdry(site,prox)) then
                 exit
             endif
         enddo
-        DClist(idc)%ID = idc
-        DClist(idc)%site = site
-        DClist(idc)%nsites = 1
+        FDClist(idc)%ID = idc
+        FDClist(idc)%site = site
+        FDClist(idc)%nsites = 1
 !	    DClist(idc)%dietime = tnow + DClifetime(kpar)
-	    DClist(idc)%alive = .true.
-	    DClist(idc)%stimulation = 0
-	    DClist(idc)%capable = .true.
+	    FDClist(idc)%alive = .true.
+!	    DClist(idc)%stimulation = 0
+!	    DClist(idc)%capable = .true.
 !        DClist(idc)%density = DCdensity(kpar)
-		write(logmsg,*) 'DC site: ',idc,site
+		write(logmsg,*) 'FDC site: ',idc,site
 		call logger(logmsg)
     enddo
-    NDCalive = NDC
-    do idc = 1,NDC
-		call assignDCsites(idc,nassigned,ok)
+    NFDCalive = NFDC
+    write(*,*) 'PlaceCells: NFDC: ',NFDC
+    do idc = 1,NFDC
+		call assignFDCsites(idc,nassigned,ok)
 		if (.not.ok) return
-        DClist(idc)%nsites = nassigned
+        FDClist(idc)%nsites = nassigned
         nlist = nlist - nassigned
 !		site = DClist(idc)%site
 !		xdc = site(1)
@@ -1140,9 +1185,9 @@ if (BC_TO_DC > 0) then   ! DC placement needs to be checked to account for SOI o
 !	        enddo
 !        enddo
     enddo
-    call check_DCproximity
+!    call check_DCproximity
 endif
-write(logmsg,'(a,2i6)') 'Number of DCs, B cells: ',NDC,nlist
+write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nlist
 call logger(logmsg)
 
 nzlim = NZ
@@ -1399,7 +1444,7 @@ do
 	xex = site(1)
 	yex = site(2)
 	zex = site(3)
-	prox = exit_prox*chemo_N				! chemo_N is chemo_radius in units of sites
+!	prox = exit_prox*chemo_N				! chemo_N is chemo_radius in units of sites
 	prox = 0.5*prox
 	if (tooNearExit(site,prox)) then	! too near another exit
 		cycle
@@ -1767,7 +1812,7 @@ real :: r(3), d, dmin, f(3), df(3)
 logical :: ok = .true.
 real :: dlim
 
-dlim = exit_prox*chemo_radius
+!dlim = exit_prox*chemo_radius
 dmin = 1.0e10
 do iexit1 = 1,Lastexit
 	if (exitlist(iexit1)%ID == 0) cycle
@@ -1851,19 +1896,29 @@ end subroutine
 !--------------------------------------------------------------------------------------
 
 !---------------------------------------------------------------------
-! Updates T cell state, and DC %stimulation (for use in modifying
-! %density in update_DCstate).
+! For cognate cells, updates T cell state, and DC %stimulation 
+! (for use in modifying %density in update_DCstate).
+!
+! Treatment of cell death
+!------------------------
+! There are two possibilities:
+! (1) Specify a time-to-die for each cell (i.e. on cell division)
+! (2) Use a probability of death in every time step (i.e. a rate of death)
+! Previously (1) was implemented.  Now implement (2) for activated
+! cognate cells, BCL6lo and BCL6hi, with generation-dependent rates.
 !---------------------------------------------------------------------
 subroutine updater(ok)
 logical :: ok
-integer :: kcell, stage, region, iseq, tag, kfrom, kto, k, ncog, ntot
+integer :: kcell, stage, iseq, tag, kfrom, kto, k, ncog, ntot
 integer :: site(3), site2(3), freeslot, indx(2), status, DC(2), idc
 integer :: tmplastcogID
 !real :: C(N_CYT), mrate(N_CYT)
 real :: tnow, dstim, S, cyt_conc, mols_pM, Ctemp, dstimrate, stimrate
-real :: t1, t2
+real :: t1, t2, die_prob
 logical :: divide_flag, producing, first, dbg, unbound, flag, flag1
 !logical, save :: first = .true.
+real(DP) :: R
+integer :: kpar = 0
 type (cog_type), pointer :: p
 
 !write(*,*) 'updater: ',me
@@ -1895,13 +1950,20 @@ do k = 1,tmplastcogID
 	    call logger(logmsg)
         stop
     endif
-    call get_region(p,region)
+
 	! Cell death
-    if (tnow > p%dietime) then
-        call Bcell_death(kcell)
+!    if (tnow > p%dietime) then
+!        call BcellDeath(kcell)
+!        cycle
+!    endif
+	die_prob = DeathProbability(p)
+	R = par_uni(kpar)
+	if (R < die_prob) then
+        call BcellDeath(kcell)
         cycle
     endif
-	call get_stage(p,stage,region)
+
+	stage = get_stage(p)
 	if (stage == ANTIGEN_MET) then
 		t2 = p%stagetime
 		t1 = t2 - T_CCR7_UP
@@ -1950,15 +2012,15 @@ subroutine updatestage(kcell,tnow,divide_flag)
 integer :: kcell
 logical :: divide_flag
 real :: tnow
-integer :: stage, region, gen, ctype, site(3)
+integer :: stage, gen, ctype, site(3)
 real :: stagetime
 type(cog_type), pointer :: p
 
 divide_flag = .false.
 site = cellist(kcell)%site
 p => cellist(kcell)%cptr
-!stage = get_stage(p)
-call get_stage(p,stage,region)
+!call get_stage(p,stage,region)
+stage = get_stage(p)
 if (stage == FINISHED) return
 ctype = cellist(kcell)%ctype
 stagetime = p%stagetime
@@ -2051,5 +2113,24 @@ if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 endif
 end function
 
+!--------------------------------------------------------------------------------------
+! The death probability in a time step depends on status (BCL6_LO, BCL6_HI, PLASMA)
+! and generation.
+!--------------------------------------------------------------------------------------
+real function DeathProbability(p)
+type(cog_type), pointer :: p
+integer :: status, gen
+
+status = get_status(p)
+if (status == PLASMA) then
+	DeathProbability = 0
+elseif (status == BCL6_LO) then
+	gen = min(get_generation(p),MMAX_GEN)
+	DeathProbability = Kdeath_lo(gen)
+elseif (status == BCL6_HI) then
+	gen = min(get_generation(p),MMAX_GEN)
+	DeathProbability = Kdeath_hi(gen)
+endif
+end function
 
 end module
