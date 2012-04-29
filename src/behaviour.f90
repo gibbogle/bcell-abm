@@ -39,6 +39,7 @@ subroutine setup_dists
 !real :: life_median1 = 48, life_median2 = 24
 !real :: life_median1 = 196, life_median2 = 196      !<------------- Note: hard-coded values
 !real :: life_shape1 = 1.5, life_shape2 = 1.4
+real :: T_half_lo, T_half_hi
 integer :: i
 
 !life_dist(1)%class = EXPONENTIAL_DIST
@@ -59,8 +60,6 @@ do i = 2,BC_MAX_GEN
 	life_dist(i)%p1 = log(60*BC_life_median2)
 	life_dist(i)%p2 = log(BC_life_shape)
 enddo
-
-
 divide_dist(1)%class = divide_dist1%class
 divide_dist(1)%p1 = divide_dist1%p1
 divide_dist(1)%p2 = divide_dist1%p2
@@ -73,6 +72,11 @@ do i = 3,BC_MAX_GEN
 	divide_dist(i)%p2 = divide_dist(2)%p2
 enddo
 
+! B cell death rates, from half-lifes
+T_half_lo = 10*24*60.   ! 10 days in minutes
+T_half_hi = 2*24*60.    ! 1 day in minutes
+Kdeath_lo(:) = log(2.)/T_half_lo    ! rate constant
+Kdeath_hi(:) = log(2.)/T_half_hi    ! rate constant
 end subroutine
 
 !--------------------------------------------------------------------------------------
@@ -581,8 +585,8 @@ integer :: kcell
 integer :: k, idc, site(3), indx(2), ctype, stype, region
 logical :: cognate
 
-write(logmsg,*) 'BcellDeath: ',kcell
-call logger(logmsg)
+!write(logmsg,*) 'BcellDeath: ',kcell
+!call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
 if (cognate) then
 !	call get_region(cellist(kcell)%cptr,region)
@@ -1943,6 +1947,10 @@ tnow = istep*DELTA_T
 tmplastcogID = lastcogID
 do k = 1,tmplastcogID
     kcell = cognate_list(k)
+    if (kcell == 0) then
+!        write(*,*) 'updater: kcell = 0: ',k,tmplastcogID
+        cycle
+    endif
     ncog = ncog + 1
     p => cellist(kcell)%cptr
     if (.not.associated(p)) then
@@ -2126,10 +2134,10 @@ if (status == PLASMA) then
 	DeathProbability = 0
 elseif (status == BCL6_LO) then
 	gen = min(get_generation(p),MMAX_GEN)
-	DeathProbability = Kdeath_lo(gen)
+	DeathProbability = Kdeath_lo(gen)*DELTA_T
 elseif (status == BCL6_HI) then
 	gen = min(get_generation(p),MMAX_GEN)
-	DeathProbability = Kdeath_hi(gen)
+	DeathProbability = Kdeath_hi(gen)*DELTA_T
 endif
 end function
 

@@ -1108,7 +1108,7 @@ end subroutine
 subroutine CellExit(kcell,slot,esite)
 integer :: kcell, slot, esite(3)
 !logical :: left
-integer :: x, y, z, ctype, gen, stage, region
+integer :: x, y, z, ctype, gen, stage, region, status
 real :: tnow
 logical :: cognate, activated
 type(cog_type), pointer :: p
@@ -1122,6 +1122,7 @@ elseif (associated(cellist(kcell)%cptr)) then
     p => cellist(kcell)%cptr
 !	call get_stage(p,stage,region)
 	stage = get_stage(p)
+	status = get_status(p)
     gen = get_generation(p)
     ctype = cellist(kcell)%ctype
 !    if (.not.exitOK(p,ctype)) then
@@ -1147,14 +1148,14 @@ else
 endif
 NBcells = NBcells - 1
 if (cognate) then
-    if (.not.evaluate_residence_time .and. activated) then
-		call efferent(p,ctype)
-	endif
+!    if (.not.evaluate_residence_time .and. activated) then
+!		call efferent(p,ctype)
+!	endif
 	ngaps = ngaps + 1
 	gaplist(ngaps) = kcell
 	cellist(kcell)%ID = 0
     cognate_list(p%cogID) = 0
-    write(logmsg,*) 'CellExit: cognate cell left: ',kcell
+    write(logmsg,'(a,3i6)') 'CellExit: cognate cell left: status,stage: ',kcell,status,stage
     call logger(logmsg)
 else
 	ngaps = ngaps + 1
@@ -2906,6 +2907,7 @@ if (allocated(occupancy)) deallocate(occupancy)
 if (allocated(Tres_dist)) deallocate(Tres_dist)
 if (allocated(cellist)) deallocate(cellist,stat=ierr)
 if (allocated(DClist)) deallocate(DClist,stat=ierr)
+if (allocated(FDClist)) deallocate(FDClist,stat=ierr)
 if (ierr /= 0) then
     write(*,*) 'cellist deallocate error: ',ierr
     stop
