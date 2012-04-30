@@ -195,7 +195,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Range of chemotactic influence of an exit site on B cell motion.  At this distance the influence is reduced to 5% of its maximum value.\n\
 [um]"},
 
-{"BASE_EXIT_PROB", 0.0063, 0.0, 0.0,
+{"BASE_EXIT_PROB", 0.008, 0.0, 0.0,
 "Base B cell exit probability",
 "A cell located at a boundary site on the lower exit surface has a probability of egress in a time step.\n\
 The specified probability applies to residence time Tres = 12 hr, and will be scaled appropriately for a different Tres value."},
@@ -213,7 +213,7 @@ The specified probability applies to residence time Tres = 12 hr, and will be sc
 "Second RNG seed",
 "The random number generator is seeded by a pair of integers.  Changing the seed generates a different Monte Carlo realization."},
 
-{"NCPU", 1, 1, 8,
+{"NCPU", 3, 1, 8,
 "Number of CPUs",
 "Number of CPUs to use for the simulation."},
 

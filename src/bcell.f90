@@ -42,6 +42,7 @@
 module main_mod
 use global
 use behaviour
+use ode_diffuse
 use FDC
 use fields
 use winsock
@@ -187,17 +188,6 @@ totalres%N_EffCogTC = 0
 totalres%N_EffCogTCGen = 0
 totalres%N_dead = 0
 totalres%dN_dead = 0
-
-if (optionA == 1 .and. .not.use_cytokines) then
-    write(logmsg,*) 'optionA == 1 => use_cytokines must be true'
-    call logger(logmsg)
-    stop
-endif
-if (optionC == 1 .and. .not.use_cytokines) then
-    write(logmsg,*) 'optionC == 1 => use_cytokines must be true'
-    call logger(logmsg)
-    stop
-endif
 
 if (evaluate_residence_time) then
     allocate(Tres_dist(int(days*24)))
@@ -2392,18 +2382,18 @@ end subroutine
 
 !-------------------------------------------------------------------------------- 
 !--------------------------------------------------------------------------------
-subroutine get_scene(nTC_list,TC_list,nDC_list,DC_list,nbond_list,bond_list) BIND(C)
+subroutine get_scene(nBC_list,BC_list,nFDC_list,FDC_list,nbond_list,bond_list) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_scene
 use, intrinsic :: iso_c_binding
 !integer(c_int) :: nmono_list, mono_list(*), ncap_list, npit_list, nclast_list
 !real(c_float) :: cap_list(*), pit_list(*), clast_list(*)
-integer(c_int) :: nDC_list, nTC_list, nbond_list, DC_list(*), TC_list(*), bond_list(*)
-integer :: k, kc, kcell, site(3), j, jb, idc, dcsite(3)
+integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond_list(*)
+integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
 integer :: x, y, z
 real :: dcstate
-integer :: idcstate, itcstate, stype, ctype, stage, region
+integer :: ifdcstate, ibcstate, stype, ctype, stage, region
 real :: bcell_diam = 0.9
-real :: DC_diam = 1.8
+real :: FDC_diam = 1.8
 integer :: gen, bnd(2)
 integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
 integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
@@ -2418,50 +2408,50 @@ do k = 1,7
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
-		itcstate = axis_centre
+		ibcstate = axis_centre
 	case (2)
 		x = Centre(1) - aRadius - 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
-		itcstate = axis_end
+		ibcstate = axis_end
 	case (3)
 		x = Centre(1) + aRadius + 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
-		itcstate = axis_end
+		ibcstate = axis_end
 	case (4)
 		x = Centre(1) + 0.5
 		y = Centre(2) - bRadius - 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
-		itcstate = axis_bottom
+		ibcstate = axis_bottom
 	case (5)
 		x = Centre(1) + 0.5
 		y = Centre(2) + bRadius + 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
-		itcstate = axis_end
+		ibcstate = axis_end
 	case (6)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) - bRadius - 2
 		site = (/x, y, z/)
-		itcstate = axis_end
+		ibcstate = axis_end
 	case (7)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) + bRadius + 2
 		site = (/x, y, z/)
-		itcstate = axis_end
+		ibcstate = axis_end
 	end select
 	j = 5*(k-1)
-	TC_list(j+1) = k-1
+	BC_list(j+1) = k-1
 !	write(logmsg,*) 'cell list #: ',j+1,k-1,site
 !	call logger(logmsg)
-	TC_list(j+2:j+4) = site
-	TC_list(j+5) = itcstate
+	BC_list(j+2:j+4) = site
+	BC_list(j+5) = ibcstate
 enddo
 k = k-1
 
@@ -2469,7 +2459,6 @@ k = k-1
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
 	if (kcell > 0) then
-!		call get_stage(cellist(kcell)%cptr,stage,region)
 		stage = get_stage(cellist(kcell)%cptr)
 		region = get_region(cellist(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
@@ -2477,39 +2466,36 @@ do kc = 1,lastcogID
 		j = 5*(k-1)
 		site = cellist(kcell)%site
 		gen = get_generation(cellist(kcell)%cptr)
-		itcstate = gen
-		! Need tcstate to convey non-activated status, i.e. 0 = non-activated
-		TC_list(j+1) = kc-1 + 7
+		ibcstate = gen
+		! Need bcstate to convey non-activated status, i.e. 0 = non-activated
+		BC_list(j+1) = kc-1 + 7
 !	write(logmsg,*) 'cell list #: ',j+1,kc-1+7,site
 !	call logger(logmsg)
-		TC_list(j+2:j+4) = site
-		TC_list(j+5) = itcstate
+		BC_list(j+2:j+4) = site
+		BC_list(j+5) = ibcstate
 	endif
 enddo
-nTC_list = k
+nBC_list = k
 
-! DC section
-nDC_list = 0
-if (NDC > 0) then
+! FDC section
+nFDC_list = 0
+if (NFDC > 0) then
 	k = 0
-    do kcell = 1,NDC
-        if (DClist(kcell)%alive) then
+    do kcell = 1,NFDC
+        if (FDClist(kcell)%alive) then
 			k = k+1
 			j = 5*(k-1)
-            site = DClist(kcell)%site
-!            dcstate = min(1.0,DClist(kcell)%density/DC_ANTIGEN_MEDIAN)
-			dcstate = 0.5
-            idcstate = 100*dcstate
-            ! Need dcstate to convey antigen density level (normalized to 0-1)
-!            write(nfpos,'(a2,i4,3i4,f4.1,f5.2)') 'D ',k-1, site, DC_diam, dcstate
-			DC_list(j+1) = kcell-1
-			DC_list(j+2:j+4) = site
-			DC_list(j+5) = idcstate
+            site = FDClist(kcell)%site
+            ifdcstate = 100
+			FDC_list(j+1) = kcell-1
+			FDC_list(j+2:j+4) = site
+			FDC_list(j+5) = ifdcstate
         endif
     enddo
-    nDC_list = k
+    nFDC_list = k
 endif
-
+write(logmsg,*) 'nFDC_list: ',nFDC_list
+call logger(logmsg)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2842,13 +2828,13 @@ if (.not.ok) return
 call CreateBdryList
 
 NXcells = 0
-if (use_portal_egress) then
-    call placeExits
+!if (use_portal_egress) then
+!    call placeExits
 !	call adjustExits
-else
+!else
     Nexits = 0
     Lastexit = 0
-endif
+!endif
 check_inflow = 0
 check_egress = 0
 last_portal_update_time = -999
@@ -2881,6 +2867,7 @@ if (save_input) then
     call save_parameters
 	call save_inputfile(fixedfile)
 endif
+
 call InitFields
 
 firstSummary = .true.

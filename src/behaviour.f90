@@ -82,6 +82,7 @@ end subroutine
 !--------------------------------------------------------------------------------------
 ! If a cognate cell is NAIVE it is long-lived - effectively it does not die.
 ! When a cognate cell has contact with a cognate DC its lifetime is immediately limited.
+! NOTE: This is not used.  For Bcells we are using death rates (see DeathProbability())
 !--------------------------------------------------------------------------------------
 real function BClifetime(ptr)
 type (cog_type), pointer :: ptr
@@ -326,23 +327,23 @@ read(nfcell,*) Inflammation_level	        ! This is the level of inflammation
 read(nfcell,*) iuse(S1PR1)
 read(nfcell,*) iuse(S1PR2)
 read(nfcell,*) chemo(S1P)%bdry_conc
-read(nfcell,*) chemo(S1P)%diff_coeff
+read(nfcell,*) chemo(S1P)%diff_coef
 read(nfcell,*) chemo(S1P)%halflife
 read(nfcell,*) receptor(S1PR1)%strength
 read(nfcell,*) receptor(S1PR2)%strength
 read(nfcell,*) iuse(CCR7)
 read(nfcell,*) chemo(CCL21)%bdry_conc
-read(nfcell,*) chemo(CCL21)%diff_coeff
+read(nfcell,*) chemo(CCL21)%diff_coef
 read(nfcell,*) chemo(CCL21)%halflife
 read(nfcell,*) receptor(CCR7)%strength
 read(nfcell,*) iuse(EBI2)
 read(nfcell,*) chemo(OXY)%bdry_conc
-read(nfcell,*) chemo(OXY)%diff_coeff
+read(nfcell,*) chemo(OXY)%diff_coef
 read(nfcell,*) chemo(OXY)%halflife
 read(nfcell,*) receptor(EBI2)%strength
 read(nfcell,*) iuse(CXCR5)
 read(nfcell,*) chemo(CXCL13)%bdry_conc
-read(nfcell,*) chemo(CXCL13)%diff_coeff
+read(nfcell,*) chemo(CXCL13)%diff_coef
 read(nfcell,*) chemo(CXCL13)%halflife
 read(nfcell,*) receptor(CXCR5)%strength
 !read(nfcell,*) VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
@@ -516,10 +517,9 @@ write(nfout,*) 'use_add_count: ',use_add_count
 write(nfout,*) 'use_traffic: ',use_traffic
 write(nfout,*) 'use_chemotaxis: ',use_chemotaxis
 write(nfout,*) 'computed_outflow: ',computed_outflow
-write(nfout,*) 'use_cytokines: ',use_cytokines
 write(nfout,*) 'use_cognate: ',use_cognate
 write(nfout,*) 'random_cognate: ',random_cognate
-write(nfout,*) 'use_diffusion: ',use_diffusion
+write(nfout,*) 'use_ode_diffuse: ',use_ode_diffuse
 write(nfout,*) 'NGEN_EXIT: ',NGEN_EXIT
 write(nfout,*) 'NDIFFSTEPS: ',NDIFFSTEPS
 write(nfout,*) 'VEGF_MODEL: ',VEGF_MODEL
@@ -568,7 +568,7 @@ do i = 1,MAX_CHEMO
 	endif
 	write(nfout,'(a,i2,2x,a,4x,a)') 'Chemokine: ',i,q%name,usage
 	write(nfout,'(a,f8.1)') 'Boundary conc: ',q%bdry_conc
-	write(nfout,'(a,f8.1)') 'Diffusion coeff: ',q%diff_coeff
+	write(nfout,'(a,f8.1)') 'Diffusion coeff: ',q%diff_coef
 	write(nfout,'(a,f8.1)') 'Halflife: ',q%halflife
 	write(nfout,'(a,f8.4)') 'Decay rate: ',q%decay_rate
 enddo
@@ -1066,7 +1066,7 @@ integer, allocatable :: permc(:)
 logical :: added, done
 integer :: kpar = 0
 
-write(logmsg,*) 'placeCells: ',NX,NY,NZ
+write(logmsg,*) 'PlaceCells: ',NX,NY,NZ
 call logger(logmsg)
 ok = .false.
 
@@ -1078,10 +1078,11 @@ do x = 1,NX
     do y = 1,NY
 	    do z = 1,NZ
             occupancy(x,y,z)%indx = 0
-            occupancy(x,y,z)%exitnum = 0
+            occupancy(x,y,z)%FDC_nbdry = 0
+!            occupancy(x,y,z)%exitnum = 0
             nullify(occupancy(x,y,z)%bdry)
             site = (/x,y,z/)
-			if (.not.insideEllipsoid(site)) then
+			if (.not.InsideEllipsoid(site)) then
 				occupancy(x,y,z)%indx = OUTSIDE_TAG
 			else
 			    nlist = nlist+1
@@ -1090,109 +1091,8 @@ do x = 1,NX
     enddo
 enddo
 
-!
-! Note: For T cells, needed to account for DCs with cognate and non-cognate antigen.
-!
-NFDC = 0
-NFDCalive = 0
-if (BC_TO_FDC > 0) then   ! DC placement needs to be checked to account for SOI overlap
-    NFDC = nlist/real(BC_TO_FDC)
-    write(*,*) 'PlaceCells: nlist,BC_TO_FDC,NFDC: ',nlist,BC_TO_FDC,NFDC
-    
-!    NDCtotal = NDC
-    if (NFDC > MAX_FDC) then
-        write(logmsg,'(a,i6)') 'Error: placeCells: NFDC exceeds MAX_FDC: ',MAX_FDC
-        call logger(logmsg)
-		ok = .false.
-        return
-    endif
-    p1 = log(DC_ANTIGEN_MEDIAN)
-    p2 = log(DC_ANTIGEN_SHAPE)
-    do idc = 1,NFDC
-        do
-            R = par_uni(kpar)
-            x = 1 + R*NX
-            R = par_uni(kpar)
-            y = 1 + R*NY
-            R = par_uni(kpar)
-	        z = 1 + R*NZ
-            site = (/x,y,z/)
-            if (occupancy(x,y,z)%indx(1) < 0) cycle     ! OUTSIDE_TAG or FDC
-            kdc = idc-1
-            if (tooNearFDC(site,kdc,DC_DCprox*FDCRadius)) cycle
-            prox = bdry_FDCprox*FDCRadius
-            if (.not.tooNearBdry(site,prox)) then
-                exit
-            endif
-        enddo
-        FDClist(idc)%ID = idc
-        FDClist(idc)%site = site
-        FDClist(idc)%nsites = 1
-!	    DClist(idc)%dietime = tnow + DClifetime(kpar)
-	    FDClist(idc)%alive = .true.
-!	    DClist(idc)%stimulation = 0
-!	    DClist(idc)%capable = .true.
-!        DClist(idc)%density = DCdensity(kpar)
-		write(logmsg,*) 'FDC site: ',idc,site
-		call logger(logmsg)
-    enddo
-    NFDCalive = NFDC
-    write(*,*) 'PlaceCells: NFDC: ',NFDC
-    do idc = 1,NFDC
-		call assignFDCsites(idc,nassigned,ok)
-		if (.not.ok) return
-        FDClist(idc)%nsites = nassigned
-        nlist = nlist - nassigned
-!		site = DClist(idc)%site
-!		xdc = site(1)
-!		ydc = site(2)
-!		zdc = site(3)
-!		xmin = xdc - DCRadius
-!        xmax = xdc + DCRadius
-!        ymin = ydc - DCRadius
-!        ymax = ydc + DCRadius
-!        zmin = zdc - DCRadius
-!        zmax = zdc + DCRadius
-!        xmin = max(1,xmin)
-!        xmax = min(NX,xmax)
-!        ymin = max(1,ymin)
-!        ymax = min(NY,ymax)
-!        zmin = max(1,zmin)
-!        zmax = min(NZ,zmax)
-!        do x = xmin,xmax
-!	        x2 = (x-xdc)*(x-xdc)
-!	        do y = ymin,ymax
-!		        y2 = (y-ydc)*(y-ydc)
-!		        do z = zmin,zmax
-!			        z2 = (z-zdc)*(z-zdc)
-!			        d2 = x2 + y2 + z2
-!			        added = .false.
-!					! The following procedure is correct only if DCRadius <= chemo_radius
-!			        if (d2 <= DCRadius*DCRadius) then
-!			            kdc = occupancy(x,y,z)%DC(0)
-!				        if (kdc < 0) cycle   ! don't touch a DC site
-!			            if (kdc < DCDIM-1) then     ! can add to the list
-!			                kdc = kdc + 1
-!			                occupancy(x,y,z)%DC(0) = kdc
-!			                occupancy(x,y,z)%DC(kdc) = idc
-!			                added = .true.
-!				        endif
-!				    endif
-!!			        if (.not.added .and. (d2 <= chemo_radius*chemo_radius)) then
-!!			            kdc = occupancy(x,y,z)%cDC(0)
-!!			            if (kdc == cDCDIM-1) cycle     ! can add no more to the list
-!!		                kdc = kdc + 1
-!!		                occupancy(x,y,z)%cDC(0) = kdc
-!!		                occupancy(x,y,z)%cDC(kdc) = idc
-!!			        endif
-!		        enddo
-!	        enddo
-!        enddo
-    enddo
-!    call check_DCproximity
-endif
-write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nlist
-call logger(logmsg)
+call placeFDCs(ok)
+if (.not.ok) stop
 
 nzlim = NZ
 allocate(permc(nlist))
@@ -1318,79 +1218,7 @@ endif
 !requiredExitPortals = requiredExitPortals/base_exit_prob
 end function
 
-!---------------------------------------------------------------------
-! Sites within the SOI of an exit are labelled with %exitnum, unless
-! the site is also within the SOI of another exit, in which case the
-! site is labelled with the exit index of the nearest exit, or in
-! the case of a tie the choice is made randomly.
-! When a site is an exit portal location (centre), %exitnum = -(the exit index)
-! Note:
-! When the blob grows, more exits will be added, and when the blob
-! shrinks again exits must be removed.  When an exit is removed from
-! the blob we set exitlist(iexit)%ID = 0, and all sites within the SOI
-! must have %exitnum either set to 0 or, if within the SOI of another
-! exit, set to the ID of the nearest exit.
-!---------------------------------------------------------------------
-subroutine placeExits
-integer :: Nex, iexit, site(3)
 
-Lastexit = 0
-Nexits = 0
-if (use_traffic) then
-	Nex = requiredExitPortals(NBcells0)
-    max_exits = 10*Nex
-    write(logmsg,*) 'NBcells0, Nex, max_exits: ',NBcells0,Nex,max_exits
-    call logger(logmsg)
-    allocate(exitlist(max_exits))       ! Set the array size to 10* the initial number of exits
-else
-    Nex = 0
-    write(logmsg,*) 'No exits'
-    call logger(logmsg)
-    return
-endif
-do iexit = 1,Nex
-	call addExitPortal
-enddo
-write(logmsg,*) 'Number of exit portals: ',Nex
-call logger(logmsg)
-end subroutine
-
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-subroutine getExitNum(iexit)
-integer :: iexit
-integer :: i
-
-iexit = 0
-! First look for an unused index
-do i = 1,Lastexit
-	if (exitlist(i)%ID == 0) then
-		iexit = i
-		exit
-	endif
-enddo
-if (iexit == 0) then
-	Lastexit = Lastexit + 1
-	iexit = Lastexit
-endif
-end subroutine
-
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-subroutine addExitPortal
-integer :: site(3)
-integer :: iexit
-
-call choosePortalSite(site)
-call getExitNum(iexit)
-Nexits = Nexits + 1
-if (Lastexit > max_exits) then
-	write(logmsg,*) 'Error: addExitPortal: too many exits: need to increase max_exits: ',max_exits
-	call logger(logmsg)
-	stop
-endif
-call placeExitPortal(iexit,site)
-end subroutine
 
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
@@ -1458,397 +1286,7 @@ enddo
 
 end subroutine
 
-!---------------------------------------------------------------------
-!---------------------------------------------------------------------
-subroutine placeExitPortal(iexit,site)
-integer :: iexit, site(3)
-integer :: kexit, x, y, z, x2, y2, z2, ek(3), vk(3), ns
-integer :: xex, yex, zex, xmin, xmax, ymin, ymax, zmin, zmax
-real(DP) :: R
-real :: d2, d2k
-integer :: kpar = 0
 
-if (iexit == Lastexit + 1) then
-	Lastexit = iexit
-endif
-ns = 0
-exitlist(iexit)%ID = iexit      ! when an exit site is lost (because the blob retracted) set %ID = 0
-exitlist(iexit)%site = site
-xex = site(1)
-yex = site(2)
-zex = site(3)
-occupancy(xex,yex,zex)%exitnum = -iexit     ! This site holds an exit 
-!write(logmsg,*) 'placeExitPortal: site,exitnum: ',xex,yex,zex,-iexit
-!call logger(logmsg)
-
-xmin = xex - chemo_N
-xmax = xex + chemo_N
-ymin = yex - chemo_N
-ymax = yex + chemo_N
-zmin = zex - chemo_N
-zmax = zex + chemo_N
-xmin = max(1,xmin)
-xmax = min(NX,xmax)
-ymin = max(1,ymin)
-ymax = min(NY,ymax)
-zmin = max(1,zmin)
-zmax = min(NZ,zmax)
-do x = xmin,xmax
-    x2 = (x-xex)*(x-xex)
-    do y = ymin,ymax
-        y2 = (y-yex)*(y-yex)
-        do z = zmin,zmax
-	        z2 = (z-zex)*(z-zex)
-	        d2 = x2 + y2 + z2
-	        if (d2 <= chemo_N*chemo_N) then
-		        if (d2 > 0) then   ! don't touch exit site
-     ! NOTE!!!  If this site is already marked as within another exit's SOI, we need to
-     ! determine which exit is closer, and set %exitnum to this exit's ID
-                    kexit = occupancy(x,y,z)%exitnum
-                    if (kexit > 0) then
-                        ek = exitlist(kexit)%site
-                        vk = (/x,y,z/) - ek
-                        d2k = dot_product(vk,vk)    ! distance from the other exit (kexit)
-!                            write(*,*) 'other exit: ',iexit,kexit,d2,d2k
-                        if (d2k < d2) then
-!	                            write(*,*) 'closer exit: ',iexit,kexit,d2,d2k
-                            cycle
-                        endif
-                        if (d2k == d2) then     ! toss a coin
-                            R = par_uni(kpar)
-                            if (R < 0.5) cycle
-                        endif
-                        occupancy(x,y,z)%exitnum = iexit  ! the site is closer to iexit than to kexit
-                        ns = ns + 1
-                    elseif (kexit == 0) then
-                        occupancy(x,y,z)%exitnum = iexit    ! this site is closest to exit iexit
-                        ns = ns + 1
-                    endif
-                endif
-	        endif
-        enddo
-    enddo
-enddo
-!write(*,*) 'near sites: ',iexit,ns
-end subroutine
-
-!---------------------------------------------------------------------
-! Remove the last nremex exits in the list.
-! Perhaps it would make more sense to remove exits that are close to 
-! others, or to adjust the locations of remaining exits.
-!---------------------------------------------------------------------
-subroutine removeExits1(nremex)
-integer :: nremex
-integer :: Nex, k, iexit, site(3)
-
-!write(*,*) 'removeExits: ',nremex
-Nex = Lastexit
-k = 0
-do iexit = Nex,1,-1
-    if (exitlist(iexit)%ID == 0) cycle
-    k = k+1
-    site = exitlist(iexit)%site
-!    write(logmsg,'(a,4i6)') 'removeExits: removeExitPortal: ',iexit,site
-!    call logger(logmsg)
-    call removeExitPortal(site)
-!    write(logmsg,'(a,4i6)') 'did removeExitPortal'
-!    call logger(logmsg)
-    if (k == nremex) exit
-enddo
-!call checkExits("in removeExits")
-end subroutine
-
-!---------------------------------------------------------------------
-! Remove exits that are close to others.
-!---------------------------------------------------------------------
-subroutine removeExits(nremex)
-integer :: nremex
-integer :: Nex, k, iexit, kexit, site1(3), site2(3)
-real :: r(3), sum, d2, cmin
-real, allocatable :: closeness(:)
-
-!write(*,*) 'removeExits: ',nremex
-Nex = Lastexit
-allocate(closeness(Nex))
-closeness = 0
-do iexit = 1,Nex
-	sum = 0
-    if (exitlist(iexit)%ID == 0) cycle
-    site1 = exitlist(iexit)%site
-    do kexit = 1,Nex
-		if (exitlist(kexit)%ID == 0) cycle
-		if (iexit == kexit) cycle
-	    site2 = exitlist(kexit)%site
-	    r = site1 - site2
-	    d2 = norm2(r)
-	    sum = sum + 1/d2
-	enddo
-	closeness(iexit) = sum
-enddo
-
-do k = 1,nremex
-	cmin = 1.0e10
-	do kexit = 1,Nex
-		if (closeness(kexit) == 0) cycle
-		if (closeness(kexit) < cmin) then
-			cmin = closeness(kexit)
-			iexit = kexit
-		endif
-	enddo
-	closeness(iexit) = 0
-    site1 = exitlist(iexit)%site
-!    write(logmsg,'(a,4i6)') 'removeExits: removeExitPortal: ',iexit,site
-!    call logger(logmsg)
-    call removeExitPortal(site1)
-!    write(logmsg,'(a,4i6)') 'did removeExitPortal'
-!    call logger(logmsg)
-enddo
-!call checkExits("in removeExits")
-deallocate(closeness)
-end subroutine
-
-!---------------------------------------------------------------------
-! Remove the exit portal at site.
-!---------------------------------------------------------------------
-subroutine removeExitPortal(site)
-integer :: site(3)
-integer :: iexit,xex,yex,zex,xmin,xmax,ymin,ymax,zmin,zmax,x,y,z,ek(3),vk(3),k,kmin,i
-real :: d2k, d2min
-
-xex = site(1)
-yex = site(2)
-zex = site(3)
-iexit = -occupancy(xex,yex,zex)%exitnum
-if (iexit <= 0) then
-	write(logmsg,*) 'Error: removeExitPortal: no exit at: ',site,iexit
-	call logger(logmsg)
-	do i = 1,Lastexit
-		site = exitlist(i)%site
-		write(logmsg,*) 'exit: ',i,site,occupancy(site(1),site(2),site(3))%exitnum
-		call logger(logmsg)
-	enddo
-	stop
-endif
-exitlist(iexit)%ID = 0
-occupancy(xex,yex,zex)%exitnum = iexit      ! to ensure that the site is processed in the next section
-											! effectively it is treated like a site within the portal's SOI
-!write(*,*) 'removeExitPortal: site,exitnum: ',site,iexit
-
-xmin = xex - chemo_N
-xmax = xex + chemo_N
-ymin = yex - chemo_N
-ymax = yex + chemo_N
-zmin = zex - chemo_N
-zmax = zex + chemo_N
-xmin = max(1,xmin)
-xmax = min(NX,xmax)
-ymin = max(1,ymin)
-ymax = min(NY,ymax)
-zmin = max(1,zmin)
-zmax = min(NZ,zmax)
-do x = xmin,xmax
-    do y = ymin,ymax
-        do z = zmin,zmax
-            if (occupancy(x,y,z)%exitnum == iexit) then
-                occupancy(x,y,z)%exitnum = 0
-                ! at this point we need to check to see if (x,y,z) is within the SOI of another exit
-                d2min = 9999
-                kmin = 0
-                do k = 1,Lastexit
-                    if (exitlist(k)%ID == 0) cycle
-                    ek = exitlist(k)%site
-                    vk = (/x,y,z/) - ek
-                    d2k = dot_product(vk,vk)    ! distance from the other exit (kexit)
-		            if (d2k <= chemo_N*chemo_N) then
-		                if (d2k < d2min) then
-		                    d2min = d2k
-		                    kmin = k
-		                endif
-		            endif
-		        enddo
-		        if (kmin > 0) then
-		            occupancy(x,y,z)%exitnum = kmin
-!					write(*,*) '  removeExitPortal: site,exitnum: ',x,y,z,kmin
-		        endif
-            endif
-        enddo
-    enddo
-enddo
-if (iexit == Lastexit) then
-	Lastexit = Lastexit - 1
-endif
-Nexits = Nexits - 1
-!write(*,*) 'removeExitPortal: Nexits: ',Nexits
-end subroutine
-
-!---------------------------------------------------------------------
-! Move the exit portal at site closer to the blob centre.
-!---------------------------------------------------------------------
-subroutine moveExitPortalInwards(site0)
-integer :: site0(3)
-integer :: site(3), site1(3), iexit0, iexit1, dx, dy, dz
-real :: d0, dc, d2, d2min, r(3)
-real, parameter :: dlim = 1.95
-
-iexit0 = -occupancy(site0(1),site0(2),site0(3))%exitnum
-! First, remove the exit
-call removeExitPortal(site0)
-!write(logmsg,*) 'Removed exit within moveExitPortalInwards: ',iexit0,site0
-!call logger(logmsg)
-!call checkexits("in moveExitPortalInwards")
-! Now add the exit back at a closer site.  Choose a new site at
-! least a distance of dlim closer to blob centre.  Choose the
-! site closest to site0 from among the neighbours within the
-! specified distance from the centre.
-! NOTE: need to check that there is not a DC or another exit portal nearby.  
-! If there is then a completely new portal site will need to be chosen, 
-! using choosePortalSite()
-d0 = cdistance(site0)
-d2min = 1.0e10
-site1 = 0
-do dx = -3,3
-	do dy = -3,3
-		do dz = -3,3
-			site = site0 + (/dx,dy,dz/)
-			dc = cdistance(site)
-			if (d0-dc >= dlim) then
-				r = site - site0
-				d2 = norm2(r)
-				if (d2 < d2min) then
-					d2min = d2
-					site1 = site
-				endif
-			endif
-		enddo
-	enddo
-enddo
-if (site1(1) == 0) then
-	write(logmsg,*) 'Error: moveExitPortalInwards: no site to move to: ',iexit0,site0
-	call logger(logmsg)
-	stop
-endif
-call getExitNum(iexit1)
-!write(logmsg,*) 'moveExitPortalInwards: ',iexit0,' from: ',site0
-!call logger(logmsg)
-!write(logmsg,*) '                new #: ',iexit1,'   at: ',site1
-!call logger(logmsg)
-Nexits = Nexits + 1
-call placeExitPortal(iexit1,site1)
-if (exitlist(iexit1)%site(1) /= site1(1) .or. &
-	exitlist(iexit1)%site(2) /= site1(2) .or. &
-	exitlist(iexit1)%site(3) /= site1(3)) then
-	write(logmsg,*) 'Error: moveExitPortalInwards: bad site: ',iexit1,exitlist(iexit1)%site,site1
-	call logger(logmsg)
-	stop
-endif
-!write(logmsg,*) 'now: ',iexit1,' is at: ',exitlist(iexit1)%site
-!call logger(logmsg)
-!write(logmsg,*) 'and exit #10 is at: ',exitlist(10)%site
-!call logger(logmsg)
-!write(logmsg,'(a,6i6)') 'moveExitPortalInwards: placeExitPortal: ',istep,iexit,site1,Nexits
-!call logger(logmsg)
-end subroutine
-
-!---------------------------------------------------------------------
-! The exit portal iexit needs to be moved by one site in the direction 
-! closest to that given by the unit vector v(:).
-!---------------------------------------------------------------------
-subroutine moveExitPortal(iexit0,v)
-integer :: iexit0
-real :: v(3)
-integer :: iexit1, site0(3), site1(3), k, kmax
-real :: proj, pmax, jump(3)
-
-pmax = 0
-do k = 1,27
-	if (k == 14) cycle
-	jump = jumpvec(:,k)
-	proj = dot_product(jump,v)/norm(jump)
-	if (proj > pmax) then
-		pmax = proj
-		kmax = k
-	endif
-enddo
-site0 = exitlist(iexit0)%site
-site1 = site0 + jumpvec(:,kmax)
-write(logmsg,'(a,i4,a,3i4,a,3i4)') 'moveExitPortal: ',iexit0,' from: ',site0,' to: ',site1
-call logger(logmsg)
-call removeExitPortal(site0)
-call getExitNum(iexit1)
-Nexits = Nexits + 1
-call placeExitPortal(iexit1,site1)
-end subroutine
-
-!---------------------------------------------------------------------
-! Display exit portal location info
-!---------------------------------------------------------------------
-subroutine displayExits
-integer :: Nex, k, iexit, kexit, site1(3), site2(3), count
-real :: r(3), sum, d2
-
-!write(*,*) 'removeExits: ',nremex
-Nex = Lastexit
-do iexit = 1,Nex
-	sum = 0
-    if (exitlist(iexit)%ID == 0) cycle
-    site1 = exitlist(iexit)%site
-    do kexit = 1,Nex
-		if (exitlist(kexit)%ID == 0) cycle
-		if (iexit == kexit) cycle
-	    site2 = exitlist(kexit)%site
-	    r = site1 - site2
-	    d2 = norm2(r)
-	    sum = sum + 1/d2
-	enddo
-	count = neighbourhoodCount(site1)
-	write(logmsg,'(5i4,3f10.3)') iexit,site1,count,cdistance(site1),(PI/180)*atan2(site1(2)-Centre(2),site1(3)-Centre(3)),1000*sum
-	call logger(logmsg)
-enddo
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-! need to ensure that exits do not get too close together
-!-----------------------------------------------------------------------------------------
-subroutine checkExitSpacing(msg)
-character*(*) :: msg
-integer :: iexit1, iexit2, site1(3), site2(3), im1=0, im2=0
-real :: r(3), d, dmin, f(3), df(3)
-logical :: ok = .true.
-real :: dlim
-
-!dlim = exit_prox*chemo_radius
-dmin = 1.0e10
-do iexit1 = 1,Lastexit
-	if (exitlist(iexit1)%ID == 0) cycle
-	site1 = exitlist(iexit1)%site
-	f = 0
-	do iexit2 = 1,Lastexit
-		if (iexit1 == iexit2) cycle
-		if (exitlist(iexit2)%ID == 0) cycle
-		site2 = exitlist(iexit2)%site
-		r = site1 - site2
-		d = norm(r)
-		if (d < dmin) then
-			dmin = d
-			im1 = iexit1
-			im2 = iexit2
-		endif
-		if (d < dlim) then
-			write(logmsg,'(2i4,f6.2)') iexit1,iexit2,d
-			call logger(logmsg)
-			df = r/d		! unit vector in direction of force
-			df = df/d		! scale by inverse distance
-			f = f + df
-		endif
-	enddo
-	if (f(1) /= 0 .or. f(2) /= 0 .or. f(3) /= 0) then
-		f = f/norm(f)
-		call moveExitPortal(iexit1,f)
-	endif
-enddo
-write(logmsg,*) msg,': Min exit spacing: ',im1,im2,dmin
-call logger(logmsg)
-end subroutine
 
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------

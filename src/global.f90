@@ -17,6 +17,7 @@ use winsock
 implicit none
 
 INTEGER,  PARAMETER  ::  DP=SELECTED_REAL_KIND( 12, 60 )
+integer, parameter :: REAL_KIND = 4
 
 ! General parameters
 integer, parameter :: BIG_INT = 2**30
@@ -144,8 +145,8 @@ real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the l
 real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the lattice, NOT the ROI
 
 ! Diffusion parameters
-logical, parameter :: use_cytokines = .false.
-logical, parameter :: use_diffusion = .false.
+
+logical, parameter :: use_ode_diffuse = .true.	! otherwise use the original method in fields.f90 
 integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion computation
 
 ! B cell parameters
@@ -164,6 +165,8 @@ integer, parameter :: FOLLICLE = 1
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
+integer, parameter :: BASE_NFDC = 10
+logical, parameter :: use_FDCs = .true.
 
 ! Differentiation probabilities
 real, parameter :: PLASMA_PROB = 0.4
@@ -253,7 +256,6 @@ integer :: Lastexit
 integer :: NDC
 integer :: NDCalive
 integer :: NFDC
-integer :: NFDCalive
 real :: aRadius
 real :: bRadius
 real :: InflowTotal
@@ -319,6 +321,7 @@ type DC_type
     real :: density             ! current antigen density
     real :: dietime             ! time DC will die
     real :: stimulation         ! amount of stimulation provided by a DC
+    real :: secretion
     logical :: capable          ! can DC deliver TCR stimulation?
     logical :: alive            ! is DC alive?
 end type
@@ -334,6 +337,7 @@ type FDC_type
 !    real :: dietime             ! time DC will die
 !    real :: stimulation         ! amount of stimulation provided by a DC
 !    logical :: capable          ! can DC deliver TCR stimulation?
+	real :: secretion
     logical :: alive            ! is FDC alive?
 end type
 
@@ -357,11 +361,12 @@ end type
 
 type occupancy_type
     integer(2) :: DC(0:DCDIM-1)     ! DC(0) = number of near DCs, DC(k) = ID of kth near DC
-!    integer(2) :: cDC(0:DCDIM-1)   ! cDC(0) = number of DCs within chemo_radius, cDC(k) = ID of kth DC
     integer :: indx(2)
-    integer :: exitnum          ! > 0 => index of closest exit, = 0 => no close exit, < 0 => an exit
-!    logical :: bdry
+!    integer :: exitnum          ! > 0 => index of closest exit, = 0 => no close exit, < 0 => an exit
+    integer :: FDC_nbdry				! number of FDCs that the site is adjacent to
     type (boundary_type), pointer :: bdry
+!    real :: chemo_conc
+!    real :: chemo_grad(3)
 end type
 
 type exit_type
@@ -780,18 +785,24 @@ end function
 
 !-----------------------------------------------------------------------------------------
 ! To determine if a site falls within the ellipsoid with major axis radius = aRadius
-! The ellipsoid equation is:
+! Currently the ellipsoid is football-shaped, i.e. the ellipsoid equation is:
 ! x^2/a^2 + (y^2 + z^2)/b^2 <= 1
+! (Possibly it should be instead a flattened sphere, with only one short axis, the y-axis.)
+! Axis orientation: 
+! The y-axis is on the line passing through the centres of the paracortex and the follicle.
+! The x-axis is parallel to the long axis of the follicle.
+! The z-axis is perpendicular to the x- and y-axes. 
+!
 !-----------------------------------------------------------------------------------------
-logical function insideEllipsoid(site)
+logical function InsideEllipsoid(site)
 integer :: site(3)
 real :: r(3)
 
 r = site - Centre
 if (r(1)*r(1)/(aRadius*aRadius) + (r(2)*r(2) + r(3)*r(3))/(bRadius*bRadius) <= 1) then
-    insideEllipsoid = .true.
+    InsideEllipsoid = .true.
 else
-    insideEllipsoid = .false.
+    InsideEllipsoid = .false.
 endif
 end function
 
@@ -1881,44 +1892,6 @@ else
 endif
 end function
 
-!--------------------------------------------------------------------------------
-! Determines e(:), the location of the nearest exit, if there is a close one.
-! Otherwise returns e(:) = 0.
-! Note: currently only one exit number is stored in occupancy()
-!--------------------------------------------------------------------------------
-subroutine nearest_exit(site,in_exit_SOI,e)
-integer :: site(3), e(3)
-logical :: in_exit_SOI
-integer :: iexit
-
-iexit = occupancy(site(1),site(2),site(3))%exitnum
-if (iexit == 0) then
-    in_exit_SOI = .false.
-    e = (/0,0,0/)
-    return
-endif
-in_exit_SOI = .true.
-e = exitlist(abs(iexit))%site
-!write(*,*) 'exit site: ',e
-end subroutine
-
-!--------------------------------------------------------------------------------
-! The criterion for a near exit is based on chemo_radius
-!--------------------------------------------------------------------------------
-subroutine near_exits(site,ne,ee)
-integer :: site(3), ne, ee(3,*)
-integer :: iexit
-
-iexit = occupancy(site(1),site(2),site(3))%exitnum
-if (iexit == 0) then
-	ne = 0
-    return
-endif
-ne = 1
-ee(:,1) = exitlist(abs(iexit))%site
-!write(*,*) 'exit site: ',e
-end subroutine
-
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -2055,67 +2028,6 @@ enddo
 write(nfres,'(2i6,3i12)') istep,k,xyzsum
 end subroutine
 
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
-subroutine checkExits(msg)
-character*(*) :: msg
-integer :: iexit,site(3)
-logical :: ok = .true.
-
-write(logmsg,'(a,i8,a,a)') 'checkExits: ',istep,'  ',msg
-call logger(logmsg)
-do iexit = 1,Lastexit
-    if (exitlist(iexit)%ID == 0) cycle
-	site = exitlist(iexit)%site
-	if (occupancy(site(1),site(2),site(3))%exitnum /= -exitlist(iexit)%ID) then
-		write(logmsg,*) 'checkExits: ',iexit,site,occupancy(site(1),site(2),site(3))%exitnum
-		call logger(logmsg)
-		ok = .false.
-	endif
-enddo
-if (.not.ok) stop
-end subroutine
-
-!--------------------------------------------------------------------------------
-!--------------------------------------------------------------------------------
-subroutine check_exit(iexit)
-integer :: iexit
-integer :: x,y,z,a,nc,nctot(0:10),site(3)
-integer :: n = 5
-
-site = exitlist(iexit)%site
-nctot(0) = sitecells(site,0,0,0)
-do a = 1,n
-    nc = 0
-    do z = -a,a,2*a
-        do x = -a,a
-            do y = -a,a
-                nc = nc + sitecells(site,x,y,z)
-            enddo
-        enddo
-    enddo
-    do z = -a+1,a-1
-        y = -a
-        do x = -a+1,a
-            nc = nc + sitecells(site,x,y,z)
-        enddo
-        x = a
-        do y = -a+1,a
-            nc = nc + sitecells(site,x,y,z)
-        enddo
-        y = a
-        do x = -a,a-1
-            nc = nc + sitecells(site,x,y,z)
-        enddo
-        x = -a
-        do y = -a,a-1
-            nc = nc + sitecells(site,x,y,z)
-        enddo
-    enddo
-    nctot(a) = nc
-enddo
-write(nfout,'(10i6)') nctot(0:n),sum(nctot(0:n))
-end subroutine
 
 !--------------------------------------------------------------------------------
 ! Returns the number of cells on the site offset by (x,y,z) from site(:)
