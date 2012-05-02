@@ -324,7 +324,14 @@ void MainWindow::loadParams()
 			QString wtag = qsname.mid(5);
 			int rbutton_case = 0;
 			if (qsname.startsWith("rbut_")) {
-				wtag = parse_rbutton(wtag,&rbutton_case);
+//				LOG_QMSG("loadParams: rbut");
+//				LOG_QMSG("wtag: "+wtag);
+//				LOG_QMSG("qsname: "+qsname);
+//				wtag = parse_rbutton(wtag,&rbutton_case);
+				parse_rbutton(wtag,&rbutton_case);
+//				LOG_QMSG("-> wtag: "+wtag);
+//				sprintf(msg,"rbutton_case: %d",rbutton_case);
+//				LOG_MSG(msg);
 			}
             // Find corresponding data in workingParameterList
             bool found = false;
@@ -464,11 +471,25 @@ void MainWindow::loadParams()
 						*/
 					} else if (qsname.startsWith("rbut_")) {
 						QRadioButton *w_rb = (QRadioButton *)w;
-						if (p.value == rbutton_case) {
+						if (int(p.value) == 1) {
 							w_rb->setChecked(true);
+							LOG_QMSG("loadParams: setChecked true")
 						} else {
 							w_rb->setChecked(false);
+							LOG_QMSG("loadParams: setChecked false")
 						}
+						setLineEditVisibility(qsname,int(p.value));
+						/*
+						if (p.value == rbutton_case) {
+							w_rb->setChecked(true);
+							LOG_QMSG("setChecked true")
+							LOG_QMSG(wtag);
+						} else {
+							w_rb->setChecked(false);
+							LOG_QMSG("setChecked false")
+							LOG_QMSG(wtag);
+						}
+						*/
 					} else if (qsname.startsWith("text_")) {
 						QLineEdit *w_l = (QLineEdit *)w;
 						w_l->setText(p.label);
@@ -586,6 +607,62 @@ QString MainWindow::parse_rbutton(QString wtag, int *rbutton_case)
 }
 
 //--------------------------------------------------------------------------------------------------------
+// Only change the LineEdit visibility is one is already enabled
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::setLineEditVisibility(QString wname, int val)
+{
+	QString lineRateName, lineConcName;	//, cbName, cbName2;
+	if (wname.contains("S1P_BDRY_0")) {
+		lineRateName = "line_S1P_BDRY_RATE";
+		lineConcName = "line_S1P_BDRY_CONC";
+//		cbName = "cbox_USE_S1PR1";
+//		cbName2 = "cbox_USE_S1PR2";
+	} else if (wname.contains("CCL21_BDRY_0")) {
+		lineRateName = "line_CCL21_BDRY_RATE";
+		lineConcName = "line_CCL21_BDRY_CONC";
+//		cbName = "cbox_USE_CCR7";
+	} else if (wname.contains("CXCL13_BDRY_0")) {
+		lineRateName = "line_CXCL13_BDRY_RATE";
+		lineConcName = "line_CXCL13_BDRY_CONC";
+//		cbName = "cbox_USE_CXCR5";
+	} else if (wname.contains("OXY_BDRY_0")) {
+		lineRateName = "line_OXY_BDRY_RATE";
+		lineConcName = "line_OXY_BDRY_CONC";
+//		cbName = "cbox_USE_EBI2";
+	}
+	// Need to locate the LineEdit widgets from their names
+	QWidget *w_rate, *w_conc;	//, *w_cb, *w_cb2=0;
+//	bool isS1P = false;
+	for (int i=0; i<nWidgets; i++) {
+		QWidget *w = widget_list[i];							// w = widget_list[i] is the ith widget in the UI
+		QString qsname = w->objectName();
+		if (qsname.contains(lineRateName)) {
+			w_rate = w;
+		}
+		if (qsname.contains(lineConcName)) {
+			w_conc = w;
+		}
+//		if (qsname.contains(cbName)) {
+//			w_cb = w;
+//			isS1P = true;
+//		}
+//		if (qsname.contains(cbName)) {
+//			w_cb2 = w;
+//			isS1P = true;
+//		}
+	}
+	if (w_rate->isEnabled() || w_conc->isEnabled()) {
+		if (val == 0) {
+			w_rate->setEnabled(false);
+			w_conc->setEnabled(true);
+		} else {
+			w_rate->setEnabled(true);
+			w_conc->setEnabled(false);
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::reloadParams()
 {
@@ -598,7 +675,8 @@ void MainWindow::reloadParams()
 			QString wtag = qsname.mid(5);
 			int rbutton_case = 0;
 			if (qsname.startsWith("rbut_")) {
-				wtag = parse_rbutton(wtag,&rbutton_case);
+//				wtag = parse_rbutton(wtag,&rbutton_case);
+				parse_rbutton(wtag,&rbutton_case);
 			}
             // Find corresponding data in workingParameterList
             bool found = false;
@@ -726,11 +804,37 @@ void MainWindow::reloadParams()
 						*/
 					} else if (qsname.startsWith("rbut_")) {
 						QRadioButton *w_rb = (QRadioButton *)w;
-						if (p.value == rbutton_case) {
+						int val = int(p.value);
+						LOG_QMSG(qsname);
+						LOG_QMSG(w_rb->objectName());
+						sprintf(msg,"val: %d",val);
+						LOG_MSG(msg);
+						setBdryRadioButton(w_rb,val);
+						setLineEditVisibility(qsname,val);
+
+						/*
+						if (val == 1) {
 							w_rb->setChecked(true);
+							LOG_QMSG("reloadParams: setChecked true")
 						} else {
 							w_rb->setChecked(false);
+							LOG_QMSG("reloadParams: setChecked false")
 						}
+						*/
+//						w_rb->setChecked(true);		// testing
+
+
+						/*
+						if (p.value == rbutton_case) {
+							w_rb->setChecked(true);
+							LOG_QMSG("reloadParams: setChecked true")
+							LOG_QMSG(wtag);
+						} else {
+							w_rb->setChecked(false);
+							LOG_QMSG("reloadParams: setChecked false")
+							LOG_QMSG(wtag);
+						}
+						*/
 					}
 				}
 			}
@@ -741,6 +845,25 @@ void MainWindow::reloadParams()
 			}
 		}
 	}				
+}
+
+//--------------------------------------------------------------------------------------------------------
+// When we want to uncheck a RadioButton, it is necessary to check some other RB.
+// In this case there is only one other RB.
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::setBdryRadioButton(QRadioButton *w_rb, int val)
+{
+	if (val == 1) {
+		w_rb->setChecked(true);
+	} else {
+		QButtonGroup *bg = (QButtonGroup *)w_rb->group();
+		QRadioButton *rb0 = (QRadioButton *)bg->buttons().first();
+		QRadioButton *rb1 = (QRadioButton *)bg->buttons().last();
+//		LOG_QMSG(bg->objectName());
+//		LOG_QMSG(rb0->objectName());
+//		LOG_QMSG(rb1->objectName());
+		rb1->setChecked(true);
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -2171,19 +2294,43 @@ void MainWindow::changeParam()
 				}
 			}
 		} else if (wname.contains("rbut_")) {
+//			LOG_QMSG("changeParam: rbut");
+//			LOG_QMSG(wname);
+			QString wtag = wname.mid(5);
 			QRadioButton *radioButton = (QRadioButton *)w;
+			for (int k=0; k<parm->nParams; k++) {
+				PARAM_SET p = parm->get_param(k);
+				if (wtag.compare(p.tag) == 0) {
+					int val;
+					if (radioButton->isChecked())
+						val = 1;
+					else
+						val = 0;
+					parm->set_value(k,val);
+					setLineEditVisibility(wname,val);
+
+//					LOG_QMSG("changeParam: set_value")
+//					LOG_QMSG(wname);
+					break;
+				}
+			}
+			/*
 			if (radioButton->isChecked()) {
 				QString wtag = wname.mid(5);
 				int rbutton_case;
-				wtag = parse_rbutton(wtag,&rbutton_case);
+//				wtag = parse_rbutton(wtag,&rbutton_case);
+				parse_rbutton(wtag,&rbutton_case);
 				for (int k=0; k<parm->nParams; k++) {
 					PARAM_SET p = parm->get_param(k);
 					if (wtag.compare(p.tag) == 0) {
 						parm->set_value(k,rbutton_case);
+						LOG_QMSG("changeParam: set_value")
+						LOG_QMSG(wtag);
 						break;
 					}
 				}
 			}
+			*/
 		}
 	}
 }

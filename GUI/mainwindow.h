@@ -150,6 +150,8 @@ private:
     void create_lognorm_dist(double p1, double p2,int n, double *x, double *prob);
 	int dist_limit(double *p, int n);
 	QString parse_rbutton(QString wtag, int *rbutton_case);
+	void setBdryRadioButton(QRadioButton *w_rb, int val);
+	void setLineEditVisibility(QString wname, int val);
 
 	PARAM_SET get_param(int);
 

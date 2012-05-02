@@ -4,6 +4,7 @@ module fields
 use global
 use chemokine
 use bdry_linked_list
+use ode_diffuse
 implicit none
 save
 
@@ -819,85 +820,60 @@ end subroutine
 ! the endothelial boundary into a sinus (high-S1P), but the cell must reach the sinus
 ! by random motion.
 !----------------------------------------------------------------------------------------
-subroutine InitFields
+subroutine InitConcentrations
 integer :: i, x, y, z
 real :: g(3), gamp, gmax
-logical, save :: first = .true.
 
 do i = 1,MAX_CHEMO
 	if (chemo(i)%used) then
-		if (first) then
-			allocate(chemo(i)%conc(NX,NY,NZ))
-			allocate(chemo(i)%grad(3,NX,NY,NZ))
-			chemo(i)%conc = 0
-		endif
-		write(logmsg,*) 'Solving steady-state: ',chemo(i)%name
-		call logger(logmsg)
-!		write(*,'(a,i2,2e12.3)') 'diff_coef, decay_rate: ', i,chemo(i)%diff_coef,chemo(i)%decay_rate
-		call SolveSteadystate_A(i,chemo(i)%diff_coef,chemo(i)%decay_rate,chemo(i)%conc)
-		! Now compute the gradient field.
-		call gradient(chemo(i)%conc,chemo(i)%grad)
-		gmax = 0
-		do x = 1,NX
-			do y = 1,NY
-				do z = 1,NZ
-					g = chemo(i)%grad(:,x,y,z)
-					gamp = sqrt(dot_product(g,g))
-					gmax = max(gamp,gmax)
-				enddo
-			enddo
-		enddo
-		write(logmsg,*) 'Max gradient: ',gmax
-		call logger(logmsg)
+		allocate(chemo(i)%conc(NX,NY,NZ))
+		allocate(chemo(i)%grad(3,NX,NY,NZ))
+		chemo(i)%conc = 0
 	endif
 enddo
-if (first) then
-	call ShowConcs
+if (use_ODE_diffusion) then
+	allocate(ODEdiff%ivar(NX,NY,NZ))
+	allocate(ODEdiff%varsite(NX*NY*NZ,3))
+	allocate(ODEdiff%icoef(NX*NY*NZ,7))
+	call SetupODEDiffusion
 endif
-first = .false.
-return
 
-!if (use_S1P) then
-!	if (first) then
-!		allocate(S1P_conc(NX,NY,NZ))
-!		allocate(S1P_grad(3,NX,NY,NZ))
-!		S1P_conc = 0
-!	endif
-!	call init_S1P
-!endif
-!if (use_OXY) then
-!	if (first) then
-!		allocate(OXY_conc(NX,NY,NZ))
-!		allocate(OXY_grad(3,NX,NY,NZ))
-!		OXY_conc = 0
-!	endif
-!	call init_OXY
-!endif
-!if (use_CCL21) then
-!	if (first) then
-!		allocate(CCL21_conc(NX,NY,NZ))
-!		allocate(CCL21_grad(3,NX,NY,NZ))
-!		CCL21_conc = 0
-!	endif
-!	call init_CCL21
-!endif
-!if (use_CXCL13) then
-!	if (first) then
-!		allocate(CXCL13_conc(NX,NY,NZ))
-!		allocate(CXCL13_grad(3,NX,NY,NZ))
-!		CXCL13_conc = 0
-!	endif
-!	call init_CXCL13
-!endif
-if (first) then
-	call ShowConcs
+end subroutine
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+subroutine ChemoSteadystate
+integer :: ichemo, x, y, z
+real :: g(3), gamp, gmax(MAX_CHEMO)
+
+if (use_ODE_diffusion) then
+	call SolveSteadystate_B
+else
+!		call SolveSteadystate_A(ic,chemo(ic)%diff_coef,chemo(ic)%decay_rate,chemo(ic)%conc)
+		call SolveSteadystate_A
+		! Now compute the gradient field.
+!		call gradient(chemo(i)%conc,chemo(i)%grad)
 endif
-first = .false.
+gmax = 0
+do ichemo = 1,MAX_CHEMO
+	if (.not.chemo(ichemo)%used) cycle
+	do x = 1,NX
+		do y = 1,NY
+			do z = 1,NZ
+				g = chemo(ichemo)%grad(:,x,y,z)
+				gamp = sqrt(dot_product(g,g))
+				gmax(ichemo) = max(gamp,gmax(ichemo))
+			enddo
+		enddo
+	enddo
+enddo
+write(logmsg,'(a,4(i3,f8.3))') 'Max gradients: ',(ichemo,gmax(ichemo),ichemo=1,MAX_CHEMO)
+call logger(logmsg)
+!if (first) then
+!	call ShowConcs
+!endif
+!first = .false.
 
-!do i = 1,100
-!    call evolveS1P(6,0.0)
-!enddo
-!call ShowConcs
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -927,50 +903,9 @@ else
 	endif
 endif
 if (.not.doit) return
-!cmin = 1.0e10
-!cmax = 0
-!do x = 1,NX
-!	do y = 1,NY
-!		do z = 1,NZ
-!			if (occupancy(x,y,z)%indx(1) >= 0) then
-!				cmin = min(cmin,S1P_conc(x,y,z))
-!				cmax = max(cmin,S1P_conc(x,y,z))
-!			endif
-!		enddo
-!	enddo
-!enddo
-!write(*,*) 'S1P_conc: min, max: ',cmin,cmax
-!allocate(S1P_old(NX,NY,NZ))
-!S1P_old = S1P_conc
-call InitFields
+
+call ChemoSteadystate
 NBlast = NBcells
-!dcmax = 0
-!do x = 1,NX
-!	do y = 1,NY
-!		do z = 1,NZ
-!			if (occupancy(x,y,z)%indx(1) >= 0) then
-!				dc = (abs(S1P_old(x,y,z) - S1P_conc(x,y,z)))/S1P_old(x,y,z)
-!				if (dc > dcmax) then
-!					dcmax = dc
-!					site = (/x,y,z/)
-!				endif
-!			endif
-!		enddo
-!	enddo
-!enddo
-!write(*,*) 'Max fractional change in S1P_conc: ',dcmax,S1P_old(site(1),site(2),site(3)),S1P_conc(site(1),site(2),site(3))
-!write(*,*) 'site: ',site
-!x = site(1)
-!y = site(2)
-!z = site(3)
-!write(*,*) 'old conc:'
-!write(*,'(a,4e12.3)') 'above: ',S1P_old(x,y+1,z)
-!write(*,'(a,4e12.3)') 'level: ',S1P_old(x-1,y,z),S1P_old(x+1,y,z),S1P_old(x,y,z-1),S1P_old(x,y,z+1)
-!write(*,'(a,4e12.3)') 'below: ',S1P_old(x,y-1,z)
-!write(*,*) 'new conc:'
-!write(*,'(a,4e12.3)') 'above: ',S1P_conc(x,y+1,z)
-!write(*,'(a,4e12.3)') 'level: ',S1P_conc(x-1,y,z),S1P_conc(x+1,y,z),S1P_conc(x,y,z-1),S1P_conc(x,y,z+1)
-!write(*,'(a,4e12.3)') 'below: ',S1P_conc(x,y-1,z)
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -1058,9 +993,10 @@ end subroutine
 ! Method A.
 ! On entry C contains the starting concentration field, which may be 0.
 !----------------------------------------------------------------------------------------
-subroutine SolveSteadystate_A(ichemo,Kdiffusion,Kdecay,C)
+!subroutine SolveSteadystate_A(ichemo,Kdiffusion,Kdecay,C)
+subroutine SolveSteadystate_A
+type(chemokine_type), pointer :: Cptr
 integer :: ichemo
-real :: C(:,:,:)
 real :: Kdiffusion, Kdecay
 real :: dx2diff, total, maxchange, maxchange_par, total_par
 real, parameter :: alpha = 0.5
@@ -1069,7 +1005,6 @@ integer :: nc, nc_par, k, it, n, kpar
 integer :: xlim(2,16), dx, x1, x2, xfr, xto	! max 16 threads
 real, allocatable :: C_par(:,:,:)
 integer :: nt = 10000
-real, allocatable :: Ctemp(:,:,:)
 
 dx = NX/Mnodes + 0.5
 do k = 1,Mnodes
@@ -1078,28 +1013,35 @@ do k = 1,Mnodes
 enddo
 xlim(2,Mnodes) = NX
 
-do it = 1,nt
-	maxchange = 0
-	total = 0
-	nc = 0
-	!$omp parallel do private(x1,x2,n,C_par,maxchange_par,total_par,nc_par)
-	do kpar = 0,Mnodes-1
-		x1 = xlim(1,kpar+1)
-		x2 = xlim(2,kpar+1)
-		n = x2 - x1 + 1
-		allocate(C_par(n,NY,NZ))
-		call par_steadystate_A(ichemo,C,Kdiffusion,Kdecay,C_par,x1,x2,maxchange_par,total_par,nc_par,kpar)
-		C(x1:x2,:,:) = C_par(1:n,:,:)
-		deallocate(C_par)
-		nc = nc + nc_par
-		total = total + total_par
-		maxchange = max(maxchange,maxchange_par)
+do ichemo = 1,MAX_CHEMO
+	if (.not.chemo(ichemo)%used) cycle
+	Cptr => chemo(ichemo)
+	Kdiffusion = Cptr%diff_coef
+	Kdecay = Cptr%decay_rate
+	do it = 1,nt
+		maxchange = 0
+		total = 0
+		nc = 0
+		!$omp parallel do private(x1,x2,n,C_par,maxchange_par,total_par,nc_par)
+		do kpar = 0,Mnodes-1
+			x1 = xlim(1,kpar+1)
+			x2 = xlim(2,kpar+1)
+			n = x2 - x1 + 1
+			allocate(C_par(n,NY,NZ))
+			call par_steadystate_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,x1,x2,maxchange_par,total_par,nc_par,kpar)
+			Cptr%conc(x1:x2,:,:) = C_par(1:n,:,:)
+			deallocate(C_par)
+			nc = nc + nc_par
+			total = total + total_par
+			maxchange = max(maxchange,maxchange_par)
+		enddo
+		if (maxchange < tol*total/nc) then
+			write(logmsg,*) 'Convergence reached: it: ',it
+			call logger(logmsg)
+			exit
+		endif
 	enddo
-	if (maxchange < tol*total/nc) then
-		write(logmsg,*) 'Convergence reached: it: ',it
-		call logger(logmsg)
-		exit
-	endif
+	call gradient(Cptr%conc,Cptr%grad)
 enddo
 end subroutine	
 

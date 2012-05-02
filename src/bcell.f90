@@ -2868,7 +2868,7 @@ if (save_input) then
 	call save_inputfile(fixedfile)
 endif
 
-call InitFields
+call InitConcentrations
 
 firstSummary = .true.
 initialized = .true.
@@ -2881,7 +2881,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine wrapup
-integer :: ierr
+integer :: ierr, ichemo
 logical :: isopen
 
 call logger('doing wrapup ...')
@@ -2911,6 +2911,15 @@ if (allocated(divide_dist)) deallocate(divide_dist)
 if (allocated(exitlist)) deallocate(exitlist)
 if (allocated(chemo_r)) deallocate(chemo_r)
 if (allocated(chemo_p)) deallocate(chemo_p)
+do ichemo = 1,MAX_CHEMO
+	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
+	if (allocated(chemo(ichemo)%conc)) deallocate(chemo(ichemo)%conc)
+	if (allocated(chemo(ichemo)%grad)) deallocate(chemo(ichemo)%grad)
+enddo
+if (allocated(ODEdiff%ivar)) deallocate(ODEdiff%ivar)
+if (allocated(ODEdiff%varsite)) deallocate(ODEdiff%varsite)
+if (allocated(ODEdiff%icoef)) deallocate(ODEdiff%icoef)
+
 !if (allocated(cytp)) deallocate(cytp)
 !if (allocated(xminmax)) deallocate(xminmax)
 !if (allocated(inblob)) deallocate(inblob)

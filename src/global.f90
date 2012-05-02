@@ -146,7 +146,7 @@ real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the l
 
 ! Diffusion parameters
 
-logical, parameter :: use_ode_diffuse = .true.	! otherwise use the original method in fields.f90 
+logical, parameter :: use_ode_diffusion = .true.	! otherwise use the original method in fields.f90 
 integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion computation
 
 ! B cell parameters

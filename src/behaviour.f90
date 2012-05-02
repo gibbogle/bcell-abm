@@ -519,7 +519,7 @@ write(nfout,*) 'use_chemotaxis: ',use_chemotaxis
 write(nfout,*) 'computed_outflow: ',computed_outflow
 write(nfout,*) 'use_cognate: ',use_cognate
 write(nfout,*) 'random_cognate: ',random_cognate
-write(nfout,*) 'use_ode_diffuse: ',use_ode_diffuse
+write(nfout,*) 'use_ode_diffusion: ',use_ode_diffusion
 write(nfout,*) 'NGEN_EXIT: ',NGEN_EXIT
 write(nfout,*) 'NDIFFSTEPS: ',NDIFFSTEPS
 write(nfout,*) 'VEGF_MODEL: ',VEGF_MODEL

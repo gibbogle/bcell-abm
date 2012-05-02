@@ -1125,102 +1125,11 @@ padding: 8px
            <attribute name="title">
             <string>Chemokine</string>
            </attribute>
-           <widget class="QWidget" name="gridLayoutWidget">
-            <property name="geometry">
-             <rect>
-              <x>80</x>
-              <y>50</y>
-              <width>207</width>
-              <height>126</height>
-             </rect>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_S1P">
-             <item row="0" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_S1P_BDRY_CONC">
-               <property name="text">
-                <string>label_S1P_BDRY_CONC</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLineEdit" name="line_S1P_BDRY_CONC"/>
-             </item>
-             <item row="1" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_S1P_DIFF_COEFF">
-               <property name="text">
-                <string>label_S1P_DIFF_COEFF</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLineEdit" name="line_S1P_DIFF_COEFF"/>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_S1P_HALFLIFE">
-               <property name="text">
-                <string>label_S1P_HALFLIFE</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLineEdit" name="line_S1P_HALFLIFE"/>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="units_S1Pconc">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QLabel" name="units_S1Pdiff">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QLabel" name="units_S1Plife">
-               <property name="text">
-                <string>h</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0" colspan="2">
-              <widget class="QLabel" name="label_S1P_STRENGTH_POS">
-               <property name="text">
-                <string>label_S1P_STRENGTH_POS</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLineEdit" name="line_S1P_STRENGTH_POS"/>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_S1P_STRENGTH_NEG">
-               <property name="text">
-                <string>label_S1P_STRENGTH_NEG</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="2">
-              <widget class="QLineEdit" name="line_S1P_STRENGTH_NEG"/>
-             </item>
-            </layout>
-           </widget>
            <widget class="QCheckBox" name="cbox_USE_S1PR1">
             <property name="geometry">
              <rect>
               <x>80</x>
-              <y>20</y>
+              <y>100</y>
               <width>81</width>
               <height>18</height>
              </rect>
@@ -1233,43 +1142,43 @@ p, li { white-space: pre-wrap; }
             <property name="geometry">
              <rect>
               <x>80</x>
-              <y>250</y>
-              <width>201</width>
-              <height>121</height>
+              <y>370</y>
+              <width>211</width>
+              <height>126</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_S1P_2">
-             <item row="0" column="0" colspan="2">
+             <item row="1" column="0" colspan="2">
               <widget class="QMyLabel" name="label_CCL21_BDRY_CONC">
                <property name="text">
                 <string>label_CCL21_BDRY_CONC</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
+             <item row="1" column="2">
               <widget class="QLineEdit" name="line_CCL21_BDRY_CONC"/>
              </item>
-             <item row="1" column="0" colspan="2">
+             <item row="2" column="0" colspan="2">
               <widget class="QMyLabel" name="label_CCL21_DIFF_COEFF">
                <property name="text">
                 <string>label_CCL21_DIFF_COEFF</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="2" column="2">
               <widget class="QLineEdit" name="line_CCL21_DIFF_COEFF"/>
              </item>
-             <item row="2" column="0" colspan="2">
+             <item row="3" column="0" colspan="2">
               <widget class="QMyLabel" name="label_CCL21_HALFLIFE">
                <property name="text">
                 <string>label_CCL21_HALFLIFE</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="2">
+             <item row="3" column="2">
               <widget class="QLineEdit" name="line_CCL21_HALFLIFE"/>
              </item>
-             <item row="0" column="3">
+             <item row="1" column="3">
               <widget class="QLabel" name="units_CCL21conc">
                <property name="text">
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1280,7 +1189,7 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="1" column="3">
+             <item row="2" column="3">
               <widget class="QLabel" name="units_CCL21diff">
                <property name="text">
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1291,30 +1200,51 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="3">
+             <item row="3" column="3">
               <widget class="QLabel" name="units_CCL21life">
                <property name="text">
                 <string>h</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="0" colspan="2">
+             <item row="4" column="0" colspan="2">
               <widget class="QLabel" name="label_CCL21_STRENGTH">
                <property name="text">
                 <string>label_CCL21_STRENGTH</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="2">
+             <item row="4" column="2">
               <widget class="QLineEdit" name="line_CCL21_STRENGTH"/>
+             </item>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="label_CCL21_BDRY_RATE">
+               <property name="text">
+                <string>label_CCL21_BDRY_RATE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_CCL21_BDRY_RATE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_CCL21rate">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg&lt;/span&gt;.&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
            <widget class="QCheckBox" name="cbox_USE_CCR7">
             <property name="geometry">
              <rect>
-              <x>150</x>
-              <y>220</y>
+              <x>80</x>
+              <y>340</y>
               <width>81</width>
               <height>18</height>
              </rect>
@@ -1323,173 +1253,11 @@ p, li { white-space: pre-wrap; }
              <string>Use CCR7?</string>
             </property>
            </widget>
-           <widget class="QWidget" name="gridLayoutWidget_3">
-            <property name="geometry">
-             <rect>
-              <x>410</x>
-              <y>50</y>
-              <width>201</width>
-              <height>121</height>
-             </rect>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_S1P_3">
-             <item row="0" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_OXY_BDRY_CONC">
-               <property name="text">
-                <string>label_OXY_BDRY_CONC</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLineEdit" name="line_OXY_BDRY_CONC"/>
-             </item>
-             <item row="1" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_OXY_DIFF_COEFF">
-               <property name="text">
-                <string>label_OXY_DIFF_COEFF</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLineEdit" name="line_OXY_DIFF_COEFF"/>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_OXY_HALFLIFE">
-               <property name="text">
-                <string>labelOXYP_HALFLIFE</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLineEdit" name="line_OXY_HALFLIFE"/>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="units_OXYconc">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QLabel" name="units_OXYdiff">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QLabel" name="units_OXYlife">
-               <property name="text">
-                <string>h</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0" colspan="2">
-              <widget class="QLabel" name="label_OXY_STRENGTH">
-               <property name="text">
-                <string>label_OXY_STRENGTH</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLineEdit" name="line_OXY_STRENGTH"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="gridLayoutWidget_4">
-            <property name="geometry">
-             <rect>
-              <x>410</x>
-              <y>250</y>
-              <width>204</width>
-              <height>121</height>
-             </rect>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_S1P_4">
-             <item row="0" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_CXCL13_BDRY_CONC">
-               <property name="text">
-                <string>label_CXCL13_BDRY_CONC</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLineEdit" name="line_CXCL13_BDRY_CONC"/>
-             </item>
-             <item row="1" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_CXCL13_DIFF_COEFF">
-               <property name="text">
-                <string>label_CXCL13_DIFF_COEFF</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLineEdit" name="line_CXCL13_DIFF_COEFF"/>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QMyLabel" name="label_CXCL13_HALFLIFE">
-               <property name="text">
-                <string>label_CXCL13_HALFLIFE</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLineEdit" name="line_CXCL13_HALFLIFE"/>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="units_CXCL13conc">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QLabel" name="units_CXCL13diff">
-               <property name="text">
-                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QLabel" name="units_CXCL13life">
-               <property name="text">
-                <string>h</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0" colspan="2">
-              <widget class="QLabel" name="label_CXCL13_STRENGTH">
-               <property name="text">
-                <string>label_CXCL13_STRENGTH</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLineEdit" name="line_CXCL13_STRENGTH"/>
-             </item>
-            </layout>
-           </widget>
            <widget class="QCheckBox" name="cbox_USE_EBI2">
             <property name="geometry">
              <rect>
-              <x>480</x>
-              <y>20</y>
+              <x>440</x>
+              <y>100</y>
               <width>71</width>
               <height>21</height>
              </rect>
@@ -1501,8 +1269,8 @@ p, li { white-space: pre-wrap; }
            <widget class="QCheckBox" name="cbox_USE_CXCR5">
             <property name="geometry">
              <rect>
-              <x>480</x>
-              <y>220</y>
+              <x>440</x>
+              <y>340</y>
               <width>81</width>
               <height>18</height>
              </rect>
@@ -1515,7 +1283,7 @@ p, li { white-space: pre-wrap; }
             <property name="geometry">
              <rect>
               <x>190</x>
-              <y>20</y>
+              <y>100</y>
               <width>81</width>
               <height>18</height>
              </rect>
@@ -1523,6 +1291,480 @@ p, li { white-space: pre-wrap; }
             <property name="text">
              <string>Use S1PR2?</string>
             </property>
+           </widget>
+           <widget class="QRadioButton" name="rbut_CCL21_BDRY_0">
+            <property name="geometry">
+             <rect>
+              <x>300</x>
+              <y>370</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use secretion</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_CCL21_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_5">
+            <property name="geometry">
+             <rect>
+              <x>440</x>
+              <y>370</y>
+              <width>220</width>
+              <height>126</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_5">
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_BDRY_CONC">
+               <property name="text">
+                <string>label_CXCL13_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_BDRY_CONC"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_DIFF_COEFF">
+               <property name="text">
+                <string>label_CXCL13_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_DIFF_COEFF"/>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_CXCL13_HALFLIFE">
+               <property name="text">
+                <string>label_CXCL13_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_HALFLIFE"/>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_CXCL13conc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_CXCL13diff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLabel" name="units_CXCL13life">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0" colspan="2">
+              <widget class="QLabel" name="label_CXCL13_STRENGTH">
+               <property name="text">
+                <string>label_CXCL13_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_STRENGTH"/>
+             </item>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="label_CXCL13_BDRY_RATE">
+               <property name="text">
+                <string>label_CXCL13_BDRY_RATE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_CXCL13_BDRY_RATE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_CXCL13rate">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg&lt;/span&gt;.&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QRadioButton" name="rbut_CXCL13_BDRY_0">
+            <property name="geometry">
+             <rect>
+              <x>670</x>
+              <y>370</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use secretion</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_CXCL13_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_4">
+            <property name="geometry">
+             <rect>
+              <x>440</x>
+              <y>130</y>
+              <width>221</width>
+              <height>126</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_4">
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_BDRY_CONC">
+               <property name="text">
+                <string>label_OXY_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_OXY_BDRY_CONC"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_DIFF_COEFF">
+               <property name="text">
+                <string>label_OXY_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_OXY_DIFF_COEFF"/>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_OXY_HALFLIFE">
+               <property name="text">
+                <string>labelOXYP_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_OXY_HALFLIFE"/>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_OXYconc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_OXYdiff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLabel" name="units_OXYlife">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0" colspan="2">
+              <widget class="QLabel" name="label_OXY_STRENGTH">
+               <property name="text">
+                <string>label_OXY_STRENGTH</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QLineEdit" name="line_OXY_STRENGTH"/>
+             </item>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="label_OXY_BDRY_RATE">
+               <property name="text">
+                <string>label_OXY_BDRY_RATE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_OXY_BDRY_RATE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_OXYrate">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg&lt;/span&gt;.&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QRadioButton" name="rbut_OXY_BDRY_0">
+            <property name="geometry">
+             <rect>
+              <x>670</x>
+              <y>130</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use secretion</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_OXY_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_3">
+            <property name="geometry">
+             <rect>
+              <x>80</x>
+              <y>130</y>
+              <width>211</width>
+              <height>152</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_S1P_3">
+             <item row="1" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_BDRY_CONC">
+               <property name="text">
+                <string>label_S1P_BDRY_CONC</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_S1P_BDRY_CONC"/>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_DIFF_COEFF">
+               <property name="text">
+                <string>label_S1P_DIFF_COEFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_S1P_DIFF_COEFF"/>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QMyLabel" name="label_S1P_HALFLIFE">
+               <property name="text">
+                <string>label_S1P_HALFLIFE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_S1P_HALFLIFE"/>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLabel" name="units_S1Pconc">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg.L&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLabel" name="units_S1Pdiff">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;m&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;2&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLabel" name="units_S1Plife">
+               <property name="text">
+                <string>h</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0" colspan="2">
+              <widget class="QLabel" name="label_S1P_STRENGTH_POS">
+               <property name="text">
+                <string>label_S1P_STRENGTH_POS</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QLineEdit" name="line_S1P_STRENGTH_POS"/>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_S1P_STRENGTH_NEG">
+               <property name="text">
+                <string>label_S1P_STRENGTH_NEG</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="2">
+              <widget class="QLineEdit" name="line_S1P_STRENGTH_NEG"/>
+             </item>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="label_S1P_BDRY_RATE">
+               <property name="text">
+                <string>label_S1P_BDRY_RATE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="line_S1P_BDRY_RATE"/>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="units_S1Prate">
+               <property name="text">
+                <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;mg&lt;/span&gt;.&lt;span style=&quot; font-size:8pt;&quot;&gt;s&lt;/span&gt;&lt;span style=&quot; font-size:8pt; vertical-align:super;&quot;&gt;-1&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QRadioButton" name="rbut_S1P_BDRY_0">
+            <property name="geometry">
+             <rect>
+              <x>300</x>
+              <y>130</y>
+              <width>91</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use secretion</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_S1P_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QLabel" name="label_chemokine">
+            <property name="geometry">
+             <rect>
+              <x>280</x>
+              <y>30</y>
+              <width>221</width>
+              <height>16</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>16</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Chemokine Parameters</string>
+            </property>
+           </widget>
+           <widget class="QRadioButton" name="rbut_S1P_BDRY_1">
+            <property name="geometry">
+             <rect>
+              <x>300</x>
+              <y>150</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use concentration</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_S1P_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QRadioButton" name="rbut_CCL21_BDRY_1">
+            <property name="geometry">
+             <rect>
+              <x>300</x>
+              <y>390</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use concentration</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_CCL21_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QRadioButton" name="rbut_OXY_BDRY_1">
+            <property name="geometry">
+             <rect>
+              <x>670</x>
+              <y>150</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use concentration</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_OXY_BDRY</string>
+            </attribute>
+           </widget>
+           <widget class="QRadioButton" name="rbut_CXCL13_BDRY_1">
+            <property name="geometry">
+             <rect>
+              <x>670</x>
+              <y>390</y>
+              <width>111</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Use concentration</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string>buttonGroup_CXCL13_BDRY</string>
+            </attribute>
            </widget>
           </widget>
           <widget class="QWidget" name="tab_TCR">
@@ -2936,6 +3178,10 @@ p, li { white-space: pre-wrap; }
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_CXCL13_BDRY"/>
   <buttongroup name="buttonGroup_SPECIES"/>
+  <buttongroup name="buttonGroup_S1P_BDRY"/>
+  <buttongroup name="buttonGroup_OXY_BDRY"/>
+  <buttongroup name="buttonGroup_CCL21_BDRY"/>
  </buttongroups>
 </ui>

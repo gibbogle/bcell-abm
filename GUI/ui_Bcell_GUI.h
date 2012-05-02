@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Sat 17. Mar 11:02:04 2012
+** Created: Tue 1. May 11:28:18 2012
 **      by: Qt User Interface Compiler version 4.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -141,21 +141,6 @@ public:
     QSlider *slider_DC_LIFETIME_MEDIAN;
     QLabel *alabel_dist_2;
     QWidget *tab_chemo;
-    QWidget *gridLayoutWidget;
-    QGridLayout *gridLayout_S1P;
-    QMyLabel *label_S1P_BDRY_CONC;
-    QLineEdit *line_S1P_BDRY_CONC;
-    QMyLabel *label_S1P_DIFF_COEFF;
-    QLineEdit *line_S1P_DIFF_COEFF;
-    QMyLabel *label_S1P_HALFLIFE;
-    QLineEdit *line_S1P_HALFLIFE;
-    QLabel *units_S1Pconc;
-    QLabel *units_S1Pdiff;
-    QLabel *units_S1Plife;
-    QLabel *label_S1P_STRENGTH_POS;
-    QLineEdit *line_S1P_STRENGTH_POS;
-    QLabel *label_S1P_STRENGTH_NEG;
-    QLineEdit *line_S1P_STRENGTH_NEG;
     QCheckBox *cbox_USE_S1PR1;
     QWidget *gridLayoutWidget_2;
     QGridLayout *gridLayout_S1P_2;
@@ -170,22 +155,16 @@ public:
     QLabel *units_CCL21life;
     QLabel *label_CCL21_STRENGTH;
     QLineEdit *line_CCL21_STRENGTH;
+    QLabel *label_CCL21_BDRY_RATE;
+    QLineEdit *line_CCL21_BDRY_RATE;
+    QLabel *units_CCL21rate;
     QCheckBox *cbox_USE_CCR7;
-    QWidget *gridLayoutWidget_3;
-    QGridLayout *gridLayout_S1P_3;
-    QMyLabel *label_OXY_BDRY_CONC;
-    QLineEdit *line_OXY_BDRY_CONC;
-    QMyLabel *label_OXY_DIFF_COEFF;
-    QLineEdit *line_OXY_DIFF_COEFF;
-    QMyLabel *label_OXY_HALFLIFE;
-    QLineEdit *line_OXY_HALFLIFE;
-    QLabel *units_OXYconc;
-    QLabel *units_OXYdiff;
-    QLabel *units_OXYlife;
-    QLabel *label_OXY_STRENGTH;
-    QLineEdit *line_OXY_STRENGTH;
-    QWidget *gridLayoutWidget_4;
-    QGridLayout *gridLayout_S1P_4;
+    QCheckBox *cbox_USE_EBI2;
+    QCheckBox *cbox_USE_CXCR5;
+    QCheckBox *cbox_USE_S1PR2;
+    QRadioButton *rbut_CCL21_BDRY_0;
+    QWidget *gridLayoutWidget_5;
+    QGridLayout *gridLayout_S1P_5;
     QMyLabel *label_CXCL13_BDRY_CONC;
     QLineEdit *line_CXCL13_BDRY_CONC;
     QMyLabel *label_CXCL13_DIFF_COEFF;
@@ -197,9 +176,51 @@ public:
     QLabel *units_CXCL13life;
     QLabel *label_CXCL13_STRENGTH;
     QLineEdit *line_CXCL13_STRENGTH;
-    QCheckBox *cbox_USE_EBI2;
-    QCheckBox *cbox_USE_CXCR5;
-    QCheckBox *cbox_USE_S1PR2;
+    QLabel *label_CXCL13_BDRY_RATE;
+    QLineEdit *line_CXCL13_BDRY_RATE;
+    QLabel *units_CXCL13rate;
+    QRadioButton *rbut_CXCL13_BDRY_0;
+    QWidget *gridLayoutWidget_4;
+    QGridLayout *gridLayout_S1P_4;
+    QMyLabel *label_OXY_BDRY_CONC;
+    QLineEdit *line_OXY_BDRY_CONC;
+    QMyLabel *label_OXY_DIFF_COEFF;
+    QLineEdit *line_OXY_DIFF_COEFF;
+    QMyLabel *label_OXY_HALFLIFE;
+    QLineEdit *line_OXY_HALFLIFE;
+    QLabel *units_OXYconc;
+    QLabel *units_OXYdiff;
+    QLabel *units_OXYlife;
+    QLabel *label_OXY_STRENGTH;
+    QLineEdit *line_OXY_STRENGTH;
+    QLabel *label_OXY_BDRY_RATE;
+    QLineEdit *line_OXY_BDRY_RATE;
+    QLabel *units_OXYrate;
+    QRadioButton *rbut_OXY_BDRY_0;
+    QWidget *gridLayoutWidget_3;
+    QGridLayout *gridLayout_S1P_3;
+    QMyLabel *label_S1P_BDRY_CONC;
+    QLineEdit *line_S1P_BDRY_CONC;
+    QMyLabel *label_S1P_DIFF_COEFF;
+    QLineEdit *line_S1P_DIFF_COEFF;
+    QMyLabel *label_S1P_HALFLIFE;
+    QLineEdit *line_S1P_HALFLIFE;
+    QLabel *units_S1Pconc;
+    QLabel *units_S1Pdiff;
+    QLabel *units_S1Plife;
+    QLabel *label_S1P_STRENGTH_POS;
+    QLineEdit *line_S1P_STRENGTH_POS;
+    QLabel *label_S1P_STRENGTH_NEG;
+    QLineEdit *line_S1P_STRENGTH_NEG;
+    QLabel *label_S1P_BDRY_RATE;
+    QLineEdit *line_S1P_BDRY_RATE;
+    QLabel *units_S1Prate;
+    QRadioButton *rbut_S1P_BDRY_0;
+    QLabel *label_chemokine;
+    QRadioButton *rbut_S1P_BDRY_1;
+    QRadioButton *rbut_CCL21_BDRY_1;
+    QRadioButton *rbut_OXY_BDRY_1;
+    QRadioButton *rbut_CXCL13_BDRY_1;
     QWidget *tab_TCR;
     QWidget *layoutWidget_2;
     QGridLayout *gridLayout_3;
@@ -299,7 +320,11 @@ public:
     QMenu *menuSnapshot;
     QStatusBar *statusbar;
     QToolBar *toolBar1;
+    QButtonGroup *buttonGroup_CXCL13_BDRY;
     QButtonGroup *buttonGroup_SPECIES;
+    QButtonGroup *buttonGroup_S1P_BDRY;
+    QButtonGroup *buttonGroup_OXY_BDRY;
+    QButtonGroup *buttonGroup_CCL21_BDRY;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -808,275 +833,385 @@ public:
         tabs->addTab(tab_DC, QString());
         tab_chemo = new QWidget();
         tab_chemo->setObjectName(QString::fromUtf8("tab_chemo"));
-        gridLayoutWidget = new QWidget(tab_chemo);
-        gridLayoutWidget->setObjectName(QString::fromUtf8("gridLayoutWidget"));
-        gridLayoutWidget->setGeometry(QRect(80, 50, 207, 126));
-        gridLayout_S1P = new QGridLayout(gridLayoutWidget);
-        gridLayout_S1P->setObjectName(QString::fromUtf8("gridLayout_S1P"));
-        gridLayout_S1P->setContentsMargins(0, 0, 0, 0);
-        label_S1P_BDRY_CONC = new QMyLabel(gridLayoutWidget);
-        label_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("label_S1P_BDRY_CONC"));
-
-        gridLayout_S1P->addWidget(label_S1P_BDRY_CONC, 0, 0, 1, 2);
-
-        line_S1P_BDRY_CONC = new QLineEdit(gridLayoutWidget);
-        line_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("line_S1P_BDRY_CONC"));
-
-        gridLayout_S1P->addWidget(line_S1P_BDRY_CONC, 0, 2, 1, 1);
-
-        label_S1P_DIFF_COEFF = new QMyLabel(gridLayoutWidget);
-        label_S1P_DIFF_COEFF->setObjectName(QString::fromUtf8("label_S1P_DIFF_COEFF"));
-
-        gridLayout_S1P->addWidget(label_S1P_DIFF_COEFF, 1, 0, 1, 2);
-
-        line_S1P_DIFF_COEFF = new QLineEdit(gridLayoutWidget);
-        line_S1P_DIFF_COEFF->setObjectName(QString::fromUtf8("line_S1P_DIFF_COEFF"));
-
-        gridLayout_S1P->addWidget(line_S1P_DIFF_COEFF, 1, 2, 1, 1);
-
-        label_S1P_HALFLIFE = new QMyLabel(gridLayoutWidget);
-        label_S1P_HALFLIFE->setObjectName(QString::fromUtf8("label_S1P_HALFLIFE"));
-
-        gridLayout_S1P->addWidget(label_S1P_HALFLIFE, 2, 0, 1, 2);
-
-        line_S1P_HALFLIFE = new QLineEdit(gridLayoutWidget);
-        line_S1P_HALFLIFE->setObjectName(QString::fromUtf8("line_S1P_HALFLIFE"));
-
-        gridLayout_S1P->addWidget(line_S1P_HALFLIFE, 2, 2, 1, 1);
-
-        units_S1Pconc = new QLabel(gridLayoutWidget);
-        units_S1Pconc->setObjectName(QString::fromUtf8("units_S1Pconc"));
-
-        gridLayout_S1P->addWidget(units_S1Pconc, 0, 3, 1, 1);
-
-        units_S1Pdiff = new QLabel(gridLayoutWidget);
-        units_S1Pdiff->setObjectName(QString::fromUtf8("units_S1Pdiff"));
-
-        gridLayout_S1P->addWidget(units_S1Pdiff, 1, 3, 1, 1);
-
-        units_S1Plife = new QLabel(gridLayoutWidget);
-        units_S1Plife->setObjectName(QString::fromUtf8("units_S1Plife"));
-
-        gridLayout_S1P->addWidget(units_S1Plife, 2, 3, 1, 1);
-
-        label_S1P_STRENGTH_POS = new QLabel(gridLayoutWidget);
-        label_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_POS"));
-
-        gridLayout_S1P->addWidget(label_S1P_STRENGTH_POS, 3, 0, 1, 2);
-
-        line_S1P_STRENGTH_POS = new QLineEdit(gridLayoutWidget);
-        line_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_POS"));
-
-        gridLayout_S1P->addWidget(line_S1P_STRENGTH_POS, 3, 2, 1, 1);
-
-        label_S1P_STRENGTH_NEG = new QLabel(gridLayoutWidget);
-        label_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_NEG"));
-
-        gridLayout_S1P->addWidget(label_S1P_STRENGTH_NEG, 4, 0, 1, 1);
-
-        line_S1P_STRENGTH_NEG = new QLineEdit(gridLayoutWidget);
-        line_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_NEG"));
-
-        gridLayout_S1P->addWidget(line_S1P_STRENGTH_NEG, 4, 2, 1, 1);
-
         cbox_USE_S1PR1 = new QCheckBox(tab_chemo);
         cbox_USE_S1PR1->setObjectName(QString::fromUtf8("cbox_USE_S1PR1"));
-        cbox_USE_S1PR1->setGeometry(QRect(80, 20, 81, 18));
+        cbox_USE_S1PR1->setGeometry(QRect(80, 100, 81, 18));
         gridLayoutWidget_2 = new QWidget(tab_chemo);
         gridLayoutWidget_2->setObjectName(QString::fromUtf8("gridLayoutWidget_2"));
-        gridLayoutWidget_2->setGeometry(QRect(80, 250, 201, 121));
+        gridLayoutWidget_2->setGeometry(QRect(80, 370, 211, 126));
         gridLayout_S1P_2 = new QGridLayout(gridLayoutWidget_2);
         gridLayout_S1P_2->setObjectName(QString::fromUtf8("gridLayout_S1P_2"));
         gridLayout_S1P_2->setContentsMargins(0, 0, 0, 0);
         label_CCL21_BDRY_CONC = new QMyLabel(gridLayoutWidget_2);
         label_CCL21_BDRY_CONC->setObjectName(QString::fromUtf8("label_CCL21_BDRY_CONC"));
 
-        gridLayout_S1P_2->addWidget(label_CCL21_BDRY_CONC, 0, 0, 1, 2);
+        gridLayout_S1P_2->addWidget(label_CCL21_BDRY_CONC, 1, 0, 1, 2);
 
         line_CCL21_BDRY_CONC = new QLineEdit(gridLayoutWidget_2);
         line_CCL21_BDRY_CONC->setObjectName(QString::fromUtf8("line_CCL21_BDRY_CONC"));
 
-        gridLayout_S1P_2->addWidget(line_CCL21_BDRY_CONC, 0, 2, 1, 1);
+        gridLayout_S1P_2->addWidget(line_CCL21_BDRY_CONC, 1, 2, 1, 1);
 
         label_CCL21_DIFF_COEFF = new QMyLabel(gridLayoutWidget_2);
         label_CCL21_DIFF_COEFF->setObjectName(QString::fromUtf8("label_CCL21_DIFF_COEFF"));
 
-        gridLayout_S1P_2->addWidget(label_CCL21_DIFF_COEFF, 1, 0, 1, 2);
+        gridLayout_S1P_2->addWidget(label_CCL21_DIFF_COEFF, 2, 0, 1, 2);
 
         line_CCL21_DIFF_COEFF = new QLineEdit(gridLayoutWidget_2);
         line_CCL21_DIFF_COEFF->setObjectName(QString::fromUtf8("line_CCL21_DIFF_COEFF"));
 
-        gridLayout_S1P_2->addWidget(line_CCL21_DIFF_COEFF, 1, 2, 1, 1);
+        gridLayout_S1P_2->addWidget(line_CCL21_DIFF_COEFF, 2, 2, 1, 1);
 
         label_CCL21_HALFLIFE = new QMyLabel(gridLayoutWidget_2);
         label_CCL21_HALFLIFE->setObjectName(QString::fromUtf8("label_CCL21_HALFLIFE"));
 
-        gridLayout_S1P_2->addWidget(label_CCL21_HALFLIFE, 2, 0, 1, 2);
+        gridLayout_S1P_2->addWidget(label_CCL21_HALFLIFE, 3, 0, 1, 2);
 
         line_CCL21_HALFLIFE = new QLineEdit(gridLayoutWidget_2);
         line_CCL21_HALFLIFE->setObjectName(QString::fromUtf8("line_CCL21_HALFLIFE"));
 
-        gridLayout_S1P_2->addWidget(line_CCL21_HALFLIFE, 2, 2, 1, 1);
+        gridLayout_S1P_2->addWidget(line_CCL21_HALFLIFE, 3, 2, 1, 1);
 
         units_CCL21conc = new QLabel(gridLayoutWidget_2);
         units_CCL21conc->setObjectName(QString::fromUtf8("units_CCL21conc"));
 
-        gridLayout_S1P_2->addWidget(units_CCL21conc, 0, 3, 1, 1);
+        gridLayout_S1P_2->addWidget(units_CCL21conc, 1, 3, 1, 1);
 
         units_CCL21diff = new QLabel(gridLayoutWidget_2);
         units_CCL21diff->setObjectName(QString::fromUtf8("units_CCL21diff"));
 
-        gridLayout_S1P_2->addWidget(units_CCL21diff, 1, 3, 1, 1);
+        gridLayout_S1P_2->addWidget(units_CCL21diff, 2, 3, 1, 1);
 
         units_CCL21life = new QLabel(gridLayoutWidget_2);
         units_CCL21life->setObjectName(QString::fromUtf8("units_CCL21life"));
 
-        gridLayout_S1P_2->addWidget(units_CCL21life, 2, 3, 1, 1);
+        gridLayout_S1P_2->addWidget(units_CCL21life, 3, 3, 1, 1);
 
         label_CCL21_STRENGTH = new QLabel(gridLayoutWidget_2);
         label_CCL21_STRENGTH->setObjectName(QString::fromUtf8("label_CCL21_STRENGTH"));
 
-        gridLayout_S1P_2->addWidget(label_CCL21_STRENGTH, 3, 0, 1, 2);
+        gridLayout_S1P_2->addWidget(label_CCL21_STRENGTH, 4, 0, 1, 2);
 
         line_CCL21_STRENGTH = new QLineEdit(gridLayoutWidget_2);
         line_CCL21_STRENGTH->setObjectName(QString::fromUtf8("line_CCL21_STRENGTH"));
 
-        gridLayout_S1P_2->addWidget(line_CCL21_STRENGTH, 3, 2, 1, 1);
+        gridLayout_S1P_2->addWidget(line_CCL21_STRENGTH, 4, 2, 1, 1);
+
+        label_CCL21_BDRY_RATE = new QLabel(gridLayoutWidget_2);
+        label_CCL21_BDRY_RATE->setObjectName(QString::fromUtf8("label_CCL21_BDRY_RATE"));
+
+        gridLayout_S1P_2->addWidget(label_CCL21_BDRY_RATE, 0, 0, 1, 2);
+
+        line_CCL21_BDRY_RATE = new QLineEdit(gridLayoutWidget_2);
+        line_CCL21_BDRY_RATE->setObjectName(QString::fromUtf8("line_CCL21_BDRY_RATE"));
+
+        gridLayout_S1P_2->addWidget(line_CCL21_BDRY_RATE, 0, 2, 1, 1);
+
+        units_CCL21rate = new QLabel(gridLayoutWidget_2);
+        units_CCL21rate->setObjectName(QString::fromUtf8("units_CCL21rate"));
+
+        gridLayout_S1P_2->addWidget(units_CCL21rate, 0, 3, 1, 1);
 
         cbox_USE_CCR7 = new QCheckBox(tab_chemo);
         cbox_USE_CCR7->setObjectName(QString::fromUtf8("cbox_USE_CCR7"));
-        cbox_USE_CCR7->setGeometry(QRect(150, 220, 81, 18));
-        gridLayoutWidget_3 = new QWidget(tab_chemo);
-        gridLayoutWidget_3->setObjectName(QString::fromUtf8("gridLayoutWidget_3"));
-        gridLayoutWidget_3->setGeometry(QRect(410, 50, 201, 121));
-        gridLayout_S1P_3 = new QGridLayout(gridLayoutWidget_3);
-        gridLayout_S1P_3->setObjectName(QString::fromUtf8("gridLayout_S1P_3"));
-        gridLayout_S1P_3->setContentsMargins(0, 0, 0, 0);
-        label_OXY_BDRY_CONC = new QMyLabel(gridLayoutWidget_3);
-        label_OXY_BDRY_CONC->setObjectName(QString::fromUtf8("label_OXY_BDRY_CONC"));
+        cbox_USE_CCR7->setGeometry(QRect(80, 340, 81, 18));
+        cbox_USE_EBI2 = new QCheckBox(tab_chemo);
+        cbox_USE_EBI2->setObjectName(QString::fromUtf8("cbox_USE_EBI2"));
+        cbox_USE_EBI2->setGeometry(QRect(440, 100, 71, 21));
+        cbox_USE_CXCR5 = new QCheckBox(tab_chemo);
+        cbox_USE_CXCR5->setObjectName(QString::fromUtf8("cbox_USE_CXCR5"));
+        cbox_USE_CXCR5->setGeometry(QRect(440, 340, 81, 18));
+        cbox_USE_S1PR2 = new QCheckBox(tab_chemo);
+        cbox_USE_S1PR2->setObjectName(QString::fromUtf8("cbox_USE_S1PR2"));
+        cbox_USE_S1PR2->setGeometry(QRect(190, 100, 81, 18));
+        rbut_CCL21_BDRY_0 = new QRadioButton(tab_chemo);
+        buttonGroup_CCL21_BDRY = new QButtonGroup(MainWindow);
+        buttonGroup_CCL21_BDRY->setObjectName(QString::fromUtf8("buttonGroup_CCL21_BDRY"));
+        buttonGroup_CCL21_BDRY->addButton(rbut_CCL21_BDRY_0);
+        rbut_CCL21_BDRY_0->setObjectName(QString::fromUtf8("rbut_CCL21_BDRY_0"));
+        rbut_CCL21_BDRY_0->setGeometry(QRect(300, 370, 111, 21));
+        gridLayoutWidget_5 = new QWidget(tab_chemo);
+        gridLayoutWidget_5->setObjectName(QString::fromUtf8("gridLayoutWidget_5"));
+        gridLayoutWidget_5->setGeometry(QRect(440, 370, 220, 126));
+        gridLayout_S1P_5 = new QGridLayout(gridLayoutWidget_5);
+        gridLayout_S1P_5->setObjectName(QString::fromUtf8("gridLayout_S1P_5"));
+        gridLayout_S1P_5->setContentsMargins(0, 0, 0, 0);
+        label_CXCL13_BDRY_CONC = new QMyLabel(gridLayoutWidget_5);
+        label_CXCL13_BDRY_CONC->setObjectName(QString::fromUtf8("label_CXCL13_BDRY_CONC"));
 
-        gridLayout_S1P_3->addWidget(label_OXY_BDRY_CONC, 0, 0, 1, 2);
+        gridLayout_S1P_5->addWidget(label_CXCL13_BDRY_CONC, 1, 0, 1, 2);
 
-        line_OXY_BDRY_CONC = new QLineEdit(gridLayoutWidget_3);
-        line_OXY_BDRY_CONC->setObjectName(QString::fromUtf8("line_OXY_BDRY_CONC"));
+        line_CXCL13_BDRY_CONC = new QLineEdit(gridLayoutWidget_5);
+        line_CXCL13_BDRY_CONC->setObjectName(QString::fromUtf8("line_CXCL13_BDRY_CONC"));
 
-        gridLayout_S1P_3->addWidget(line_OXY_BDRY_CONC, 0, 2, 1, 1);
+        gridLayout_S1P_5->addWidget(line_CXCL13_BDRY_CONC, 1, 2, 1, 1);
 
-        label_OXY_DIFF_COEFF = new QMyLabel(gridLayoutWidget_3);
-        label_OXY_DIFF_COEFF->setObjectName(QString::fromUtf8("label_OXY_DIFF_COEFF"));
+        label_CXCL13_DIFF_COEFF = new QMyLabel(gridLayoutWidget_5);
+        label_CXCL13_DIFF_COEFF->setObjectName(QString::fromUtf8("label_CXCL13_DIFF_COEFF"));
 
-        gridLayout_S1P_3->addWidget(label_OXY_DIFF_COEFF, 1, 0, 1, 2);
+        gridLayout_S1P_5->addWidget(label_CXCL13_DIFF_COEFF, 2, 0, 1, 2);
 
-        line_OXY_DIFF_COEFF = new QLineEdit(gridLayoutWidget_3);
-        line_OXY_DIFF_COEFF->setObjectName(QString::fromUtf8("line_OXY_DIFF_COEFF"));
+        line_CXCL13_DIFF_COEFF = new QLineEdit(gridLayoutWidget_5);
+        line_CXCL13_DIFF_COEFF->setObjectName(QString::fromUtf8("line_CXCL13_DIFF_COEFF"));
 
-        gridLayout_S1P_3->addWidget(line_OXY_DIFF_COEFF, 1, 2, 1, 1);
+        gridLayout_S1P_5->addWidget(line_CXCL13_DIFF_COEFF, 2, 2, 1, 1);
 
-        label_OXY_HALFLIFE = new QMyLabel(gridLayoutWidget_3);
-        label_OXY_HALFLIFE->setObjectName(QString::fromUtf8("label_OXY_HALFLIFE"));
+        label_CXCL13_HALFLIFE = new QMyLabel(gridLayoutWidget_5);
+        label_CXCL13_HALFLIFE->setObjectName(QString::fromUtf8("label_CXCL13_HALFLIFE"));
 
-        gridLayout_S1P_3->addWidget(label_OXY_HALFLIFE, 2, 0, 1, 2);
+        gridLayout_S1P_5->addWidget(label_CXCL13_HALFLIFE, 3, 0, 1, 2);
 
-        line_OXY_HALFLIFE = new QLineEdit(gridLayoutWidget_3);
-        line_OXY_HALFLIFE->setObjectName(QString::fromUtf8("line_OXY_HALFLIFE"));
+        line_CXCL13_HALFLIFE = new QLineEdit(gridLayoutWidget_5);
+        line_CXCL13_HALFLIFE->setObjectName(QString::fromUtf8("line_CXCL13_HALFLIFE"));
 
-        gridLayout_S1P_3->addWidget(line_OXY_HALFLIFE, 2, 2, 1, 1);
+        gridLayout_S1P_5->addWidget(line_CXCL13_HALFLIFE, 3, 2, 1, 1);
 
-        units_OXYconc = new QLabel(gridLayoutWidget_3);
-        units_OXYconc->setObjectName(QString::fromUtf8("units_OXYconc"));
+        units_CXCL13conc = new QLabel(gridLayoutWidget_5);
+        units_CXCL13conc->setObjectName(QString::fromUtf8("units_CXCL13conc"));
 
-        gridLayout_S1P_3->addWidget(units_OXYconc, 0, 3, 1, 1);
+        gridLayout_S1P_5->addWidget(units_CXCL13conc, 1, 3, 1, 1);
 
-        units_OXYdiff = new QLabel(gridLayoutWidget_3);
-        units_OXYdiff->setObjectName(QString::fromUtf8("units_OXYdiff"));
+        units_CXCL13diff = new QLabel(gridLayoutWidget_5);
+        units_CXCL13diff->setObjectName(QString::fromUtf8("units_CXCL13diff"));
 
-        gridLayout_S1P_3->addWidget(units_OXYdiff, 1, 3, 1, 1);
+        gridLayout_S1P_5->addWidget(units_CXCL13diff, 2, 3, 1, 1);
 
-        units_OXYlife = new QLabel(gridLayoutWidget_3);
-        units_OXYlife->setObjectName(QString::fromUtf8("units_OXYlife"));
+        units_CXCL13life = new QLabel(gridLayoutWidget_5);
+        units_CXCL13life->setObjectName(QString::fromUtf8("units_CXCL13life"));
 
-        gridLayout_S1P_3->addWidget(units_OXYlife, 2, 3, 1, 1);
+        gridLayout_S1P_5->addWidget(units_CXCL13life, 3, 3, 1, 1);
 
-        label_OXY_STRENGTH = new QLabel(gridLayoutWidget_3);
-        label_OXY_STRENGTH->setObjectName(QString::fromUtf8("label_OXY_STRENGTH"));
+        label_CXCL13_STRENGTH = new QLabel(gridLayoutWidget_5);
+        label_CXCL13_STRENGTH->setObjectName(QString::fromUtf8("label_CXCL13_STRENGTH"));
 
-        gridLayout_S1P_3->addWidget(label_OXY_STRENGTH, 3, 0, 1, 2);
+        gridLayout_S1P_5->addWidget(label_CXCL13_STRENGTH, 4, 0, 1, 2);
 
-        line_OXY_STRENGTH = new QLineEdit(gridLayoutWidget_3);
-        line_OXY_STRENGTH->setObjectName(QString::fromUtf8("line_OXY_STRENGTH"));
+        line_CXCL13_STRENGTH = new QLineEdit(gridLayoutWidget_5);
+        line_CXCL13_STRENGTH->setObjectName(QString::fromUtf8("line_CXCL13_STRENGTH"));
 
-        gridLayout_S1P_3->addWidget(line_OXY_STRENGTH, 3, 2, 1, 1);
+        gridLayout_S1P_5->addWidget(line_CXCL13_STRENGTH, 4, 2, 1, 1);
 
+        label_CXCL13_BDRY_RATE = new QLabel(gridLayoutWidget_5);
+        label_CXCL13_BDRY_RATE->setObjectName(QString::fromUtf8("label_CXCL13_BDRY_RATE"));
+
+        gridLayout_S1P_5->addWidget(label_CXCL13_BDRY_RATE, 0, 0, 1, 2);
+
+        line_CXCL13_BDRY_RATE = new QLineEdit(gridLayoutWidget_5);
+        line_CXCL13_BDRY_RATE->setObjectName(QString::fromUtf8("line_CXCL13_BDRY_RATE"));
+
+        gridLayout_S1P_5->addWidget(line_CXCL13_BDRY_RATE, 0, 2, 1, 1);
+
+        units_CXCL13rate = new QLabel(gridLayoutWidget_5);
+        units_CXCL13rate->setObjectName(QString::fromUtf8("units_CXCL13rate"));
+
+        gridLayout_S1P_5->addWidget(units_CXCL13rate, 0, 3, 1, 1);
+
+        rbut_CXCL13_BDRY_0 = new QRadioButton(tab_chemo);
+        buttonGroup_CXCL13_BDRY = new QButtonGroup(MainWindow);
+        buttonGroup_CXCL13_BDRY->setObjectName(QString::fromUtf8("buttonGroup_CXCL13_BDRY"));
+        buttonGroup_CXCL13_BDRY->addButton(rbut_CXCL13_BDRY_0);
+        rbut_CXCL13_BDRY_0->setObjectName(QString::fromUtf8("rbut_CXCL13_BDRY_0"));
+        rbut_CXCL13_BDRY_0->setGeometry(QRect(670, 370, 111, 21));
         gridLayoutWidget_4 = new QWidget(tab_chemo);
         gridLayoutWidget_4->setObjectName(QString::fromUtf8("gridLayoutWidget_4"));
-        gridLayoutWidget_4->setGeometry(QRect(410, 250, 204, 121));
+        gridLayoutWidget_4->setGeometry(QRect(440, 130, 221, 126));
         gridLayout_S1P_4 = new QGridLayout(gridLayoutWidget_4);
         gridLayout_S1P_4->setObjectName(QString::fromUtf8("gridLayout_S1P_4"));
         gridLayout_S1P_4->setContentsMargins(0, 0, 0, 0);
-        label_CXCL13_BDRY_CONC = new QMyLabel(gridLayoutWidget_4);
-        label_CXCL13_BDRY_CONC->setObjectName(QString::fromUtf8("label_CXCL13_BDRY_CONC"));
+        label_OXY_BDRY_CONC = new QMyLabel(gridLayoutWidget_4);
+        label_OXY_BDRY_CONC->setObjectName(QString::fromUtf8("label_OXY_BDRY_CONC"));
 
-        gridLayout_S1P_4->addWidget(label_CXCL13_BDRY_CONC, 0, 0, 1, 2);
+        gridLayout_S1P_4->addWidget(label_OXY_BDRY_CONC, 1, 0, 1, 2);
 
-        line_CXCL13_BDRY_CONC = new QLineEdit(gridLayoutWidget_4);
-        line_CXCL13_BDRY_CONC->setObjectName(QString::fromUtf8("line_CXCL13_BDRY_CONC"));
+        line_OXY_BDRY_CONC = new QLineEdit(gridLayoutWidget_4);
+        line_OXY_BDRY_CONC->setObjectName(QString::fromUtf8("line_OXY_BDRY_CONC"));
 
-        gridLayout_S1P_4->addWidget(line_CXCL13_BDRY_CONC, 0, 2, 1, 1);
+        gridLayout_S1P_4->addWidget(line_OXY_BDRY_CONC, 1, 2, 1, 1);
 
-        label_CXCL13_DIFF_COEFF = new QMyLabel(gridLayoutWidget_4);
-        label_CXCL13_DIFF_COEFF->setObjectName(QString::fromUtf8("label_CXCL13_DIFF_COEFF"));
+        label_OXY_DIFF_COEFF = new QMyLabel(gridLayoutWidget_4);
+        label_OXY_DIFF_COEFF->setObjectName(QString::fromUtf8("label_OXY_DIFF_COEFF"));
 
-        gridLayout_S1P_4->addWidget(label_CXCL13_DIFF_COEFF, 1, 0, 1, 2);
+        gridLayout_S1P_4->addWidget(label_OXY_DIFF_COEFF, 2, 0, 1, 2);
 
-        line_CXCL13_DIFF_COEFF = new QLineEdit(gridLayoutWidget_4);
-        line_CXCL13_DIFF_COEFF->setObjectName(QString::fromUtf8("line_CXCL13_DIFF_COEFF"));
+        line_OXY_DIFF_COEFF = new QLineEdit(gridLayoutWidget_4);
+        line_OXY_DIFF_COEFF->setObjectName(QString::fromUtf8("line_OXY_DIFF_COEFF"));
 
-        gridLayout_S1P_4->addWidget(line_CXCL13_DIFF_COEFF, 1, 2, 1, 1);
+        gridLayout_S1P_4->addWidget(line_OXY_DIFF_COEFF, 2, 2, 1, 1);
 
-        label_CXCL13_HALFLIFE = new QMyLabel(gridLayoutWidget_4);
-        label_CXCL13_HALFLIFE->setObjectName(QString::fromUtf8("label_CXCL13_HALFLIFE"));
+        label_OXY_HALFLIFE = new QMyLabel(gridLayoutWidget_4);
+        label_OXY_HALFLIFE->setObjectName(QString::fromUtf8("label_OXY_HALFLIFE"));
 
-        gridLayout_S1P_4->addWidget(label_CXCL13_HALFLIFE, 2, 0, 1, 2);
+        gridLayout_S1P_4->addWidget(label_OXY_HALFLIFE, 3, 0, 1, 2);
 
-        line_CXCL13_HALFLIFE = new QLineEdit(gridLayoutWidget_4);
-        line_CXCL13_HALFLIFE->setObjectName(QString::fromUtf8("line_CXCL13_HALFLIFE"));
+        line_OXY_HALFLIFE = new QLineEdit(gridLayoutWidget_4);
+        line_OXY_HALFLIFE->setObjectName(QString::fromUtf8("line_OXY_HALFLIFE"));
 
-        gridLayout_S1P_4->addWidget(line_CXCL13_HALFLIFE, 2, 2, 1, 1);
+        gridLayout_S1P_4->addWidget(line_OXY_HALFLIFE, 3, 2, 1, 1);
 
-        units_CXCL13conc = new QLabel(gridLayoutWidget_4);
-        units_CXCL13conc->setObjectName(QString::fromUtf8("units_CXCL13conc"));
+        units_OXYconc = new QLabel(gridLayoutWidget_4);
+        units_OXYconc->setObjectName(QString::fromUtf8("units_OXYconc"));
 
-        gridLayout_S1P_4->addWidget(units_CXCL13conc, 0, 3, 1, 1);
+        gridLayout_S1P_4->addWidget(units_OXYconc, 1, 3, 1, 1);
 
-        units_CXCL13diff = new QLabel(gridLayoutWidget_4);
-        units_CXCL13diff->setObjectName(QString::fromUtf8("units_CXCL13diff"));
+        units_OXYdiff = new QLabel(gridLayoutWidget_4);
+        units_OXYdiff->setObjectName(QString::fromUtf8("units_OXYdiff"));
 
-        gridLayout_S1P_4->addWidget(units_CXCL13diff, 1, 3, 1, 1);
+        gridLayout_S1P_4->addWidget(units_OXYdiff, 2, 3, 1, 1);
 
-        units_CXCL13life = new QLabel(gridLayoutWidget_4);
-        units_CXCL13life->setObjectName(QString::fromUtf8("units_CXCL13life"));
+        units_OXYlife = new QLabel(gridLayoutWidget_4);
+        units_OXYlife->setObjectName(QString::fromUtf8("units_OXYlife"));
 
-        gridLayout_S1P_4->addWidget(units_CXCL13life, 2, 3, 1, 1);
+        gridLayout_S1P_4->addWidget(units_OXYlife, 3, 3, 1, 1);
 
-        label_CXCL13_STRENGTH = new QLabel(gridLayoutWidget_4);
-        label_CXCL13_STRENGTH->setObjectName(QString::fromUtf8("label_CXCL13_STRENGTH"));
+        label_OXY_STRENGTH = new QLabel(gridLayoutWidget_4);
+        label_OXY_STRENGTH->setObjectName(QString::fromUtf8("label_OXY_STRENGTH"));
 
-        gridLayout_S1P_4->addWidget(label_CXCL13_STRENGTH, 3, 0, 1, 2);
+        gridLayout_S1P_4->addWidget(label_OXY_STRENGTH, 4, 0, 1, 2);
 
-        line_CXCL13_STRENGTH = new QLineEdit(gridLayoutWidget_4);
-        line_CXCL13_STRENGTH->setObjectName(QString::fromUtf8("line_CXCL13_STRENGTH"));
+        line_OXY_STRENGTH = new QLineEdit(gridLayoutWidget_4);
+        line_OXY_STRENGTH->setObjectName(QString::fromUtf8("line_OXY_STRENGTH"));
 
-        gridLayout_S1P_4->addWidget(line_CXCL13_STRENGTH, 3, 2, 1, 1);
+        gridLayout_S1P_4->addWidget(line_OXY_STRENGTH, 4, 2, 1, 1);
 
-        cbox_USE_EBI2 = new QCheckBox(tab_chemo);
-        cbox_USE_EBI2->setObjectName(QString::fromUtf8("cbox_USE_EBI2"));
-        cbox_USE_EBI2->setGeometry(QRect(480, 20, 71, 21));
-        cbox_USE_CXCR5 = new QCheckBox(tab_chemo);
-        cbox_USE_CXCR5->setObjectName(QString::fromUtf8("cbox_USE_CXCR5"));
-        cbox_USE_CXCR5->setGeometry(QRect(480, 220, 81, 18));
-        cbox_USE_S1PR2 = new QCheckBox(tab_chemo);
-        cbox_USE_S1PR2->setObjectName(QString::fromUtf8("cbox_USE_S1PR2"));
-        cbox_USE_S1PR2->setGeometry(QRect(190, 20, 81, 18));
+        label_OXY_BDRY_RATE = new QLabel(gridLayoutWidget_4);
+        label_OXY_BDRY_RATE->setObjectName(QString::fromUtf8("label_OXY_BDRY_RATE"));
+
+        gridLayout_S1P_4->addWidget(label_OXY_BDRY_RATE, 0, 0, 1, 2);
+
+        line_OXY_BDRY_RATE = new QLineEdit(gridLayoutWidget_4);
+        line_OXY_BDRY_RATE->setObjectName(QString::fromUtf8("line_OXY_BDRY_RATE"));
+
+        gridLayout_S1P_4->addWidget(line_OXY_BDRY_RATE, 0, 2, 1, 1);
+
+        units_OXYrate = new QLabel(gridLayoutWidget_4);
+        units_OXYrate->setObjectName(QString::fromUtf8("units_OXYrate"));
+
+        gridLayout_S1P_4->addWidget(units_OXYrate, 0, 3, 1, 1);
+
+        rbut_OXY_BDRY_0 = new QRadioButton(tab_chemo);
+        buttonGroup_OXY_BDRY = new QButtonGroup(MainWindow);
+        buttonGroup_OXY_BDRY->setObjectName(QString::fromUtf8("buttonGroup_OXY_BDRY"));
+        buttonGroup_OXY_BDRY->addButton(rbut_OXY_BDRY_0);
+        rbut_OXY_BDRY_0->setObjectName(QString::fromUtf8("rbut_OXY_BDRY_0"));
+        rbut_OXY_BDRY_0->setGeometry(QRect(670, 130, 111, 21));
+        gridLayoutWidget_3 = new QWidget(tab_chemo);
+        gridLayoutWidget_3->setObjectName(QString::fromUtf8("gridLayoutWidget_3"));
+        gridLayoutWidget_3->setGeometry(QRect(80, 130, 211, 152));
+        gridLayout_S1P_3 = new QGridLayout(gridLayoutWidget_3);
+        gridLayout_S1P_3->setObjectName(QString::fromUtf8("gridLayout_S1P_3"));
+        gridLayout_S1P_3->setContentsMargins(0, 0, 0, 0);
+        label_S1P_BDRY_CONC = new QMyLabel(gridLayoutWidget_3);
+        label_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("label_S1P_BDRY_CONC"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_BDRY_CONC, 1, 0, 1, 2);
+
+        line_S1P_BDRY_CONC = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("line_S1P_BDRY_CONC"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_BDRY_CONC, 1, 2, 1, 1);
+
+        label_S1P_DIFF_COEFF = new QMyLabel(gridLayoutWidget_3);
+        label_S1P_DIFF_COEFF->setObjectName(QString::fromUtf8("label_S1P_DIFF_COEFF"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_DIFF_COEFF, 2, 0, 1, 2);
+
+        line_S1P_DIFF_COEFF = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_DIFF_COEFF->setObjectName(QString::fromUtf8("line_S1P_DIFF_COEFF"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_DIFF_COEFF, 2, 2, 1, 1);
+
+        label_S1P_HALFLIFE = new QMyLabel(gridLayoutWidget_3);
+        label_S1P_HALFLIFE->setObjectName(QString::fromUtf8("label_S1P_HALFLIFE"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_HALFLIFE, 3, 0, 1, 2);
+
+        line_S1P_HALFLIFE = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_HALFLIFE->setObjectName(QString::fromUtf8("line_S1P_HALFLIFE"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_HALFLIFE, 3, 2, 1, 1);
+
+        units_S1Pconc = new QLabel(gridLayoutWidget_3);
+        units_S1Pconc->setObjectName(QString::fromUtf8("units_S1Pconc"));
+
+        gridLayout_S1P_3->addWidget(units_S1Pconc, 1, 3, 1, 1);
+
+        units_S1Pdiff = new QLabel(gridLayoutWidget_3);
+        units_S1Pdiff->setObjectName(QString::fromUtf8("units_S1Pdiff"));
+
+        gridLayout_S1P_3->addWidget(units_S1Pdiff, 2, 3, 1, 1);
+
+        units_S1Plife = new QLabel(gridLayoutWidget_3);
+        units_S1Plife->setObjectName(QString::fromUtf8("units_S1Plife"));
+
+        gridLayout_S1P_3->addWidget(units_S1Plife, 3, 3, 1, 1);
+
+        label_S1P_STRENGTH_POS = new QLabel(gridLayoutWidget_3);
+        label_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_POS"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_STRENGTH_POS, 4, 0, 1, 2);
+
+        line_S1P_STRENGTH_POS = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_STRENGTH_POS->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_POS"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_STRENGTH_POS, 4, 2, 1, 1);
+
+        label_S1P_STRENGTH_NEG = new QLabel(gridLayoutWidget_3);
+        label_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("label_S1P_STRENGTH_NEG"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_STRENGTH_NEG, 5, 0, 1, 1);
+
+        line_S1P_STRENGTH_NEG = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_STRENGTH_NEG->setObjectName(QString::fromUtf8("line_S1P_STRENGTH_NEG"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_STRENGTH_NEG, 5, 2, 1, 1);
+
+        label_S1P_BDRY_RATE = new QLabel(gridLayoutWidget_3);
+        label_S1P_BDRY_RATE->setObjectName(QString::fromUtf8("label_S1P_BDRY_RATE"));
+
+        gridLayout_S1P_3->addWidget(label_S1P_BDRY_RATE, 0, 0, 1, 2);
+
+        line_S1P_BDRY_RATE = new QLineEdit(gridLayoutWidget_3);
+        line_S1P_BDRY_RATE->setObjectName(QString::fromUtf8("line_S1P_BDRY_RATE"));
+
+        gridLayout_S1P_3->addWidget(line_S1P_BDRY_RATE, 0, 2, 1, 1);
+
+        units_S1Prate = new QLabel(gridLayoutWidget_3);
+        units_S1Prate->setObjectName(QString::fromUtf8("units_S1Prate"));
+
+        gridLayout_S1P_3->addWidget(units_S1Prate, 0, 3, 1, 1);
+
+        rbut_S1P_BDRY_0 = new QRadioButton(tab_chemo);
+        buttonGroup_S1P_BDRY = new QButtonGroup(MainWindow);
+        buttonGroup_S1P_BDRY->setObjectName(QString::fromUtf8("buttonGroup_S1P_BDRY"));
+        buttonGroup_S1P_BDRY->addButton(rbut_S1P_BDRY_0);
+        rbut_S1P_BDRY_0->setObjectName(QString::fromUtf8("rbut_S1P_BDRY_0"));
+        rbut_S1P_BDRY_0->setGeometry(QRect(300, 130, 91, 21));
+        label_chemokine = new QLabel(tab_chemo);
+        label_chemokine->setObjectName(QString::fromUtf8("label_chemokine"));
+        label_chemokine->setGeometry(QRect(280, 30, 221, 16));
+        QFont font2;
+        font2.setPointSize(16);
+        label_chemokine->setFont(font2);
+        rbut_S1P_BDRY_1 = new QRadioButton(tab_chemo);
+        buttonGroup_S1P_BDRY->addButton(rbut_S1P_BDRY_1);
+        rbut_S1P_BDRY_1->setObjectName(QString::fromUtf8("rbut_S1P_BDRY_1"));
+        rbut_S1P_BDRY_1->setGeometry(QRect(300, 150, 111, 21));
+        rbut_S1P_BDRY_1->setChecked(true);
+        rbut_CCL21_BDRY_1 = new QRadioButton(tab_chemo);
+        buttonGroup_CCL21_BDRY->addButton(rbut_CCL21_BDRY_1);
+        rbut_CCL21_BDRY_1->setObjectName(QString::fromUtf8("rbut_CCL21_BDRY_1"));
+        rbut_CCL21_BDRY_1->setGeometry(QRect(300, 390, 111, 21));
+        rbut_CCL21_BDRY_1->setChecked(true);
+        rbut_OXY_BDRY_1 = new QRadioButton(tab_chemo);
+        buttonGroup_OXY_BDRY->addButton(rbut_OXY_BDRY_1);
+        rbut_OXY_BDRY_1->setObjectName(QString::fromUtf8("rbut_OXY_BDRY_1"));
+        rbut_OXY_BDRY_1->setGeometry(QRect(670, 150, 111, 21));
+        rbut_OXY_BDRY_1->setChecked(true);
+        rbut_CXCL13_BDRY_1 = new QRadioButton(tab_chemo);
+        buttonGroup_CXCL13_BDRY->addButton(rbut_CXCL13_BDRY_1);
+        rbut_CXCL13_BDRY_1->setObjectName(QString::fromUtf8("rbut_CXCL13_BDRY_1"));
+        rbut_CXCL13_BDRY_1->setGeometry(QRect(670, 390, 111, 21));
+        rbut_CXCL13_BDRY_1->setChecked(true);
         tabs->addTab(tab_chemo, QString());
         tab_TCR = new QWidget();
         tab_TCR->setObjectName(QString::fromUtf8("tab_TCR"));
@@ -1182,10 +1317,10 @@ public:
         label_40 = new QLabel(tab_TCR);
         label_40->setObjectName(QString::fromUtf8("label_40"));
         label_40->setGeometry(QRect(10, 10, 211, 16));
-        QFont font2;
-        font2.setBold(true);
-        font2.setWeight(75);
-        label_40->setFont(font2);
+        QFont font3;
+        font3.setBold(true);
+        font3.setWeight(75);
+        label_40->setFont(font3);
         tabs->addTab(tab_TCR, QString());
         tab_run = new QWidget();
         tab_run->setObjectName(QString::fromUtf8("tab_run"));
@@ -1531,12 +1666,12 @@ public:
         label_input = new QLabel(page_input);
         label_input->setObjectName(QString::fromUtf8("label_input"));
         label_input->setMaximumSize(QSize(16777215, 30));
-        QFont font3;
-        font3.setFamily(QString::fromUtf8("Segoe UI"));
-        font3.setPointSize(16);
-        font3.setBold(true);
-        font3.setWeight(75);
-        label_input->setFont(font3);
+        QFont font4;
+        font4.setFamily(QString::fromUtf8("Segoe UI"));
+        font4.setPointSize(16);
+        font4.setBold(true);
+        font4.setWeight(75);
+        label_input->setFont(font4);
         label_input->setAlignment(Qt::AlignCenter);
 
         verticalLayout->addWidget(label_input);
@@ -1600,13 +1735,13 @@ public:
         label_hour = new QLabel(page_3D);
         label_hour->setObjectName(QString::fromUtf8("label_hour"));
         label_hour->setGeometry(QRect(10, 0, 46, 20));
-        QFont font4;
-        font4.setPointSize(10);
-        label_hour->setFont(font4);
+        QFont font5;
+        font5.setPointSize(10);
+        label_hour->setFont(font5);
         hour_display = new QLabel(page_3D);
         hour_display->setObjectName(QString::fromUtf8("hour_display"));
         hour_display->setGeometry(QRect(50, 0, 46, 20));
-        hour_display->setFont(font4);
+        hour_display->setFont(font5);
         stackedWidget->addWidget(page_3D);
 
         gridLayout_5->addWidget(stackedWidget, 0, 0, 1, 1);
@@ -1772,22 +1907,6 @@ public:
         label_DC_LIFETIME_MEDIAN->setText(QApplication::translate("MainWindow", "label_DC_LIFETIME_MEDIAN", 0, QApplication::UnicodeUTF8));
         alabel_dist_2->setText(QApplication::translate("MainWindow", "Probability distributions", 0, QApplication::UnicodeUTF8));
         tabs->setTabText(tabs->indexOf(tab_DC), QApplication::translate("MainWindow", "DC", 0, QApplication::UnicodeUTF8));
-        label_S1P_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_S1P_BDRY_CONC", 0, QApplication::UnicodeUTF8));
-        label_S1P_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_S1P_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
-        label_S1P_HALFLIFE->setText(QApplication::translate("MainWindow", "label_S1P_HALFLIFE", 0, QApplication::UnicodeUTF8));
-        units_S1Pconc->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_S1Pdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_S1Plife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
-        label_S1P_STRENGTH_POS->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_POS", 0, QApplication::UnicodeUTF8));
-        label_S1P_STRENGTH_NEG->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_NEG", 0, QApplication::UnicodeUTF8));
         cbox_USE_S1PR1->setText(QApplication::translate("MainWindow", "Use S1PR1?", 0, QApplication::UnicodeUTF8));
         label_CCL21_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_CCL21_BDRY_CONC", 0, QApplication::UnicodeUTF8));
         label_CCL21_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_CCL21_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
@@ -1804,22 +1923,17 @@ public:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CCL21life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CCL21_STRENGTH->setText(QApplication::translate("MainWindow", "label_CCL21_STRENGTH", 0, QApplication::UnicodeUTF8));
+        label_CCL21_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_CCL21_BDRY_RATE", 0, QApplication::UnicodeUTF8));
+        units_CCL21rate->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg</span>.<span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         cbox_USE_CCR7->setText(QApplication::translate("MainWindow", "Use CCR7?", 0, QApplication::UnicodeUTF8));
-        label_OXY_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_OXY_BDRY_CONC", 0, QApplication::UnicodeUTF8));
-        label_OXY_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_OXY_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
-        label_OXY_HALFLIFE->setText(QApplication::translate("MainWindow", "labelOXYP_HALFLIFE", 0, QApplication::UnicodeUTF8));
-        units_OXYconc->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_OXYdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_OXYlife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
-        label_OXY_STRENGTH->setText(QApplication::translate("MainWindow", "label_OXY_STRENGTH", 0, QApplication::UnicodeUTF8));
+        cbox_USE_EBI2->setText(QApplication::translate("MainWindow", "Use EBI2?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_CXCR5->setText(QApplication::translate("MainWindow", "Use CXCR5?", 0, QApplication::UnicodeUTF8));
+        cbox_USE_S1PR2->setText(QApplication::translate("MainWindow", "Use S1PR2?", 0, QApplication::UnicodeUTF8));
+        rbut_CCL21_BDRY_0->setText(QApplication::translate("MainWindow", "Use secretion", 0, QApplication::UnicodeUTF8));
         label_CXCL13_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_CXCL13_BDRY_CONC", 0, QApplication::UnicodeUTF8));
         label_CXCL13_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_CXCL13_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
         label_CXCL13_HALFLIFE->setText(QApplication::translate("MainWindow", "label_CXCL13_HALFLIFE", 0, QApplication::UnicodeUTF8));
@@ -1835,9 +1949,63 @@ public:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CXCL13life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CXCL13_STRENGTH->setText(QApplication::translate("MainWindow", "label_CXCL13_STRENGTH", 0, QApplication::UnicodeUTF8));
-        cbox_USE_EBI2->setText(QApplication::translate("MainWindow", "Use EBI2?", 0, QApplication::UnicodeUTF8));
-        cbox_USE_CXCR5->setText(QApplication::translate("MainWindow", "Use CXCR5?", 0, QApplication::UnicodeUTF8));
-        cbox_USE_S1PR2->setText(QApplication::translate("MainWindow", "Use S1PR2?", 0, QApplication::UnicodeUTF8));
+        label_CXCL13_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_CXCL13_BDRY_RATE", 0, QApplication::UnicodeUTF8));
+        units_CXCL13rate->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg</span>.<span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        rbut_CXCL13_BDRY_0->setText(QApplication::translate("MainWindow", "Use secretion", 0, QApplication::UnicodeUTF8));
+        label_OXY_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_OXY_BDRY_CONC", 0, QApplication::UnicodeUTF8));
+        label_OXY_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_OXY_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
+        label_OXY_HALFLIFE->setText(QApplication::translate("MainWindow", "labelOXYP_HALFLIFE", 0, QApplication::UnicodeUTF8));
+        units_OXYconc->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        units_OXYdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        units_OXYlife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
+        label_OXY_STRENGTH->setText(QApplication::translate("MainWindow", "label_OXY_STRENGTH", 0, QApplication::UnicodeUTF8));
+        label_OXY_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_OXY_BDRY_RATE", 0, QApplication::UnicodeUTF8));
+        units_OXYrate->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg</span>.<span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        rbut_OXY_BDRY_0->setText(QApplication::translate("MainWindow", "Use secretion", 0, QApplication::UnicodeUTF8));
+        label_S1P_BDRY_CONC->setText(QApplication::translate("MainWindow", "label_S1P_BDRY_CONC", 0, QApplication::UnicodeUTF8));
+        label_S1P_DIFF_COEFF->setText(QApplication::translate("MainWindow", "label_S1P_DIFF_COEFF", 0, QApplication::UnicodeUTF8));
+        label_S1P_HALFLIFE->setText(QApplication::translate("MainWindow", "label_S1P_HALFLIFE", 0, QApplication::UnicodeUTF8));
+        units_S1Pconc->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        units_S1Pdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        units_S1Plife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
+        label_S1P_STRENGTH_POS->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_POS", 0, QApplication::UnicodeUTF8));
+        label_S1P_STRENGTH_NEG->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_NEG", 0, QApplication::UnicodeUTF8));
+        label_S1P_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_S1P_BDRY_RATE", 0, QApplication::UnicodeUTF8));
+        units_S1Prate->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg</span>.<span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
+        rbut_S1P_BDRY_0->setText(QApplication::translate("MainWindow", "Use secretion", 0, QApplication::UnicodeUTF8));
+        label_chemokine->setText(QApplication::translate("MainWindow", "Chemokine Parameters", 0, QApplication::UnicodeUTF8));
+        rbut_S1P_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
+        rbut_CCL21_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
+        rbut_OXY_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
+        rbut_CXCL13_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
         tabs->setTabText(tabs->indexOf(tab_chemo), QApplication::translate("MainWindow", "Chemokine", 0, QApplication::UnicodeUTF8));
         label_IL2_THRESHOLD->setText(QApplication::translate("MainWindow", "label_IL2_THRESHOLD", 0, QApplication::UnicodeUTF8));
         label_ACTIVATION_THRESHOLD->setText(QApplication::translate("MainWindow", "label_ACTIVATION_THRESHOLD", 0, QApplication::UnicodeUTF8));

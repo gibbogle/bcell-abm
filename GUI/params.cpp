@@ -110,6 +110,14 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Use S1PR2?",
 "S1P chemotactic repulsion is simulated"},
 
+{"S1P_BDRY_0",1, 0, 1,
+"Use S1P bdry secretion?",
+"Use S1P bdry secretion rate"},
+
+{"S1P_BDRY_RATE", 1, 0, 0,
+ "S1P boundary rate",
+ "Influx rate of S1P at the follicle surface"},
+
 {"S1P_BDRY_CONC", 1, 0, 0,
  "S1P boundary conc",
  "Concentration of S1P at the follicle surface"},
@@ -134,6 +142,14 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Use CCR7?",
 "CCL21 chemotaxis is simulated"},
 
+{"CCL21_BDRY_0", 1, 0, 1,
+"Use CCL21 bdry secretion?",
+"Use CCL21 bdry secretion rate"},
+
+{"CCL21_BDRY_RATE", 1, 0, 0,
+ "CCL21 boundary rate",
+ "Influx rate of CCL21 at the follicle surface"},
+
 {"CCL21_BDRY_CONC", 1, 0, 0,
  "CCL21 boundary conc",
  "Concentration of CCL21 at the follicle surface"},
@@ -153,6 +169,14 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"USE_EBI2", 0, 0, 1,
 "Use EBI2?",
 "Oxysterol chemotaxis is simulated"},
+
+{"OXY_BDRY_0", 1, 0, 1,
+"Use OXY bdry secretion?",
+"Use OXY bdry secretion rate"},
+
+{"OXY_BDRY_RATE", 1, 0, 0,
+ "OXY boundary rate",
+ "Influx rate of Oxysterol at the follicle surface"},
 
 {"OXY_BDRY_CONC", 1, 0, 0,
  "OXY boundary conc",
@@ -174,9 +198,17 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Use CXCR5?",
 "CXCL13 chemotaxis is simulated"},
 
+{"CXCL13_BDRY_0", 1, 0, 1,
+"Use FDC CXCL13 secretion?",
+"Use FDC CXCL13 secretion rate"},
+
+{"CXCL13_BDRY_RATE", 1, 0, 0,
+ "CXCL13 boundary rate",
+ "Secretion rate of CXCL13 at the FDC surface"},
+
 {"CXCL13_BDRY_CONC", 1, 0, 0,
  "CXCL13 boundary conc",
- "Concentration of CXCL13 at the follicle surface"},
+ "Concentration of CXCL13 at the FDC surface"},
 
 {"CXCL13_DIFF_COEFF", 1, 0, 0,
  "CXCL13 diffusion coeff",
