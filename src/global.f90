@@ -344,15 +344,15 @@ end type
 type boundary_type
     integer :: site(3)
     logical :: chemo_influx(MAX_CHEMO)
-    real :: chemo_rate(MAX_CHEMO)
-    logical :: S1P
-    real :: S1Prate
-    logical :: CXCL13
-    real :: CXCL13rate
-    logical :: CCL21
-    real :: CCL21rate
-    logical :: OXY
-    real :: OXYrate
+!    real :: chemo_rate(MAX_CHEMO)
+!    logical :: S1P
+!    real :: S1Prate
+!    logical :: CXCL13
+!    real :: CXCL13rate
+!    logical :: CCL21
+!    real :: CCL21rate
+!    logical :: OXY
+!    real :: OXYrate
     logical :: entry_ok
     logical :: exit_ok
 !    type (boundary_type), pointer :: previous

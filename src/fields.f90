@@ -86,7 +86,7 @@ do x = 1,NX
                 site = (/x,y,z/)
                 bdry%site = site
                 bdry%chemo_influx = .false.
-                bdry%chemo_rate = 0
+!                bdry%chemo_rate = 0
 !                bdry%S1P = .false.
 !                bdry%CXCL13 = .false.
 !                bdry%CCL21 = .false.
@@ -122,7 +122,7 @@ do x = 1,NX
                 site = (/x,y,z/)
                 bdry%site = site
                 bdry%chemo_influx = .false.
-                bdry%chemo_rate = 0
+!                bdry%chemo_rate = 0
 !                bdry%S1P = .false.
 !                bdry%CXCL13 = .false.
 !                bdry%CCL21 = .false.
@@ -151,7 +151,7 @@ type (boundary_type), pointer :: bdry
 real, parameter :: S1Pfraction = 0.25
 
 bdry%chemo_influx = .false.
-bdry%chemo_rate = 0
+!bdry%chemo_rate = 0
 !bdry%S1P = .false.
 !bdry%CCL21 = .false.
 !bdry%OXY = .false.
@@ -277,7 +277,7 @@ if (isbdry(site(1),site(2),site(3))) then   ! add it to the bdrylist
     allocate(bdry)
     bdry%site = site
     bdry%chemo_influx = .false.
-    bdry%chemo_rate = 0
+!    bdry%chemo_rate = 0
 !    bdry%S1P = .false.
 !    bdry%CXCL13 = .false.
 !    bdry%CCL21 = .false.
@@ -435,7 +435,7 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
             allocate(bdry)
             bdry%site = site
             bdry%chemo_influx = .false.
-            bdry%chemo_rate = 0
+!            bdry%chemo_rate = 0
 !            bdry%S1P = .false.
 !            bdry%CXCL13 = .false.
 !            bdry%CCL21 = .false.
@@ -820,15 +820,14 @@ end subroutine
 ! the endothelial boundary into a sinus (high-S1P), but the cell must reach the sinus
 ! by random motion.
 !----------------------------------------------------------------------------------------
-subroutine InitConcentrations
-integer :: i, x, y, z
-real :: g(3), gamp, gmax
+subroutine AllocateConcArrays
+integer :: ic
 
-do i = 1,MAX_CHEMO
-	if (chemo(i)%used) then
-		allocate(chemo(i)%conc(NX,NY,NZ))
-		allocate(chemo(i)%grad(3,NX,NY,NZ))
-		chemo(i)%conc = 0
+do ic = 1,MAX_CHEMO
+	if (chemo(ic)%used) then
+		allocate(chemo(ic)%conc(NX,NY,NZ))
+		allocate(chemo(ic)%grad(3,NX,NY,NZ))
+		chemo(ic)%conc = 0
 	endif
 enddo
 if (use_ODE_diffusion) then
@@ -838,6 +837,37 @@ if (use_ODE_diffusion) then
 	call SetupODEDiffusion
 endif
 
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! Set up boundary concentrations for the chemokines.
+! These values do not change as long as the boundaries or FDCs do not move.
+!----------------------------------------------------------------------------------------
+subroutine BdryConcentrations
+integer :: ic, i, site(3)
+type (boundary_type), pointer :: bdry
+
+do ic = 1,MAX_CHEMO
+	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
+		if (ic /= CXCL13) then
+			bdry => bdrylist
+			do while ( associated ( bdry )) 
+				if (bdry%chemo_influx(ic)) then
+					site = bdry%site
+					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
+				endif
+			enddo
+		else	! special treatment needed for CXCL13, which is secreted by FDCs
+				! need to maintain a list of FDC neighbour sites - for now use occupancy()%FDC_nbdry, OK if FDCs do not move
+			do i = 1,ODEdiff%nvars
+				site = ODEdiff%varsite(:,i)
+				if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0) then
+					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
+				endif
+			enddo
+		endif
+	endif
+enddo
 end subroutine
 
 !----------------------------------------------------------------------------------------

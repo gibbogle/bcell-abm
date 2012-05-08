@@ -292,7 +292,7 @@ end subroutine
 subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
-integer :: i, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR)
+integer :: i, ic, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
 integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
 
@@ -326,22 +326,30 @@ read(nfcell,*) Inflammation_days2	        ! End of inflammation
 read(nfcell,*) Inflammation_level	        ! This is the level of inflammation
 read(nfcell,*) iuse(S1PR1)
 read(nfcell,*) iuse(S1PR2)
+read(nfcell,*) iuse_rate(S1P)
+read(nfcell,*) chemo(S1P)%bdry_rate
 read(nfcell,*) chemo(S1P)%bdry_conc
 read(nfcell,*) chemo(S1P)%diff_coef
 read(nfcell,*) chemo(S1P)%halflife
 read(nfcell,*) receptor(S1PR1)%strength
 read(nfcell,*) receptor(S1PR2)%strength
 read(nfcell,*) iuse(CCR7)
+read(nfcell,*) iuse_rate(CCL21)
+read(nfcell,*) chemo(CCL21)%bdry_rate
 read(nfcell,*) chemo(CCL21)%bdry_conc
 read(nfcell,*) chemo(CCL21)%diff_coef
 read(nfcell,*) chemo(CCL21)%halflife
 read(nfcell,*) receptor(CCR7)%strength
 read(nfcell,*) iuse(EBI2)
+read(nfcell,*) iuse_rate(OXY)
+read(nfcell,*) chemo(OXY)%bdry_rate
 read(nfcell,*) chemo(OXY)%bdry_conc
 read(nfcell,*) chemo(OXY)%diff_coef
 read(nfcell,*) chemo(OXY)%halflife
 read(nfcell,*) receptor(EBI2)%strength
 read(nfcell,*) iuse(CXCR5)
+read(nfcell,*) iuse_rate(CXCL13)
+read(nfcell,*) chemo(CXCL13)%bdry_rate
 read(nfcell,*) chemo(CXCL13)%bdry_conc
 read(nfcell,*) chemo(CXCL13)%diff_coef
 read(nfcell,*) chemo(CXCL13)%halflife
@@ -386,8 +394,9 @@ do i = 1,MAX_RECEPTOR
 		receptor(i)%sign = 1
 	endif
 enddo
-do i = 1,MAX_CHEMO
-	chemo(i)%decay_rate = DecayRate(chemo(i)%halflife)
+do ic = 1,MAX_CHEMO
+	chemo(ic)%use_secretion = (iuse_rate(ic) == 1)
+	chemo(ic)%decay_rate = DecayRate(chemo(ic)%halflife)
 enddo
 
 VEGF_MODEL = 1

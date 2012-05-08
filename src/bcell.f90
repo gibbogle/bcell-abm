@@ -2868,7 +2868,8 @@ if (save_input) then
 	call save_inputfile(fixedfile)
 endif
 
-call InitConcentrations
+call AllocateConcArrays
+call BdryConcentrations
 
 firstSummary = .true.
 initialized = .true.
