@@ -567,9 +567,10 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine SetBdryConcs(site)
 integer :: site(3)
-integer :: i
+integer :: ic, i, nsum, nbsite(3)
 type (boundary_type), pointer :: bdry
-real :: cbnd
+real :: csum
+logical :: set(MAX_CHEMO)
 
 bdry => occupancy(site(1),site(2),site(3))%bdry
 if (.not.associated(bdry)) then
@@ -578,17 +579,40 @@ if (.not.associated(bdry)) then
 	stop
 endif
 
-do i = 1,MAX_CHEMO
-	if (chemo(i)%used) then
-		if (bdry%chemo_influx(i)) then
-			cbnd = chemo(i)%bdry_conc
-		else
-			cbnd = -1
-		endif 
-		call AverageBdryConc(bdry,chemo(i)%conc,chemo(i)%grad,site,cbnd)
+set = .false.
+do ic = 1,MAX_CHEMO
+	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
+!		if (bdry%chemo_influx(ic)) then
+!			cbnd = chemo(ic)%bdry_conc
+!		else
+!			cbnd = -1
+!		endif 
+		if (bdry%chemo_influx(ic)) then
+			chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
+			set(ic) = .true.
+!			write(*,*) 'Set conc: ',chemo(ic)%bdry_conc,site
+		endif
+		! Need to set gradient!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!		call AverageBdryConc(bdry,chemo(i)%conc,chemo(i)%grad,site,cbnd)
 	endif
 enddo
-
+do ic = 1,MAX_CHEMO
+	if (chemo(ic)%used .and. .not.set(ic)) then
+		! set the conc to the average of neighbour sites
+		csum = 0
+		nsum = 0
+		do i = 1,27
+			if (i==14) cycle
+			nbsite = site + jumpvec(:,i)
+			if (ODEdiff%ivar(nbsite(1),nbsite(2),nbsite(3)) == 0) cycle
+			nsum = nsum + 1
+			csum = csum + chemo(ic)%conc(nbsite(1),nbsite(2),nbsite(3))
+		enddo
+		if (nsum > 0) then
+			chemo(ic)%conc(site(1),site(2),site(3)) = csum/nsum
+		endif
+	endif
+enddo
 !if (use_S1P) then
 !	if (bdry%S1P) then
 !		cbnd = BdryS1PConc
@@ -823,18 +847,18 @@ end subroutine
 subroutine AllocateConcArrays
 integer :: ic
 
+write(*,*) 'AllocateConcArrays'
 do ic = 1,MAX_CHEMO
 	if (chemo(ic)%used) then
 		allocate(chemo(ic)%conc(NX,NY,NZ))
 		allocate(chemo(ic)%grad(3,NX,NY,NZ))
-		chemo(ic)%conc = 0
+		chemo(ic)%conc = 0	
 	endif
 enddo
 if (use_ODE_diffusion) then
 	allocate(ODEdiff%ivar(NX,NY,NZ))
 	allocate(ODEdiff%varsite(NX*NY*NZ,3))
 	allocate(ODEdiff%icoef(NX*NY*NZ,7))
-	call SetupODEDiffusion
 endif
 
 end subroutine
@@ -847,8 +871,11 @@ subroutine BdryConcentrations
 integer :: ic, i, site(3)
 type (boundary_type), pointer :: bdry
 
+write(*,*) 'BdryConcentrations'
 do ic = 1,MAX_CHEMO
+!	write(*,*) 'Chemokine: ',ic,chemo(ic)%used,chemo(ic)%use_secretion
 	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
+		write(*,*) 'Chemokine: ',ic
 		if (ic /= CXCL13) then
 			bdry => bdrylist
 			do while ( associated ( bdry )) 
@@ -856,11 +883,12 @@ do ic = 1,MAX_CHEMO
 					site = bdry%site
 					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
 				endif
+				bdry => bdry%next
 			enddo
 		else	! special treatment needed for CXCL13, which is secreted by FDCs
 				! need to maintain a list of FDC neighbour sites - for now use occupancy()%FDC_nbdry, OK if FDCs do not move
 			do i = 1,ODEdiff%nvars
-				site = ODEdiff%varsite(:,i)
+				site = ODEdiff%varsite(i,:)
 				if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0) then
 					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
 				endif
@@ -876,6 +904,10 @@ subroutine ChemoSteadystate
 integer :: ichemo, x, y, z
 real :: g(3), gamp, gmax(MAX_CHEMO)
 
+write(*,*) 'ChemoSteadystate'
+
+call SetupODEDiffusion
+call BdryConcentrations
 if (use_ODE_diffusion) then
 	call SolveSteadystate_B
 else

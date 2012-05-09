@@ -2869,7 +2869,8 @@ if (save_input) then
 endif
 
 call AllocateConcArrays
-call BdryConcentrations
+
+call ChemoSteadystate
 
 firstSummary = .true.
 initialized = .true.
