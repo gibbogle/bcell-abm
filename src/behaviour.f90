@@ -396,6 +396,12 @@ do i = 1,MAX_RECEPTOR
 enddo
 do ic = 1,MAX_CHEMO
 	chemo(ic)%use_secretion = (iuse_rate(ic) == 1)
+	if (chemo(ic)%use_secretion .and. .not.use_ODE_diffusion) then
+		write(logmsg,*) 'Error: simulating chemokine ',chemo(ic)%name,' secretion requires use_ODE_diffusion'
+		call logger(logmsg)
+		ok = .false.
+		return
+	endif
 	chemo(ic)%decay_rate = DecayRate(chemo(ic)%halflife)
 enddo
 
@@ -979,7 +985,8 @@ do
         exit
     endif
     if (newsite(2) < 1 .or. newsite(2) > NY .or. newsite(3) < 1 .or. newsite(3) > NZ) then
-        write(*,*) 'ERROR: add_vacant_site: reached grid limits (a): ',k,site,dxyz
+        write(logmsg,*) 'ERROR: add_vacant_site: reached grid limits (a): ',k,site,dxyz
+        call logger(logmsg)
         stop
     endif
     if (occupancy(newsite(1),newsite(2),newsite(3))%indx(1) == OUTSIDE_TAG) then
@@ -993,9 +1000,11 @@ if (redo) then
         k = k+1
         newsite = site0 + k*0.5*dxyz
         if (newsite(2) < 1 .or. newsite(2) > NY .or. newsite(3) < 1 .or. newsite(3) > NZ) then
-            write(*,*) 'ERROR: add_vacant_site: reached grid limits (b): ',k,site,dxyz
+            write(logmsg,*) 'ERROR: add_vacant_site: reached grid limits (b): ',k,site,dxyz
+            call logger(logmsg)
             newsite = site0 + (k-1)*0.5*dxyz
-            write(*,*) newsite,occupancy(newsite(1),newsite(2),newsite(3))%indx(1)
+            write(logmsg,*) newsite,occupancy(newsite(1),newsite(2),newsite(3))%indx(1)
+            call logger(logmsg)
             stop
         endif
         if (occupancy(newsite(1),newsite(2),newsite(3))%indx(1) == OUTSIDE_TAG) then

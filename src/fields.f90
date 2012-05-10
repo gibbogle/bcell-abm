@@ -110,7 +110,8 @@ integer :: x, y, z, ncheck
 integer :: k, site(3)
 type (boundary_type), pointer :: bdry
 
-write(*,*) 'CreateCheckList'
+write(logmsg,*) 'CreateCheckList'
+call logger(logmsg)
 nullify(checklist)
 ncheck = 0
 do x = 1,NX
@@ -134,7 +135,8 @@ do x = 1,NX
         enddo
     enddo
 enddo
-write(*,*) 'ncheck = ',ncheck, ' NBcells: ',NBcells
+write(logmsg,*) 'ncheck = ',ncheck, ' NBcells: ',NBcells
+call logger(logmsg)
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -847,7 +849,8 @@ end subroutine
 subroutine AllocateConcArrays
 integer :: ic
 
-write(*,*) 'AllocateConcArrays'
+write(logmsg,*) 'AllocateConcArrays'
+call logger(logmsg)
 do ic = 1,MAX_CHEMO
 	if (chemo(ic)%used) then
 		allocate(chemo(ic)%conc(NX,NY,NZ))
@@ -855,9 +858,10 @@ do ic = 1,MAX_CHEMO
 		chemo(ic)%conc = 0	
 	endif
 enddo
+! Note: the arrays ivar and varsite are generally useful, not just for ODE diffusion
+allocate(ODEdiff%ivar(NX,NY,NZ))
+allocate(ODEdiff%varsite(NX*NY*NZ,3))
 if (use_ODE_diffusion) then
-	allocate(ODEdiff%ivar(NX,NY,NZ))
-	allocate(ODEdiff%varsite(NX*NY*NZ,3))
 	allocate(ODEdiff%icoef(NX*NY*NZ,7))
 endif
 
@@ -871,11 +875,10 @@ subroutine BdryConcentrations
 integer :: ic, i, site(3)
 type (boundary_type), pointer :: bdry
 
-write(*,*) 'BdryConcentrations'
+write(logmsg,*) 'BdryConcentrations'
+call logger(logmsg)
 do ic = 1,MAX_CHEMO
-!	write(*,*) 'Chemokine: ',ic,chemo(ic)%used,chemo(ic)%use_secretion
 	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
-		write(*,*) 'Chemokine: ',ic
 		if (ic /= CXCL13) then
 			bdry => bdrylist
 			do while ( associated ( bdry )) 
@@ -904,8 +907,8 @@ subroutine ChemoSteadystate
 integer :: ichemo, x, y, z
 real :: g(3), gamp, gmax(MAX_CHEMO)
 
-write(*,*) 'ChemoSteadystate'
-
+write(logmsg,*) 'ChemoSteadystate'
+call logger(logmsg)
 call SetupODEDiffusion
 call BdryConcentrations
 if (use_ODE_diffusion) then

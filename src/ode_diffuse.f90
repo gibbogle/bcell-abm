@@ -62,7 +62,7 @@ real(REAL_KIND) :: DX, DX2, c(MAX_CHEMO,7)
 real(REAL_KIND) :: secretion
 logical :: left, right
 
-write(*,*) 'SetupODEDiffusion: '
+call logger('Set diffusion parameters')
 DX = 1.0
 DX2 = DX*DX
 ODEdiff%ivar = 0
@@ -80,11 +80,12 @@ do x = 1,NX
 enddo
 ODEdiff%nvars = i
 
+if (.not.use_ODE_diffusion) return
+
 do ichemo = 1,MAX_CHEMO
 	if (.not.chemo(ichemo)%used) cycle
 	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
 	allocate(chemo(ichemo)%coef(ODEdiff%nvars,7))
-	write(*,*) 'allocated coef for ichemo: ',ichemo
 enddo
 
 do i = 1,ODEdiff%nvars
@@ -212,10 +213,6 @@ do i = 1,n
 	sum = 0
 	do k = 1,7
 		if (chemo(ODEdiff%ichemo)%coef(i,k) /= 0) then
-			if (ODEdiff%icoef(i,k) <= 0) then
-				write(*,*) 'i, k, icoef: ',i,k,ODEdiff%icoef(i,k)
-				stop
-			endif
 			sum = sum + chemo(ODEdiff%ichemo)%coef(i,k)*v(ODEdiff%icoef(i,k))
 		endif
 	enddo
@@ -281,7 +278,8 @@ real(REAL_KIND) :: amp, r, ctemp(10)
 integer :: nt(2) = (/20,100/)	! Number of rkf45 iterations with bdry concentration (1) and bdry secretion (2)
 logical :: ok
 
-write(*,*) 'SolveSteadystate_B: nvars: ',ODEdiff%nvars
+write(logmsg,*) 'SolveSteadystate_B: nvars: ',ODEdiff%nvars
+call logger(logmsg)
 allocate(state(ODEdiff%nvars))
 allocate(prev_state(ODEdiff%nvars))
 allocate(statep(ODEdiff%nvars))
@@ -315,18 +313,19 @@ do ichemo = 1,MAX_CHEMO
 	!		call r8_rkf45 ( deriv, ODEdiff%nvars, state, statep, tstart, tend, relerr, abserr, flag )
 		endif
 		if (flag /= 2) then
-			write(*,*) 'Bad flag: ',flag
+			write(logmsg,*) 'Bad flag: ',flag
+			call logger(logmsg)
 		endif
 		flag = 2
-		do j = 1,10
-			x = xmid + j
-			i = ODEdiff%ivar(x,ymid,zmid)
-			if (i > 0) then
-				ctemp(j) = state(i)
-			else
-				ctemp(j) = 0
-			endif
-		enddo
+!		do j = 1,10
+!			x = xmid + j
+!			i = ODEdiff%ivar(x,ymid,zmid)
+!			if (i > 0) then
+!				ctemp(j) = state(i)
+!			else
+!				ctemp(j) = 0
+!			endif
+!		enddo
 !		write(*,'(10f7.2)') ctemp
 		call CheckConvergence(state,prev_state,ok)
 		if (ok) exit
@@ -376,7 +375,7 @@ if (abs(dfmax) < tol) then
 else
 	ok = .false.
 endif
-write(*,'(a,2e12.3,4i6)') 'dfmax: ',dfmax, dsmax, imax, ODEdiff%varsite(imax,:)
+!write(*,'(a,2e12.3,4i6)') 'dfmax: ',dfmax, dsmax, imax, ODEdiff%varsite(imax,:)
 end subroutine
 
 !----------------------------------------------------------------------------------
@@ -388,27 +387,18 @@ real(REAL_KIND) :: state(:)
 integer :: x, y, z, i, site(3), nz
 real(REAL_KIND) :: smin, smax
 
-write(*,*) 'InitState: ',chemo(ichemo)%name
+write(logmsg,*) 'InitState: ',chemo(ichemo)%name
+call logger(logmsg)
 smin = 1.0e10
 smax = -smin
-nz = 0
-!do x = 1,NX
-!	do y = 1,NY
-!		do z = 1,NZ
-!			if (occupancy(x,y,z)%indx(1) < 0) cycle
-!			i = ODEdiff%ivar(x,y,z)
 do i = 1,ODEdiff%nvars
 	site = ODEdiff%varsite(i,:)
 	state(i) = chemo(ichemo)%conc(site(1),site(2),site(3))
-	if (state(i) == 0) then
-		write(*,*) 'C=0: ',i,site
-		nz = nz + 1
-	endif
 	if (state(i) < smin) smin = state(i)
 	if (state(i) > smax) smax = state(i)
 enddo
-write(*,'(a,i2,2f8.3,a,i4)') 'min, max: ',ichemo,smin,smax,'  nz: ',nz
-write(*,*)
+!write(*,'(a,i2,2f8.3,a,i4)') 'min, max: ',ichemo,smin,smax,'  nz: ',nz
+!write(*,*)
 end subroutine
 
 
@@ -512,113 +502,6 @@ if (del > 0) then
 else
 	grad(3) = 0
 endif
-end subroutine
-
-
-subroutine SetupODEDiffusion1
-integer :: x, y, z, i, site(3), ifdc, ichemo, k, nc
-real(REAL_KIND) :: DX, DX2, c(MAX_CHEMO,7)
-real(REAL_KIND) :: secretion
-
-write(*,*) 'SetupODEDiffusion: '
-DX = 1.0
-DX2 = DX*DX
-ODEdiff%ivar = 0
-i = 0
-do x = 1,NX
-	do y = 1,NY
-		do z = 1,NZ
-			if (occupancy(x,y,z)%indx(1) >= 0) then
-				i = i+1
-				ODEdiff%ivar(x,y,z) = i
-				ODEdiff%varsite(i,:) = (/x,y,z/)
-!				if (x == 72) then
-!					write(*,*) '??? ',i,x,y,z,occupancy(x,y,z)%indx(1)
-!					site = (/x,y,z/)
-!					if (InsideEllipsoid(site)) then
-!						write(*,*) 'Inside'
-!					else
-!						write(*,*) 'Outside'
-!					endif
-!				endif
-			endif
-		enddo
-	enddo
-enddo
-ODEdiff%nvars = i
-
-do ichemo = 1,MAX_CHEMO
-	if (.not.chemo(ichemo)%used) cycle
-	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
-	allocate(chemo(ichemo)%coef(ODEdiff%nvars,7))
-	write(*,*) 'allocated coef for ichemo: ',ichemo
-enddo
-
-do i = 1,ODEdiff%nvars
-	c = 0
-	nc = 0
-	site = ODEdiff%varsite(i,:)
-	x = site(1)
-	y = site(2)
-	z = site(3)
-	do ichemo = 1,MAX_CHEMO
-		c(ichemo,1) = -chemo(ichemo)%decay_rate
-	enddo
-	ODEdiff%icoef(i,1) = i
-	
-	if (x==1 .or. x==NX) then 
-		! no term for second derivative in x
-	elseif (ODEdiff%ivar(x+1,y,z) > 0 .and. ODEdiff%ivar(x-1,y,z) > 0) then
-		do ichemo = 1,MAX_CHEMO
-			c(ichemo,2) = chemo(ichemo)%diff_coef/DX2
-			c(ichemo,3) = chemo(ichemo)%diff_coef/DX2
-		enddo
-		ODEdiff%icoef(i,2) = ODEdiff%ivar(x-1,y,z)
-		ODEdiff%icoef(i,3) = ODEdiff%ivar(x+1,y,z)
-		nc = nc + 2
-	endif
-	if (y==1 .or. y==NY) then 
-		! no term for second derivative in y
-	elseif (ODEdiff%ivar(x,y+1,z) > 0 .and. ODEdiff%ivar(x,y-1,z) > 0) then
-		do ichemo = 1,MAX_CHEMO
-			c(ichemo,4) = chemo(ichemo)%diff_coef/DX2
-			c(ichemo,5) = chemo(ichemo)%diff_coef/DX2
-		enddo
-		ODEdiff%icoef(i,4) = ODEdiff%ivar(x,y-1,z)
-		ODEdiff%icoef(i,5) = ODEdiff%ivar(x,y+1,z)
-		nc = nc + 2
-	endif
-	if (z==1 .or. z==NZ) then 
-		! no term for second derivative in x
-	elseif (ODEdiff%ivar(x,y,z+1) > 0 .and. ODEdiff%ivar(x,y,z-1) > 0) then
-		do ichemo = 1,MAX_CHEMO
-			c(ichemo,6) = chemo(ichemo)%diff_coef/DX2
-			c(ichemo,7) = chemo(ichemo)%diff_coef/DX2
-		enddo
-		ODEdiff%icoef(i,6) = ODEdiff%ivar(x,y,z-1)
-		ODEdiff%icoef(i,7) = ODEdiff%ivar(x,y,z+1)
-		nc = nc + 2
-	endif
-
-	do ichemo = 1,MAX_CHEMO
-		c(ichemo,1) = c(ichemo,1) - nc*chemo(ichemo)%diff_coef/DX2
-		if (chemo(ichemo)%used) then
-			chemo(ichemo)%coef(i,:) = c(ichemo,:) 
-		endif
-	enddo
-!	if (i == ivdbug) then
-!		write(*,*) 'ivdbug: ',nc, ODEdiff%varsite(ivdbug,:)
-!		write(*,*) ODEdiff%ivar(x-1,y,z),ODEdiff%ivar(x+1,y,z)
-!		write(*,*) ODEdiff%ivar(x,y-1,z),ODEdiff%ivar(x,y+1,z)
-!		write(*,*) ODEdiff%ivar(x,y,z-1),ODEdiff%ivar(x,y,z+1)
-!		write(*,'(a,7i6)') 'icoef: ',ODEdiff%icoef(i,:)
-!		write(*,'(a,7f8.4)') 'coef: ',chemo(1)%coef(i,:)
-!	endif
-!	if (nc == 0) then
-!		write(*,*) 'Isolated: ',i,ODEdiff%varsite(i,:)
-!		write(nfout,*) 'Isolated: ',i,ODEdiff%varsite(i,:)
-!	endif
-enddo
 end subroutine
 
 end module
