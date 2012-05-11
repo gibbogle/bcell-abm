@@ -111,7 +111,7 @@ integer, parameter :: CXCR5    = 4		! CXCL13
 integer, parameter :: S1PR2    = 5		! S1P (negative)
 
 !real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,1.,0., .2,3.,1.,1.,0., .2,0.,3.,1.,0., 0.,0.,0.,1.,2. /), (/5,4/)) ! my guess
-real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,1.,0., .2,2.,2.,1.,0., .2,.5,2.,1.,0., 0.,0.,.2,1.,2. /), (/5,4/))	! Taka
+real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Taka
 
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
@@ -126,7 +126,7 @@ integer, parameter :: OUTSIDE_TAG = -9999
 integer, parameter :: NAIVE_TAG = 1
 integer, parameter :: ANTIGEN_TAG = 2
 integer, parameter :: ACTIVATED_TAG = 3
-integer, parameter :: GCC_TAG = 3
+integer, parameter :: GCC_TAG = 4
 
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 integer, parameter :: jumpvec2D(3,8) = reshape((/ 1,0,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, -1,-1,0, 0,-1,0, 1,-1,0 /), (/3,8/))
@@ -202,6 +202,7 @@ integer, parameter :: n_multiple_runs = 1
 ! Parameters and switches for testing
 logical, parameter :: test_vascular = .false.
 logical, parameter :: turn_off_chemotaxis = .false.		! to test the chemotaxis model when cells are not attracted to exits
+logical, parameter :: test_chemotaxis = .true.			! to test multiple chemotactic effects on one or a few cells
 
 ! Debugging parameters
 !logical, parameter :: dbug = .false.

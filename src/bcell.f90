@@ -2586,6 +2586,7 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 real(DP) :: t1, t2, tmover=0, tfields=0
+integer :: k, kcell
 logical :: ok
 logical, save :: first = .true.
 
@@ -2601,6 +2602,21 @@ istep = istep + 1
 if (dbug) then
 	write(logmsg,*) 'simulate_step: ',istep
 	call logger(logmsg)
+endif
+
+if (test_chemotaxis) then
+	if (istep == 1) then
+		do k = 1,lastcogID
+			kcell = cognate_list(k)
+			if (kcell > 0) then
+				call ReceptorLevel(kcell,NAIVE_TAG,GCC_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
+				write(logmsg,'(a,i6,5f8.3)') 'Cognate cell receptor levels: ',kcell,cellist(kcell)%receptor_level
+				call logger(logmsg)
+			endif
+		enddo
+	endif
+	call mover(ok)
+	return
 endif
 
 if (mod(istep,240) == 0) then
@@ -2619,13 +2635,6 @@ if (mod(istep,240) == 0) then
     tmover = 0
 !    call CheckBdryList
 endif
-!if (use_cytokines) then
-!    if (use_diffusion) then
-!        call diffuser
-!    else
-!        call molsynch
-!    endif
-!endif
 
 if (dbug) write(nflog,*) 'call mover'
 call cpu_time(t1)

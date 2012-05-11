@@ -868,20 +868,7 @@ else
     call logger(logmsg)
     stop
 endif
-! Interim measure:
 cell%receptor_level = receptor%level(NAIVE_TAG)
-!if (use_S1P) then
-!    cell%receptor(S1P) = 10.0
-!endif
-!if (use_CCL21) then
-!    cell%receptor(CCL21) = 10.0
-!endif
-!if (use_OXY) then
-!    cell%receptor(OXY) = 0.4
-!endif
-!if (use_CXCL13) then
-!    cell%receptor(CXCL13) = 0.4
-!endif
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
 cell%site = site
@@ -1304,9 +1291,16 @@ enddo
 
 end subroutine
 
-
-
 !--------------------------------------------------------------------------------------
+! The receptor levels are ramped over t1 < t < t2 from levels given by:
+!   receptor(ireceptor)%level(ifrom)
+! to those given by:
+!  receptor(ireceptor)%level(ito)
+! where ifrom and ito are cognate B cell stages of activation/differentiation:
+! NAIVE_TAG
+! ANTIGEN_TAG
+! ACTIVATED_TAG
+! GCC_TAG
 !--------------------------------------------------------------------------------------
 subroutine ReceptorLevel(kcell,ifrom,ito,t,t1,t2,level)
 integer :: kcell, ifrom, ito
