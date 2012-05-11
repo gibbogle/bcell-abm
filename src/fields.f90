@@ -894,6 +894,7 @@ do ic = 1,MAX_CHEMO
 				site = ODEdiff%varsite(i,:)
 				if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0) then
 					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
+!					write(*,'(a,4i4,i6,f8.1)') chemo(ic)%name,i,site,occupancy(site(1),site(2),site(3))%FDC_nbdry,chemo(ic)%bdry_conc
 				endif
 			enddo
 		endif
@@ -906,6 +907,7 @@ end subroutine
 subroutine ChemoSteadystate
 integer :: ichemo, x, y, z
 real :: g(3), gamp, gmax(MAX_CHEMO)
+logical, save :: first = .true.
 
 write(logmsg,*) 'ChemoSteadystate'
 call logger(logmsg)
@@ -914,10 +916,10 @@ call BdryConcentrations
 if (use_ODE_diffusion) then
 	call SolveSteadystate_B
 else
-!		call SolveSteadystate_A(ic,chemo(ic)%diff_coef,chemo(ic)%decay_rate,chemo(ic)%conc)
-		call SolveSteadystate_A
-		! Now compute the gradient field.
-!		call gradient(chemo(i)%conc,chemo(i)%grad)
+!	call SolveSteadystate_A(ic,chemo(ic)%diff_coef,chemo(ic)%decay_rate,chemo(ic)%conc)
+	call SolveSteadystate_A
+	! Now compute the gradient field.
+!	call gradient(chemo(i)%conc,chemo(i)%grad)
 endif
 gmax = 0
 do ichemo = 1,MAX_CHEMO
@@ -934,10 +936,10 @@ do ichemo = 1,MAX_CHEMO
 enddo
 write(logmsg,'(a,4(i3,f8.3))') 'Max gradients: ',(ichemo,gmax(ichemo),ichemo=1,MAX_CHEMO)
 call logger(logmsg)
-!if (first) then
-!	call ShowConcs
-!endif
-!first = .false.
+if (first) then
+	call ShowConcs
+endif
+first = .false.
 
 end subroutine
 
@@ -977,27 +979,20 @@ end subroutine
 !----------------------------------------------------------------------------------------
 subroutine ShowConcs
 integer :: x, y, z, i
+real :: gamp
 
 x = NX/2
-z = NZ/2
+z = 45
 do i = 1,MAX_CHEMO
 	if (chemo(i)%used) then
 		write(nfout,'(a,a)') chemo(i)%name,'  conc        gradient' 
 		do y = 1,NY
 			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
-		    write(nfout,'(i4,4e12.4)') y,chemo(i)%conc(x,y,z),chemo(i)%grad(:,x,y,z)
+			gamp = norm(chemo(i)%grad(:,x,y,z))
+		    write(nfout,'(3i4,4e12.4,4x,f8.4)') x,y,z,chemo(i)%conc(x,y,z),chemo(i)%grad(:,x,y,z),gamp
 		enddo
 	endif
 enddo
-!do y = 1,NY
-!    if (occupancy(x,y,z)%indx(1) < 0) cycle
-!    write(nfout,'(i4,4e12.4)') y,S1P_conc(x,y,z),CCL21_conc(x,y,z) !,OXY_conc(x,y,z)
-!enddo
-!write(nfout,*) 'Grad   S1P                                 CCL21'
-!do y = 1,NY
-!    if (occupancy(x,y,z)%indx(1) < 0) cycle
-!    write(nfout,'(i4,6e12.4)') y,S1P_grad(:,x,y,z),CCL21_grad(:,x,y,z)
-!enddo
 end subroutine
 
 

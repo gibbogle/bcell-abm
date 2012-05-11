@@ -166,13 +166,16 @@ integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
 type (cell_type), pointer :: cell
 integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype
-integer :: irel,dir1,lastdir1,indx2(2),k,kr,rv(3),id, ichemo
+integer :: irel,dir1,lastdir1,indx2(2),k,kr,rv(3),id, ichemo, nfull, nrest, nout
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
 logical :: ischemo, cognate
 
 dbug = .false.
+!if (kcell == 11803) then
+!    dbug = .true.
+!endif
 tnow = istep*DELTA_T
 cell => cellist(kcell)
 cognate = associated(cell%cptr)
@@ -212,10 +215,10 @@ if (ischemo) then
 			v = chemo(ichemo)%grad(:,site1(1),site1(2),site1(3))
 !	    	vsum = vsum + (f/norm(v))*v
 	    	vsum = vsum + f*v
-	    	if (cognate) then
-	    		if (f > 0) write(*,'(3i4,2x,a,f6.1,6f8.3)') site1,receptor(kr)%name,f,v,vsum
-	    		if (kr == 5) write(*,*)
-	    	endif
+!	    	if (dbug) then
+!	    		if (f > 0) write(*,'(3i4,2x,a,f6.1,6f8.3)') site1,receptor(kr)%name,f,v,vsum
+!	    		if (kr == 5) write(*,*)
+!	    	endif
 	    endif
 	enddo
 	! For exit chemotaxis:
@@ -244,6 +247,7 @@ if (fullslots1 /= BOTH) then
     R = par_uni(kpar)
     if (R <= stay_prob) then    ! case of no jump
 	    go = .false.
+!	    if (dbug) write(*,*) 'R < stay_prob: ',istep,R,stay_prob
         return
     endif
 endif
@@ -253,10 +257,14 @@ stype = struct_type(int(cell%ctype))     ! COG_TYPE_TAG or NONCOG_TYPE_TAG
 
 ! Compute jump probabilities in the absence of chemotaxis
 site1 = cell%site
+if (dbug) write(nfout,*) kcell,site1
 lastdir1 = cell%lastdir
 p = 0
 savesite2a = 0
 saveslots2a = 0
+nfull = 0
+nrest = 0
+nout = 0
 do irel = 1,nreldir
 	dir1 = reldir(lastdir1,irel)
 	site2 = site1 + jumpvec(:,dir1)
@@ -270,19 +278,26 @@ do irel = 1,nreldir
                 endif
             enddo
             if (fullslots2 == BOTH) then
+                nfull = nfull + 1
                 cycle
             elseif (fullslots2 /= 0) then
+                nrest = nrest + 1
                 p(dir1) = dirprob(irel)*GAMMA
             else
+                nrest = nrest + 1
                 p(dir1) = dirprob(irel)
             endif
             saveslots2a(dir1) = fullslots2
+        else
+!            if (dbug) write(*,'(3i4,2x,2i6)') site2,indx2
+	        nout = nout + 1
 		endif
 	endif
 	savesite2a(:,dir1) = site2
 enddo
 if (sum(p) == 0) then
     go = .false.
+!	if (dbug) write(*,*) 'sum(p) = 0: ',istep,nfull,nrest,nout,nreldir
     return
 endif
 
@@ -295,6 +310,7 @@ psum = sum(p)
 
 if (psum == 0) then
 	go = .false.
+!	if (dbug) write(*,*) 'psum = 0: ',istep
 	return
 else
     go = .true.

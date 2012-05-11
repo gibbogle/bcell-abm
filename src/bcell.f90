@@ -2494,8 +2494,6 @@ if (NFDC > 0) then
     enddo
     nFDC_list = k
 endif
-write(logmsg,*) 'nFDC_list: ',nFDC_list
-call logger(logmsg)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2615,6 +2613,10 @@ if (test_chemotaxis) then
 			endif
 		enddo
 	endif
+!	do k = 1,lastcogID
+!		kcell = cognate_list(k)
+!		write(nfout,'(i4,i6,2x,3i4)') k,kcell,cellist(kcell)%site
+!	enddo
 	call mover(ok)
 	return
 endif

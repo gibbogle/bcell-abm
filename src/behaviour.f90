@@ -394,6 +394,10 @@ do i = 1,MAX_RECEPTOR
 		receptor(i)%sign = 1
 	endif
 enddo
+if (.not.use_FDCs) then
+    receptor(CXCR5)%used = .false.
+    chemo(CXCL13)%used = .false.
+endif
 do ic = 1,MAX_CHEMO
 	chemo(ic)%use_secretion = (iuse_rate(ic) == 1)
 	if (chemo(ic)%use_secretion .and. .not.use_ODE_diffusion) then
@@ -1096,10 +1100,13 @@ do x = 1,NX
     enddo
 enddo
 
+write(*,*) '(a) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
+write(*,*) 'nlist: ',nlist
 call placeFDCs(ok)
 if (.not.ok) stop
+write(*,*) 'nlist: ',nlist
+write(*,*) '(b) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
 
-nzlim = NZ
 allocate(permc(nlist))
 do k = 1,nlist
     permc(k) = k
@@ -1113,10 +1120,11 @@ done = .false.
 do while (.not.done)
 do x = 1,NX
     do y = 1,NY
-	    do z = 1,nzlim
+	    do z = 1,NZ
 	        if (occupancy(x,y,z)%indx(1) == 0) then ! vacant site, not OUTSIDE_TAG or DC
                 id = id+1
                 lastID = id
+                k = permc(id)
                 site = (/x,y,z/)
                 gen = 1
                 stage = NAIVE
@@ -1132,9 +1140,9 @@ do x = 1,NX
                     ctype = select_cell_type(kpar)
                     if (ctype /= NONCOG_TYPE_TAG) then
                         ncogseed = ncogseed + 1
+                        write(*,*) 'cognate: ',k,site
                     endif
                 endif
-                k = permc(id)
                 call CreateBcell(k,cellist(k),site,ctype,gen,stage,region,ok)
                 if (.not.ok) return
                 occupancy(x,y,z)%indx(1) = k
@@ -1158,6 +1166,7 @@ enddo
 deallocate(permc)
 call make_cognate_list(ok)
 if (.not.ok) return
+write(*,*) '(c) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
 
 write(nfout,*) 'nlist,RESIDENCE_TIME: ',nlist,RESIDENCE_TIME
 nlist = id	! this is already the case for 3D blob
@@ -1171,6 +1180,7 @@ NBcells0 = NBcells
 aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
 bRadius = aRadius/ELLIPSE_RATIO
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
+
 end subroutine
 
 !-----------------------------------------------------------------------------

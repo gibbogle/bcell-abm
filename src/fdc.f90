@@ -90,9 +90,7 @@ outer_loop: do
 	enddo
 enddo outer_loop
 
-do ifdc = 1,NFDC
-	call AssignFDCBdry(ifdc)
-enddo
+call AssignFDCBdrySites
 
 write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nlist
 call logger(logmsg)
@@ -132,30 +130,32 @@ end function
 ! SolveSteadystate_B().  
 ! occupancy(:,:,:)%FDC_nbdry records the number of adjacent FDCs
 !--------------------------------------------------------------------------------
-subroutine AssignFDCBdry(ifdc)
-integer :: ifdc
-integer :: i, j, site(3), fsite(3), bsite(3), dx, dy, dz
+subroutine AssignFDCBdrySites
+integer :: i, j, ifdc, site(3), fsite(3), bsite(3), dx, dy, dz
 logical :: bdry(-2:2,-2:2,-2:2)
 
 occupancy(:,:,:)%FDC_nbdry = 0
-bdry = .false.
-do i = 2,7
-	fsite = DCoffset(:,i)
-	do j = 1,27
-		if (j == 14) cycle
-		bsite = fsite + jumpvec(:,j)
-		bdry(bsite(1),bsite(2),bsite(3)) = .true.
-	enddo
-enddo
-do dx = -2,2
-	do dy = -2,2
-		do dz = -2,2
-			if (bdry(dx,dy,dz)) then
-				site = FDClist(ifdc)%site + (/dx,dy,dz/)
-				occupancy(site(1),site(2),site(3))%FDC_nbdry = occupancy(site(1),site(2),site(3))%FDC_nbdry + 1
-			endif
-		enddo
-	enddo
+
+do ifdc = 1,NFDC
+    bdry = .false.
+    do i = 2,7
+	    fsite = DCoffset(:,i)
+	    do j = 1,27
+		    if (j == 14) cycle
+		    bsite = fsite + jumpvec(:,j)
+		    bdry(bsite(1),bsite(2),bsite(3)) = .true.
+	    enddo
+    enddo
+    do dx = -2,2
+	    do dy = -2,2
+		    do dz = -2,2
+			    if (bdry(dx,dy,dz)) then
+				    site = FDClist(ifdc)%site + (/dx,dy,dz/)
+				    occupancy(site(1),site(2),site(3))%FDC_nbdry = occupancy(site(1),site(2),site(3))%FDC_nbdry + 1
+			    endif
+		    enddo
+	    enddo
+    enddo
 enddo
 end subroutine
 
