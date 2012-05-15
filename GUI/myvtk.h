@@ -32,12 +32,13 @@ struct cell_pos {
 	int tag;
 	int x, y, z;
 	double diameter;
-	double state;
+//	double state;
+	int state;
 };
 typedef cell_pos CELL_POS;
 
 struct bond_pos {
-	int TCtag;
+	int BCtag;
 	int DCtag;
 };
 typedef bond_pos BOND_POS;
@@ -52,8 +53,9 @@ public:
 	void get_cell_positions(bool fast);
 	void init();
 	void cleanup();
+	void unpack(int x, double *, double *, double *);
 	void renderCells(bool,bool);
-    void process_Tcells();
+	void process_Bcells();
     void process_Dcells(bool);
     void process_bonds();
 	bool startPlayer(QString, QTimer *, bool);
@@ -63,18 +65,18 @@ public:
 	void saveSnapshot(QString, QString);
 	void stop();
 
-	QList<CELL_POS > TCpos_list;
+	QList<CELL_POS > BCpos_list;
 	QList<CELL_POS > DCpos_list;
 	QList<BOND_POS > bondpos_list;
-	QList<vtkActor *> T_Actor_list;
-	QList<vtkActor *> D_Actor_list;
 	QList<vtkActor *> B_Actor_list;
+	QList<vtkActor *> D_Actor_list;
+	QList<vtkActor *> Bnd_Actor_list;
 
 	QVTKWidget* qvtkWidget;
 	vtkRenderWindow *renWin;	
 	vtkRenderer* ren;
 	vtkRenderWindowInteractor * iren;
-	vtkPolyDataMapper *TcellMapper;
+	vtkPolyDataMapper *BcellMapper;
 	vtkPolyDataMapper *DcellMapper;
 	vtkPolyDataMapper *bondMapper;
 	vtkMPEG2Writer *mpg;
@@ -104,7 +106,6 @@ public:
 	QFile *playerData;
 	QTextStream *playerStream;
 
-//	double *TCColor, *DCColor;
 };
 
 #endif

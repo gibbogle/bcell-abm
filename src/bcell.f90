@@ -930,165 +930,6 @@ endif
 end function
 
 
-!-----------------------------------------------------------------------------------------
-! This version aims to determine outflow on the basis of the number of exit sites (which
-! depends on NBcells) and on how many cells arrive at the exits, which also involves the
-! calibration parameter chemo_K_exit and possibly another.
-! The number of exits is greater than 1/2 the desired outflow, and the calibration
-! parameter exit_prob is used to adjust the mean outflow.
-! PROBLEM:
-! It seems that CHEMO_K_EXIT has no effect on the exit rate
-! For some reason, CHEMO_K_EXIT = 0 is NOT the same as USE_CHEMOTAXIS = false,
-! but it SHOULD be.
-! SOLVED.  The reason was that different coefficients were being used to compute
-! requiredExitPortals.
-!
-! Enhanced egress
-! ---------------
-! To cover the possibility of activated cells having an enhanced probability of egress,
-! the exit region can be expanded to some neighbourhood of the portal site, e.g.
-! the Moore27 neighbourhood.  Any cell within the expanded region that meets a
-! specified criterion (e.g. generation > 4) has the possibility of egress.
-!
-! NOT USED FOR B CELLS
-!-----------------------------------------------------------------------------------------
-subroutine portal_traffic(ok)
-logical :: ok
-integer :: iexit, esite(3), esite0(3),site(3), k, slot, indx(2), kcell, ne, ipermex, ihr, nv, j
-integer :: x, y, z, ctype, gen, region, node_inflow, node_outflow, net_inflow, iloop, nloops, nbrs
-real(DP) :: R, df
-logical :: left
-logical :: central, egress_possible, use_full_neighbourhood, tagcell
-integer, allocatable :: permex(:)
-integer :: kpar = 0
-real :: tnow, ssfract
-real :: exit_prob   ! 12 hr => 0.2, 24 hr => 0.1
-
-ok = .true.
-region = FOLLICLE
-exit_prob = base_exit_prob
-
-node_inflow = InflowTotal
-node_outflow = OutflowTotal
-df = InflowTotal - node_inflow
-R = par_uni(kpar)
-if (R < df) then
-    node_inflow = node_inflow + 1
-endif
-
-if (steadystate) then
-    ssfract = real(NBcells)/NBcells0
-    if (ssfract > 1.01) then
-        node_inflow = node_inflow - 1
-    elseif (ssfract < 0.99) then
-        node_inflow = node_inflow + 1
-    endif
-    exit_prob = ssfract*exit_prob
-else
-    df = OutflowTotal - node_outflow
-    R = par_uni(kpar)
-    if (R < df) then
-        node_outflow = node_outflow + 1
-    endif
-endif
-if (computed_outflow) then
-	nloops = 5
-else
-	nloops = 1
-endif
-
-tnow = istep*DELTA_T
-
-! Inflow
-call CellInflux(node_inflow,ok)
-if (.not.ok) return
-
-check_inflow = check_inflow + node_inflow
-
-! Outflow
-use_full_neighbourhood = .true.
-exit_prob = 0.02		! TESTING------------------ (0.02 works when chemo_K_exit = 0)
-nbrs = 26
- 
-ne = 0
-if (Lastexit > max_exits) then
-	write(logmsg,'(a,2i4)') 'Error: portal_traffic: Lastexit > max_exits: ',Lastexit, max_exits
-	call logger(logmsg)
-	ok = .false.
-	return
-endif
-allocate(permex(Lastexit))
-do k = 1,Lastexit
-	permex(k) = k
-enddo
-call permute(permex,Lastexit,kpar)
-do iloop = 1,nloops
-do ipermex = 1,Lastexit
-	iexit = permex(ipermex)
-	if (exitlist(iexit)%ID == 0) cycle
-	esite0 = exitlist(iexit)%site
-	
-	do j = 1,nbrs+1
-		if (use_full_neighbourhood) then
-			if (j == 14) then
-				esite = esite0
-				central = .true.
-			else
-				esite = esite0 + jumpvec(:,j)
-				central = .false.
-			endif
-		else
-			if (j == 1) then
-				esite = esite0
-				central = .true.
-			else
-				esite = esite0 + neumann(:,1)
-				central = .false.
-			endif
-		endif
-	
-		indx = occupancy(esite(1),esite(2),esite(3))%indx
-		do slot = 2,1,-1
-			kcell = indx(slot)
-			if (kcell > 0) then
-				! Determine egress_possible from kcell, will depend on kcell - activated cognate cell is NOT allowed
-				! The idea is that this is used if use_chemotaxis = .false.				
-				if (par_uni(kpar) < exit_prob) then
-					egress_possible = .true.
-				else
-					egress_possible = .false.
-				endif				
-				if (egress_possible) then	
-					call CellExit(kcell,slot,esite)
-!					if (left) then
-						ne = ne + 1
-						check_egress(iexit) = check_egress(iexit) + 1
-						if (evaluate_residence_time) then
-							if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
-								noutflow_tag = noutflow_tag + 1
-								restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
-								ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
-								Tres_dist(ihr) = Tres_dist(ihr) + 1
-							endif
-						endif
-						if (ne == node_outflow .and. computed_outflow) exit
-!					endif
-				endif
-			endif
-		enddo
-	enddo
-	
-	if (ne == node_outflow .and. computed_outflow) exit
-enddo
-if (ne == node_outflow .and. computed_outflow) exit
-enddo
-deallocate(permex)
-
-net_inflow = node_inflow - ne
-nadd_sites = nadd_sites + net_inflow
-total_in = total_in + node_inflow
-total_out = total_out + ne
-end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! The cell kcell in slot at esite(:) is a candidate to exit.  If it meets the criteria,
@@ -1334,100 +1175,11 @@ else
 endif
 return
 
-! Do not add or remove portals more than once per hour.  To prevent repetitive adding and removing.
-if (use_portal_egress .and. use_traffic .and. tnow - last_portal_update_time > 60) then		
-	if (NBcells < NBcells0) then
-		! Set Nexits = Nexits0 for steady-state maintenance.  To wrap up the end of the response.
-!        Nexits0 = exit_fraction*NBcells0
-		Nexits0 = requiredExitPortals(NBcells0)
-		if (Nexits < Nexits0) then
-			last_portal_update_time = tnow
-			do k = 1,Nexits0 - Nexits
-				call addExitPortal()
-			enddo
-!			write(*,*) '-------------------------------------'
-!			write(*,*) 'Set Nexits to base steady-state level'
-!			write(*,*) '--------------------------'
-!			write(*,*) 'Nexits: ',Nexits
-!			write(*,*) '--------------------------'
-		elseif (Nexits > Nexits0) then
-			last_portal_update_time = tnow
-			call removeExits(Nexits - Nexits0)
-!			write(*,*) '-------------------------------------'
-!			write(*,*) 'Set Nexits to base steady-state level'
-!			write(*,*) '--------------------------'
-!			write(*,*) 'Nexits: ',Nexits
-!			write(*,*) '--------------------------'
-		endif
-		return
-	endif
-    dexit = requiredExitPortals(NBcells) - Nexits
-    if (dexit > 0) then
-        naddex = dexit
-		last_portal_update_time = tnow
-!       write(*,*) '--------------------------'
-!       write(*,*) 'Nexits: ',Nexits
-!       write(*,*) '--------------------------'
-!       write(nflog,*) 'added: Nexits: ',naddex, Nexits
-        write(logmsg,*) 'add: Nexits: ',naddex, NBcells, Nexits, requiredExitPortals(NBcells),istep
-        call logger(logmsg) 
-        do k = 1,naddex
-            call addExitPortal()
-        enddo
-!		if (istep > 25900) then
-!		    write(logmsg,*) 'did addExitPortal: exit #10: ',exitlist(10)%site,exitlist(5)%site
-!		    call logger(logmsg) 
-!		endif
-    elseif (dexit < 0) then
-        nremex = -dexit
-		last_portal_update_time = tnow
-!        write(nflog,*) 'balancer: dexit < 0: ',requiredExitPortals(NBcells) 
-!            write(*,*) '--------------------------'
-!            write(*,*) 'Nexits: ',Nexits
-!            write(*,*) '--------------------------'
-!	        write(nflog,*) 'removed: Nexits: ',nremex,Nexits
-!        write(logmsg,*) 'remove: Nexits: ',nremex,requiredExitPortals(NBcells),Nexits,NBcells
-!        call logger(logmsg)
-        call removeExits(nremex)
-!		if (istep > 25900) then
-!		    write(logmsg,*) 'did removeExits: exit #10: ',exitlist(10)%site,exitlist(5)%site
-!		    call logger(logmsg) 
-!		    call checkexits("after removeExits")
-!		endif
-    endif
-endif
-end subroutine
-
-
-!--------------------------------------------------------------------------------
-! When a new empty site is added, the cytokines in the neighbouring sites are
-! mixed in.
-! NOT USED
-!--------------------------------------------------------------------------------
-subroutine smear_cyt(site0)
-integer :: site0(3)
-real :: csum(MAX_CYT)
-integer :: k, n, site(3), jlist(MAXRELDIR)
-
-n = 0
-!csum(1:Ncytokines) = 0
-do k = 1,27
-    if (k == 14) cycle
-    site = site0 + jumpvec(:,k)
-    if (occupancy(site(1),site(2),site(3))%indx(1) >= 0) then
-        n = n+1
-        jlist(n) = k
-!        csum(1:Ncytokines) = csum(1:Ncytokines) + cyt(site(1),site(2),site(3),1:Ncytokines)
-    endif
-enddo
-csum = csum/(n+1)
-do k = 1,n
-    site = site0 + jumpvec(:,jlist(k))
-!    cyt(site(1),site(2),site(3),1:Ncytokines) = csum(1:Ncytokines)
-enddo
-!cyt(site0(1),site0(2),site0(3),:) = csum(1:Ncytokines)
 
 end subroutine
+
+
+
 
 !--------------------------------------------------------------------------------
 ! Counts efferent cognate cells, and records their generation distribution.
@@ -2381,14 +2133,23 @@ check_egress = 0
 end subroutine
 
 !-------------------------------------------------------------------------------- 
+! The GUI calls this subroutine to fetch the cell info needed to identify and render 
+! the cells:
+!   id			the cell's sequence number
+!   position	(x,y,z)
+!   state       this is translated into a colour
+!
+! The info is stored in integer arrays, one for B cells, one for FDCs,
+! and one for cell-cell bonds (not used).
+! As a quick-and-dirty measure, the first 7 B cells in the list are actually 
+! markers to provide a visual indication of the extent of the follicular blob.
 !--------------------------------------------------------------------------------
 subroutine get_scene(nBC_list,BC_list,nFDC_list,FDC_list,nbond_list,bond_list) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_scene
 use, intrinsic :: iso_c_binding
-!integer(c_int) :: nmono_list, mono_list(*), ncap_list, npit_list, nclast_list
-!real(c_float) :: cap_list(*), pit_list(*), clast_list(*)
 integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond_list(*)
 integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
+integer :: r, g, b
 integer :: x, y, z
 real :: dcstate
 integer :: ifdcstate, ibcstate, stype, ctype, stage, region
@@ -2398,9 +2159,11 @@ integer :: gen, bnd(2)
 integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
 integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
 integer, parameter :: axis_bottom = -4	! identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
+integer, parameter :: ninfo = 5			! the size of the info package for a cell (number of integers)
 
 k = 0
-! Need some markers to delineate the follicle extent
+! Need some markers to delineate the follicle extent.  These 7 "cells" are used to convey the follicle centre
+! and the approximate ellipsoidal blob limits in the 3 axis directions.
 do k = 1,7
 	select case (k)
 	case (1)
@@ -2446,7 +2209,8 @@ do k = 1,7
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	end select
-	j = 5*(k-1)
+
+	j = ninfo*(k-1)
 	BC_list(j+1) = k-1
 !	write(logmsg,*) 'cell list #: ',j+1,k-1,site
 !	call logger(logmsg)
@@ -2455,24 +2219,24 @@ do k = 1,7
 enddo
 k = k-1
 
-! T cell section
+! B cell section
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
 	if (kcell > 0) then
-		stage = get_stage(cellist(kcell)%cptr)
 		region = get_region(cellist(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
 		k = k+1
-		j = 5*(k-1)
+		j = ninfo*(k-1)
 		site = cellist(kcell)%site
-		gen = get_generation(cellist(kcell)%cptr)
-		ibcstate = gen
+		call BcellColour(kcell,r,g,b)
+!		gen = get_generation(cellist(kcell)%cptr)
+!		ibcstate = gen
 		! Need bcstate to convey non-activated status, i.e. 0 = non-activated
 		BC_list(j+1) = kc-1 + 7
 !	write(logmsg,*) 'cell list #: ',j+1,kc-1+7,site
 !	call logger(logmsg)
 		BC_list(j+2:j+4) = site
-		BC_list(j+5) = ibcstate
+		BC_list(j+5) = rgb(r,g,b)
 	endif
 enddo
 nBC_list = k
@@ -2484,7 +2248,7 @@ if (NFDC > 0) then
     do kcell = 1,NFDC
         if (FDClist(kcell)%alive) then
 			k = k+1
-			j = 5*(k-1)
+			j = ninfo*(k-1)
             site = FDClist(kcell)%site
             ifdcstate = 100
 			FDC_list(j+1) = kcell-1
@@ -2495,6 +2259,63 @@ if (NFDC > 0) then
     nFDC_list = k
 endif
 end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Rendered cognate B cell colour depends on stage, state, receptor expression level.
+!-----------------------------------------------------------------------------------------
+subroutine BcellColour(kcell,r,g,b)
+integer :: kcell, r, g, b
+integer :: stage
+type(cog_type),pointer :: p
+
+p => cellist(kcell)%cptr
+stage = get_stage(p)
+select case(stage)
+case (NAIVE)
+	r = 40
+	g = 140
+	b = 0
+case (ANTIGEN_MET, CCR7_UP)
+	r = 60
+	g = 230
+	b = 0
+case (TCELL_MET, EBI2_UP)
+	r = 30
+	g = 170
+	b = 170
+case (DIVIDING)
+	if (BCL6_HI) then
+		r = 250
+		g = 250
+		b = 40
+	else
+		r = 90
+		g = 230
+		b = 230
+	endif
+case (GCC_COMMIT, BCL6_UP)
+	r = 250
+	g = 250
+	b = 40
+case (PLASMA)
+	r = 240
+	g = 100
+	b = 60
+case default
+	r = 255
+	g = 255
+	b = 255
+end select
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Pack the colours (r,g,b) into an integer.
+!-----------------------------------------------------------------------------------------
+integer function rgb(r, g, b)
+integer :: r, g, b
+
+rgb = ishft(r,16) + ishft(g,8) + b
+end function
 
 !-----------------------------------------------------------------------------------------
 ! Now this is used only to set use_TCP = .false.
@@ -2607,9 +2428,10 @@ if (test_chemotaxis) then
 		do k = 1,lastcogID
 			kcell = cognate_list(k)
 			if (kcell > 0) then
+				call set_stage(cellist(kcell)%cptr,min(k,BCL6_UP))
 				call ReceptorLevel(kcell,NAIVE_TAG,GCC_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
-				write(logmsg,'(a,i6,5f8.3)') 'Cognate cell receptor levels: ',kcell,cellist(kcell)%receptor_level
-				call logger(logmsg)
+!				write(logmsg,'(a,i6,5f8.3)') 'Cognate cell receptor levels: ',kcell,cellist(kcell)%receptor_level
+!				call logger(logmsg)
 			endif
 		enddo
 	endif
@@ -2665,16 +2487,16 @@ if (use_traffic) then
     if (vary_vascularity) then
         call vascular
     endif
-    if (use_portal_egress) then
-		if (dbug) write(nflog,*) 'call portal_traffic'
-        call portal_traffic(ok)
-	    if (.not.ok) then
-			call logger('portal_traffic returned error')
-			res = 1
-			return
-		endif
-		if (dbug) write(nflog,*) 'did portal_traffic'
-    else
+!    if (use_portal_egress) then
+!		if (dbug) write(nflog,*) 'call portal_traffic'
+!        call portal_traffic(ok)
+!	    if (.not.ok) then
+!			call logger('portal_traffic returned error')
+!			res = 1
+!			return
+!		endif
+!		if (dbug) write(nflog,*) 'did portal_traffic'
+!    else
 		if (dbug) write(nflog,*) 'call traffic'
         call traffic(ok)
 !        if (istep > 4*240) then
@@ -2686,7 +2508,7 @@ if (use_traffic) then
 			res = 1
 			return
 		endif
-    endif
+!    endif
 endif
 if (dbug) call check_xyz(3)
 

@@ -31,9 +31,9 @@ Graphs *grph;
 
 int showingVTK;
 int VTKbuffer[100];
-int TC_list[5*MAX_TC];
-int nTC_list;
-int DC_list[5*MAX_DC];
+int BC_list[NINFO*MAX_BC];
+int nBC_list;
+int DC_list[NINFO*MAX_DC];
 int nDC_list;
 int bond_list[2*MAX_BOND];
 int nbond_list;
@@ -534,7 +534,7 @@ void MainWindow::loadParams()
 
 					bool is_slider = false;
 					int j;
-					QSlider *s;
+					QSlider *s=0;
 					QString sliderString;
 					for (j=0; j<nSliders; j++) {
 						sliderString = "slider_" + wtag;
@@ -631,7 +631,7 @@ void MainWindow::setLineEditVisibility(QString wname, int val)
 //		cbName = "cbox_USE_EBI2";
 	}
 	// Need to locate the LineEdit widgets from their names
-	QWidget *w_rate, *w_conc;	//, *w_cb, *w_cb2=0;
+	QWidget *w_rate=0, *w_conc=0;	//, *w_cb, *w_cb2=0;
 //	bool isS1P = false;
 	for (int i=0; i<nWidgets; i++) {
 		QWidget *w = widget_list[i];							// w = widget_list[i] is the ith widget in the UI
@@ -857,11 +857,7 @@ void MainWindow::setBdryRadioButton(QRadioButton *w_rb, int val)
 		w_rb->setChecked(true);
 	} else {
 		QButtonGroup *bg = (QButtonGroup *)w_rb->group();
-		QRadioButton *rb0 = (QRadioButton *)bg->buttons().first();
 		QRadioButton *rb1 = (QRadioButton *)bg->buttons().last();
-//		LOG_QMSG(bg->objectName());
-//		LOG_QMSG(rb0->objectName());
-//		LOG_QMSG(rb1->objectName());
 		rb1->setChecked(true);
 	}
 }
@@ -1559,7 +1555,6 @@ if (NO_USE_PGRAPH) {
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::drawGraphs()
 {
-	char msg[128];
 	RESULT_SET *R;
 	double act_max = 0, ntot_max = 0, nDC_max = 0, teffgen_max = 0, ncog_LN_max = 0, ncog_PER_max = 0, nbnd_max = 0, ncogseed_max = 0;
 	for (int kres=0; kres<Plot::ncmax; kres++) {
@@ -1651,7 +1646,6 @@ void MainWindow::displayScene()
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::showSummary()
 {
-	char msg[128];
 //	LOG_MSG("showSummary");
 	step++;
 	if (step >= newR->nsteps) {

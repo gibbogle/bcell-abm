@@ -62,12 +62,13 @@ integer, parameter :: NAIVE		  = 1
 integer, parameter :: ANTIGEN_MET = 2
 integer, parameter :: CCR7_UP     = 3
 integer, parameter :: TCELL_MET   = 4
-integer, parameter :: DIVIDING    = 5
-integer, parameter :: GCC_COMMIT  = 6
-integer, parameter :: PLASMA      = 7
-integer, parameter :: BCL6_UP     = 8
-integer, parameter :: FINISHED    = 9
-integer, parameter :: STAGELIMIT  = 9
+integer, parameter :: EBI2_UP     = 5
+integer, parameter :: DIVIDING    = 6
+integer, parameter :: GCC_COMMIT  = 7
+integer, parameter :: PLASMA      = 8
+integer, parameter :: BCL6_UP     = 9
+integer, parameter :: FINISHED    = 10
+integer, parameter :: STAGELIMIT  = 10
 
 integer, parameter :: BCL6_LO = 1
 integer, parameter :: BCL6_HI = GCC_COMMIT
@@ -88,15 +89,6 @@ integer, parameter :: GENERATION_BYTE = 2
 integer, parameter :: SLOT_NUM1 = 1
 integer, parameter :: SLOT_NUM2 = 2
 integer, parameter :: BOTH = 3
-
-integer, parameter :: MAX_CYT = 6
-!integer, parameter :: IL2_TAG  = 1
-!integer, parameter :: IL4_TAG  = 2
-!integer, parameter :: IL7_TAG  = 3
-!integer, parameter :: IL9_TAG  = 4
-!integer, parameter :: IL15_TAG = 5
-!integer, parameter :: IL21_TAG = 6
-!character*(5), parameter :: cyt_name(MAX_CYT) = (/ 'IL-2 ','IL-4 ','IL-7 ','IL-9 ','IL-15','IL-21' /)
 
 integer, parameter :: MAX_CHEMO = 4
 integer, parameter :: S1P    = 1
@@ -202,7 +194,7 @@ integer, parameter :: n_multiple_runs = 1
 ! Parameters and switches for testing
 logical, parameter :: test_vascular = .false.
 logical, parameter :: turn_off_chemotaxis = .false.		! to test the chemotaxis model when cells are not attracted to exits
-logical, parameter :: test_chemotaxis = .true.			! to test multiple chemotactic effects on one or a few cells
+logical, parameter :: test_chemotaxis = .false.			! to test multiple chemotactic effects on one or a few cells
 
 ! Debugging parameters
 !logical, parameter :: dbug = .false.

@@ -130,7 +130,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P halflife",
  "S1P halflife (hours)"},
 
-{"S1P_STRENGTH_POS", 1, 0, 0,
+{"S1P_STRENGTH_POS", 0.1, 0, 0,
  "S1P pos strength",
  "Relative strength of S1P chemotactic attraction (S1PR1)"},
 
@@ -162,7 +162,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CCL21 halflife",
  "CCL21 halflife (hours)"},
 
-{"CCL21_STRENGTH", 1, 0, 0,
+{"CCL21_STRENGTH", 0.1, 0, 0,
  "CCL21 strength",
  "Relative strength of CCL21 chemotactic influence"},
 
@@ -190,7 +190,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY halflife",
  "Oxysterol halflife (hours)"},
 
-{"OXY_STRENGTH", 1, 0, 0,
+{"OXY_STRENGTH", 0.1, 0, 0,
  "OXY strength",
  "Relative strength of Oxysterol chemotactic influence"},
 
@@ -214,11 +214,11 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CXCL13 diffusion coeff",
  "CXCL13 diffusion coefficient"},
 
-{"CXCL13_HALFLIFE", 3, 0, 0,
+{"CXCL13_HALFLIFE", 10, 0, 0,
  "CXCL13 halflife",
  "CXCL13 halflife (hours)"},
 
-{"CXCL13_STRENGTH", 1, 0, 0,
+{"CXCL13_STRENGTH", 0.1, 0, 0,
  "CXCL13 strength",
  "Relative strength of CXCL13 chemotactic influence"},
 

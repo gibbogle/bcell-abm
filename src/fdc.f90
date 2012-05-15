@@ -81,8 +81,8 @@ outer_loop: do
 					endif
 					FDClist(NFDC)%nsites = nassigned
 					nlist = nlist - nassigned
-					write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
-					call logger(logmsg)
+!					write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
+!					call logger(logmsg)
 					if (NFDC == NFDCrequired) exit outer_loop
 				endif
 			enddo

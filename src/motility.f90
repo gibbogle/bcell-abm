@@ -1,3 +1,25 @@
+!--------------------------------------------------------------------------------------
+! Motility behaviour
+! There are potentially 4 motility states:
+! (1) Naive cell, very short non-cognate DC contacts 3 min (motility level 1)
+! (2) Short cognate DC contacts 11 min (motility level 2)
+! (3) Long cognate DC contacts > 1 hr clusters (motility level 3)
+! (4) Short cognate DC contacts 18 min  swarms (motility level 4)
+! It isn't clear what level of motility occurs at each stage. Possibly
+! the contact duration is related to the motility, since reduced motility
+! leads to a higher probability of rebinding.
+! A simple way to vary motility is to keep the persistence parameter rho fixed
+! and vary alpha (plongjump), the probability of 2 steps, and possibly beta,
+! the probability of moving at all.  In any case the jump parameters for each case
+! are stored as pjump(2) and dirprob(0:6).
+! In principle: speed & Cm -> rho, beta, delta -> dirprob(), pjump().
+!
+! Mark Miller says that their motility measurements didn't exclude periods when
+! T cells were in contact with DC, therefore we have no info about motility in
+! various stages of activation.  For now it is safest to use the same motility
+! parameters for all stages.
+!--------------------------------------------------------------------------------------
+
 module motility
 
 use global

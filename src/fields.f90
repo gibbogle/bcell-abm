@@ -1096,7 +1096,7 @@ do ichemo = 1,MAX_CHEMO
 			maxchange = max(maxchange,maxchange_par)
 		enddo
 		if (maxchange < tol*total/nc) then
-			write(logmsg,*) 'Convergence reached: it: ',it
+			write(logmsg,'(a,a,a,i4)') 'Convergence reached for: ',chemo(ichemo)%name,' # of iterations: ',it
 			call logger(logmsg)
 			exit
 		endif

@@ -5,14 +5,15 @@
 
 extern int showingVTK;
 
-#define MAX_TC 1000000
-#define MAX_DC 1000
-#define MAX_BOND 50000
+#define MAX_BC 100000
+#define MAX_DC 100
+#define MAX_BOND 1
+#define NINFO 5
 
 extern int VTKbuffer[100];
-extern int TC_list[5*MAX_TC];
-extern int nTC_list;
-extern int DC_list[5*MAX_DC];
+extern int BC_list[NINFO*MAX_BC];
+extern int nBC_list;
+extern int DC_list[NINFO*MAX_DC];
 extern int nDC_list;
 extern int bond_list[2*MAX_BOND];
 extern int nbond_list;

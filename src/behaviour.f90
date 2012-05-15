@@ -8,18 +8,10 @@ use motility
 
 implicit none
 
-!INTEGER,  PARAMETER  ::  DP=SELECTED_REAL_KIND( 12, 60 )
-
-
-!integer, parameter :: POST_DIVISION = SWARMS    ! on division, cells enter SWARMS
-
 integer, parameter :: NORMAL_DIST      = 1
 integer, parameter :: LOGNORMAL_DIST   = 2
 integer, parameter :: EXPONENTIAL_DIST = 3
 integer, parameter :: CONSTANT_DIST    = 4
-
-!integer, parameter :: Nbindtime_nc = 10
-!real, parameter :: CYTOKINESIS_TIME = 20.0
 
 type(dist_type), allocatable :: stage_dist(:,:,:), life_dist(:), divide_dist(:)
 
@@ -297,9 +289,7 @@ integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
 
 ok = .true.
-!write(*,*) 'Read cell parameter file: ',inputfile
-!call logger('Reading cell parameter file')
-!call logger(inputfile)
+!call logger('Reading B cell parameter file: '//inputfile)
 open(nfcell,file=inputfile,status='old')
 read(nfcell,*) BC_AVIDITY_MEDIAN            ! median of avidity distribution (only if fix_avidity = false)
 read(nfcell,*) BC_AVIDITY_SHAPE			    ! shape -> 1 gives normal dist with small variance
@@ -680,12 +670,9 @@ real(DP) :: R
 !write(*,*) 'cell_division: ',kcell
 ok = .true.
 tnow = istep*DELTA_T
-!call show_cognate_cell(kcell)
 p1 => cellist(kcell)%cptr
 gen = get_generation(p1)
-!call get_region(p1,region)
 region = get_region(p1)
-!write(*,*) 'cell_division: ',kcell,gen,istep,tnow
 if (gen == BC_MAX_GEN) then
     write(logmsg,*) 'cell_division: reached maximum generation: ',kcell
 	call logger(logmsg)
@@ -695,7 +682,6 @@ if (gen == 1) then
     write(logmsg,*) 'First division at hour: ',tnow/60
     call logger(logmsg)
 else
-!    write(*,*) 'Time for next division: ',kcell,gen,(tnow-cellist(kcell)%entrytime)/60
 endif
 ndivided(gen) = ndivided(gen) + 1
 tdivided(gen) = tdivided(gen) + (tnow - p1%dividetime)
@@ -737,21 +723,12 @@ else
 	call set_stage(p1,DIVIDING)
 	p1%stagetime = tnow + DivisionTime()
 endif
-!call set_stage(p1,POST_DIVISION)
-!if (TCR_splitting) then
-!    p1%stimulation = p1%stimulation/2
-!endif
 ctype = cellist(kcell)%ctype
-!p1%dietime = tnow + BClifetime(p1)
-!p1%dividetime = tnow
-!p1%stagetime = tnow + dividetime(gen,ctype)
 site = cellist(kcell)%site
 indx = occupancy(site(1),site(2),site(3))%indx
 
 call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,region,ok)
 if (.not.ok) return
-
-!write(*,*) 'New cell: ',icnew
 
 p2 => cellist(icnew)%cptr
 
@@ -924,91 +901,6 @@ NBcells = NBcells + 1
 
 end subroutine
 
-!--------------------------------------------------------------------------------
-!--------------------------------------------------------------------------------
-subroutine add_site_local(site)
-integer :: site(3)
-
-if (use_add_count) then
-    nadd_sites = nadd_sites - 1
-else
-    write(logmsg,*) 'add_site_local: no code to add site, use add count'
-    call logger(logmsg)
-    stop
-endif
-end subroutine
-
-!--------------------------------------------------------------------------------
-! Add a vacant site at a boundary to account for the T cell added at site
-! In the case of an end node (me = 0 or me = Mnodes-1) the added site can be
-! at a different x value, but for internal nodes the added site  must go at
-! (or near) the same x value.
-! For the spherical blob case, try to place the site at a point near the bdry
-! on a line drawn through site from the centre.
-! NOT USED
-!--------------------------------------------------------------------------------
-subroutine add_vacant_site(site,kpar)
-integer :: site(3),kpar
-integer :: k, site0(3),newsite(3)
-real(DP) :: R
-real :: dxyz(3)
-logical :: redo
-
-if (dbug) write(*,'(a,4i6)') 'add_vacant_site: ',site
-site0 = site
-dxyz = real(site0) - Centre
-do k = 2,3
-!    call random_number(R)
-    R = par_uni(kpar)
-    dxyz(k) = dxyz(k) + (R - 0.5)
-enddo
-call normalize(dxyz)
-redo = .false.
-k = 0
-do
-    k = k+1
-    newsite = site0 + k*0.5*dxyz
-    if (newsite(1) < 1 .or. newsite(1) > NX) then
-        site0 = site0 + (k-1)*0.5*dxyz
-        dxyz(1) = 0
-        call normalize(dxyz)
-        redo = .true.
-        exit
-    endif
-    if (newsite(2) < 1 .or. newsite(2) > NY .or. newsite(3) < 1 .or. newsite(3) > NZ) then
-        write(logmsg,*) 'ERROR: add_vacant_site: reached grid limits (a): ',k,site,dxyz
-        call logger(logmsg)
-        stop
-    endif
-    if (occupancy(newsite(1),newsite(2),newsite(3))%indx(1) == OUTSIDE_TAG) then
-        exit
-    endif
-enddo
-if (redo) then
-    if (dbug) write(*,*) 'redo: ', site0
-    k = 0
-    do
-        k = k+1
-        newsite = site0 + k*0.5*dxyz
-        if (newsite(2) < 1 .or. newsite(2) > NY .or. newsite(3) < 1 .or. newsite(3) > NZ) then
-            write(logmsg,*) 'ERROR: add_vacant_site: reached grid limits (b): ',k,site,dxyz
-            call logger(logmsg)
-            newsite = site0 + (k-1)*0.5*dxyz
-            write(logmsg,*) newsite,occupancy(newsite(1),newsite(2),newsite(3))%indx(1)
-            call logger(logmsg)
-            stop
-        endif
-        if (occupancy(newsite(1),newsite(2),newsite(3))%indx(1) == OUTSIDE_TAG) then
-            exit
-        endif
-    enddo
-endif
-if (dbug) write(*,'(a,4i6)') 'newsite: ',newsite
-occupancy(newsite(1),newsite(2),newsite(3))%indx = 0
-if (dbug) write(*,'(a,7i6)') 'site, vacant site: ',site,newsite
-
-end subroutine
-
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
 real function get_GccProb(gen)
@@ -1100,12 +992,8 @@ do x = 1,NX
     enddo
 enddo
 
-write(*,*) '(a) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
-write(*,*) 'nlist: ',nlist
 call placeFDCs(ok)
 if (.not.ok) stop
-write(*,*) 'nlist: ',nlist
-write(*,*) '(b) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
 
 allocate(permc(nlist))
 do k = 1,nlist
@@ -1140,7 +1028,6 @@ do x = 1,NX
                     ctype = select_cell_type(kpar)
                     if (ctype /= NONCOG_TYPE_TAG) then
                         ncogseed = ncogseed + 1
-                        write(*,*) 'cognate: ',k,site
                     endif
                 endif
                 call CreateBcell(k,cellist(k),site,ctype,gen,stage,region,ok)
@@ -1166,7 +1053,6 @@ enddo
 deallocate(permc)
 call make_cognate_list(ok)
 if (.not.ok) return
-write(*,*) '(c) occupancy(47,53,39)%indx: ',occupancy(47,53,39)%indx
 
 write(nfout,*) 'nlist,RESIDENCE_TIME: ',nlist,RESIDENCE_TIME
 nlist = id	! this is already the case for 3D blob
@@ -1182,57 +1068,6 @@ bRadius = aRadius/ELLIPSE_RATIO
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
 
 end subroutine
-
-!-----------------------------------------------------------------------------
-! Number of exit portals required for the current cell population, ncells. 
-! For SURFACE_PORTALS, roughlyly proportional to surface area, i.e. to
-! ncells^(2/3), factor = exit_fraction
-! Modified to use an adjustment that was computed with:
-!	Tres = 12
-!	chemotaxis factor = 1
-!	chemotaxis radius = 100 um
-! exit_fraction = mN + c
-! where
-!	N = ncells
-!	m = 1.607E-5
-!	c = 0.00602
-! 
-! Better is a quadratic fit (from Excel, steady_chemo_0_1.xls):
-! exit_fraction = a.x^2 + b.x + c
-! where x = Ncells/1000
-!-----------------------------------------------------------------------------
-integer function requiredExitPortals(ncells)
-integer :: ncells
-real :: a, b, c, x, Fe
-real, parameter :: pow = 2./3.
-real, parameter :: a_nochemo_24h = -4.058E-08
-real, parameter :: b_nochemo_24h = 5.590E-05
-real, parameter :: c_nochemo_24h = 1.006E-02
-
-! This is to adjust Ne when there is general exit chemotaxis, to generate steady-state
-real, parameter :: K_Ke = 1.0		! 0.68 for Ke = 1.0, 1.0 for Ke = 0.0 (Pe = 0.02)
-
-	a = a_nochemo_24h
-	b = b_nochemo_24h
-	c = c_nochemo_24h
-	base_exit_prob = 1.0
-if (FIXED_NEXITS) then
-	x = NBcells0/1000
-	exit_fraction = (a*x**2 + b*x + c)*24/residence_time
-	requiredExitPortals = exit_fraction*NBcells0**pow + 0.5
-else
-	x = ncells/1000
-!	Fe = (a*x**2 + b*x + c)
-!	Fe = 3.028E-03*x**3.571E-01		! power law fit (7 points)
-	Fe = 2.990E-03*x**3.595E-01		! power law fit (8 points, 51k - 1.1m cells)
-	exit_fraction = Fe*24.0/residence_time
-	requiredExitPortals = K_Ke*exit_fraction*ncells**pow + 0.5 
-!	write(logmsg,'(a,f7.4)') 'exit_fraction: ',exit_fraction 
-!	call logger(logmsg)
-endif
-!requiredExitPortals = requiredExitPortals/base_exit_prob
-end function
-
 
 
 !---------------------------------------------------------------------
@@ -1262,44 +1097,6 @@ enddo
 site = (/x,y,z/)
 end subroutine
 
-!-----------------------------------------------------------------------------
-! Exit sites (portals) are on a portion of the lower follicle surface, at
-! T zone interface.
-!-----------------------------------------------------------------------------
-subroutine choosePortalSite(site)
-integer :: site(3)
-integer :: xex, yex, zex
-real(DP) :: R
-real :: prox, u(3), theta, rx
-integer :: kpar = 0
-logical :: ok
-
-!call logger('choosePortalSite')
-! randomly choose direction in 3D, then locate sites near this vector on the blob boundary
-! Need to restrict the sinus interface by removing the follicle interface.
-do
-	R = par_uni(kpar)
-	u(1) = 2*R - 1
-	if (u(1) > 0.5) cycle
-	rx = sqrt(1-u(1)*u(1))
-	R = par_uni(kpar)
-	theta = 2*PI*R
-	u(2) = rx*cos(theta)
-	u(3) = rx*sin(theta)
-	call getBoundarySite(u,site,ok)
-	if (.not.ok) cycle
-	xex = site(1)
-	yex = site(2)
-	zex = site(3)
-!	prox = exit_prox*chemo_N				! chemo_N is chemo_radius in units of sites
-	prox = 0.5*prox
-	if (tooNearExit(site,prox)) then	! too near another exit
-		cycle
-	endif	
-	exit
-enddo
-
-end subroutine
 
 !--------------------------------------------------------------------------------------
 ! The receptor levels are ramped over t1 < t < t2 from levels given by:
@@ -1337,31 +1134,8 @@ do ireceptor = 1,MAX_CHEMO
 enddo
 end subroutine
 
-!--------------------------------------------------------------------------------------
-! Motility behaviour
-! There are potentially 4 motility states:
-! (1) Naive cell, very short non-cognate DC contacts 3 min (motility level 1)
-! (2) Short cognate DC contacts 11 min (motility level 2)
-! (3) Long cognate DC contacts > 1 hr clusters (motility level 3)
-! (4) Short cognate DC contacts 18 min  swarms (motility level 4)
-! It isn't clear what level of motility occurs at each stage. Possibly
-! the contact duration is related to the motility, since reduced motility
-! leads to a higher probability of rebinding.
-! A simple way to vary motility is to keep the persistence parameter rho fixed
-! and vary alpha (plongjump), the probability of 2 steps, and possibly beta,
-! the probability of moving at all.  In any case the jump parameters for each case
-! are stored as pjump(2) and dirprob(0:6).
-! In principle: speed & Cm -> rho, beta, delta -> dirprob(), pjump().
-!
-! Mark Miller says that their motility measurements didn't exclude periods when
-! T cells were in contact with DC, therefore we have no info about motility in
-! various stages of activation.  For now it is safest to use the same motility
-! parameters for all stages.
-!--------------------------------------------------------------------------------------
-
 !---------------------------------------------------------------------
-! For cognate cells, updates T cell state, and DC %stimulation 
-! (for use in modifying %density in update_DCstate).
+! For cognate cells, updates B cell state.
 !
 ! Treatment of cell death
 !------------------------
@@ -1376,16 +1150,13 @@ logical :: ok
 integer :: kcell, stage, iseq, tag, kfrom, kto, k, ncog, ntot
 integer :: site(3), site2(3), freeslot, indx(2), status, DC(2), idc
 integer :: tmplastcogID
-!real :: C(N_CYT), mrate(N_CYT)
 real :: tnow, dstim, S, cyt_conc, mols_pM, Ctemp, dstimrate, stimrate
 real :: t1, t2, die_prob
 logical :: divide_flag, producing, first, dbg, unbound, flag, flag1
-!logical, save :: first = .true.
 real(DP) :: R
 integer :: kpar = 0
 type (cog_type), pointer :: p
 
-!write(*,*) 'updater: ',me
 ok = .true.
 dbg = .false.
 flag = .false.
@@ -1393,22 +1164,11 @@ flag1 = .false.
 ntot = 0
 ncog = 0
 tnow = istep*DELTA_T
-! Scaling factor to convert total number of molecules in the region to conc in pM
-!mols_pM = L_um3*M_pM/(NBcells*Vc*Navo)
-
-!do kcell = 1,nlist
-!    if (cellist(kcell)%ID == 0) cycle
-!    ntot = ntot + 1
-!    if (dbg) write(*,*) 'kcell: ',kcell
-!    ctype = cellist(kcell)%ctype
-!    stype = struct_type(ctype)
-!    if (stype /= COG_TYPE_TAG) cycle
-    ! Only cognate cells considered
+! Only cognate cells considered
 tmplastcogID = lastcogID
 do k = 1,tmplastcogID
     kcell = cognate_list(k)
     if (kcell == 0) then
-!        write(*,*) 'updater: kcell = 0: ',k,tmplastcogID
         cycle
     endif
     ncog = ncog + 1
@@ -1473,15 +1233,27 @@ enddo
 end subroutine
 
 !--------------------------------------------------------------------------------------
-! stage is the current stage of the cell, 
-! p%stagetime = time that the cell is expected to make transition to the next stage.
+! stage is the current stage of the cell 
+! p%nextstagetime = time that the cell is expected to make transition to the next stage.
+! When the current time tnow reaches (exceeds) nextstagetime, the case corresponding to
+! stage is executed to handle the transition to the next stage.
+! The interval between stage transitions can be:
+!    Fixed length 
+!      ANTIGEN_MET -> CCR7_UP takes T_CCR7_UP
+!      TCELL_MET -> EBI2_UP takes T_EBI2_UP
+!      GCC_COMMIT -> BCL6_UP takes T_BCL6_UP
+!    Variable length determined by stochastic cell motion
+!      NAIVE -> ANTIGEN_MET depends on antigen encounter at the upper follicle boundary
+!      CCR7_UP -> TCELL_MET depends on helper T cell encounter at the lower follicle boundary
+!    Variable length determined by a probability distribution
+!      EBI2_UP -> DIVIDING, BCL6_UP -> DIVIDING, DIVIDING -> DIVIDING determined by division time distribution.
 !--------------------------------------------------------------------------------------
 subroutine updatestage(kcell,tnow,divide_flag)
 integer :: kcell
 logical :: divide_flag
 real :: tnow
 integer :: stage, gen, ctype, site(3)
-real :: stagetime
+real :: nextstagetime
 type(cog_type), pointer :: p
 
 divide_flag = .false.
@@ -1491,35 +1263,38 @@ p => cellist(kcell)%cptr
 stage = get_stage(p)
 if (stage == FINISHED) return
 ctype = cellist(kcell)%ctype
-stagetime = p%stagetime
-if (tnow > stagetime) then		! time constraint to move to next stage is met
+nextstagetime = p%stagetime
+if (tnow > nextstagetime) then		! time constraint to move to next stage is met
 	! May be possible to make the transition from stage
 	select case(stage)
 	case (NAIVE)
 		if (AntigenEncounter(kcell,site)) then
 	        call set_stage(p,ANTIGEN_MET)
-	        p%stagetime = tnow + T_CCR7_UP	
+	        p%stagetime = tnow + T_CCR7_UP		! time of execution of case (ANTIGEN_MET), which sets the stage to CCR7_UP
 	        write(logmsg,'(a,i6,2f8.2)') 'updatestage: -> ANTIGEN_MET: ',kcell,tnow,p%stagetime	
 	        call logger(logmsg)
 		endif		
-	case (ANTIGEN_MET)    ! possible transition from ANTIGEN_MET to CCR7_UP
+	case (ANTIGEN_MET)    ! transition from ANTIGEN_MET to CCR7_UP
         call set_stage(p,CCR7_UP)
 		p%stagetime = tnow
 	case (CCR7_UP)     ! possible transition from CCR7_UP to TCELL_MET
 		if (TCellEncounter(kcell,site)) then
 	        call set_stage(p,TCELL_MET)
-	        p%stagetime = tnow + T_EBI2_UP		
+	        p%stagetime = tnow + T_EBI2_UP		! time of execution of case (TCELL_MET), which sets the stage to EBI2_UP
 		endif
 	case (TCELL_MET)
+		call set_stage(p,EBI2_UP)
+        p%stagetime = tnow		
+	case (EBI2_UP)
 		call set_stage(p,DIVIDING)
-        p%stagetime = tnow + max(0.,T_FIRST_DIVISION - T_EBI2_UP)
-	case (DIVIDING)		! the next stage for DIVIDING cells is set in cell_division(), call triggered by divide_flag
+		p%stagetime = tnow + DivisionTime()		! time of execution of case (DIVIDING), which sets divide_flag
+	case (DIVIDING)								! the next stage for DIVIDING cells is set in cell_division()
         gen = get_generation(p)
 		if (gen == BC_MAX_GEN) then
             call set_stage(p,FINISHED)
 			p%stagetime = BIG_TIME
 		else
-		    divide_flag = .true.
+		    divide_flag = .true.				! this triggers a call to cell_division()
 		endif
 	case (GCC_COMMIT)
         call set_stage(p,BCL6_UP)

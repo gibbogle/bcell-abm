@@ -101,13 +101,13 @@ MyVTK::MyVTK(QWidget *page)
 	iren->Initialize();
 
 	// Create mappers
-	vtkSphereSource *Tcell = vtkSphereSource::New();
-    Tcell->SetThetaResolution(12);
-    Tcell->SetPhiResolution(12);
-    Tcell->SetRadius(0.5);
-	TcellMapper = vtkPolyDataMapper::New();
+	vtkSphereSource *Bcell = vtkSphereSource::New();
+	Bcell->SetThetaResolution(12);
+	Bcell->SetPhiResolution(12);
+	Bcell->SetRadius(0.5);
+	BcellMapper = vtkPolyDataMapper::New();
 
-	TcellMapper->SetInputConnection(Tcell->GetOutputPort());
+	BcellMapper->SetInputConnection(Bcell->GetOutputPort());
 
 	vtkSphereSource *Dcell = vtkSphereSource::New();
     Dcell->SetThetaResolution(12);
@@ -143,24 +143,27 @@ MyVTK::~MyVTK()
 }
 
 //-----------------------------------------------------------------------------------------
+// The cell info is fetched from the DLL by ExecThread::snapshot().
+// The info is transmitted in the integer arrays BC_list[] and DC_list[]
+// The info is transferred here into BCpos_list and DCpos_list, which are Qlists.
 //-----------------------------------------------------------------------------------------
 void MyVTK::get_cell_positions(bool fast)
 {
-	double TC_diam = 0.9;
+	double BC_diam = 0.9;
 	double DC_diam = 1.8;
-	TCpos_list.clear();
+	BCpos_list.clear();
 	DCpos_list.clear();
 	bondpos_list.clear();
-	for (int i=0; i<nTC_list; i++) {
+	for (int i=0; i<nBC_list; i++) {
 		int j = 5*i;
 		CELL_POS cp;
-		cp.tag = TC_list[j];
-		cp.x = TC_list[j+1];
-		cp.y = TC_list[j+2];
-		cp.z = TC_list[j+3];
-		cp.state = TC_list[j+4];
-		cp.diameter = TC_diam;
-		TCpos_list.append(cp);
+		cp.tag = BC_list[j];
+		cp.x = BC_list[j+1];
+		cp.y = BC_list[j+2];
+		cp.z = BC_list[j+3];
+		cp.state = BC_list[j+4];
+		cp.diameter = BC_diam;
+		BCpos_list.append(cp);
 //		sprintf(msg,"T cell: %d: tag: %d pos: %d %d %d state: %lf",i,cp.tag,cp.x,cp.y,cp.z,cp.state);
 //		LOG_MSG(msg);
 	}
@@ -178,7 +181,7 @@ void MyVTK::get_cell_positions(bool fast)
 	for (int i=0; i<nbond_list; i++) {
 		int j = 2*i;
 		BOND_POS cp;
-		cp.TCtag = bond_list[j];
+		cp.BCtag = bond_list[j];
 		cp.DCtag = bond_list[j+1];
 		bondpos_list.append(cp);
 	}
@@ -188,7 +191,7 @@ void MyVTK::get_cell_positions(bool fast)
 //-----------------------------------------------------------------------------------------
 void MyVTK::read_cell_positions(QString infileName, QString outfileName, bool savepos)
 {	
-    TCpos_list.clear();
+	BCpos_list.clear();
     DCpos_list.clear();
     bondpos_list.clear();
 	QString line, saveline;
@@ -222,7 +225,7 @@ void MyVTK::read_cell_positions(QString infileName, QString outfileName, bool sa
 					cp.z = s[4].toInt();
 					cp.diameter = s[5].toDouble();
 					cp.state = s[6].toDouble();
-					TCpos_list.append(cp);
+					BCpos_list.append(cp);
 				} else if (s[0].compare("D") == 0) {
 					CELL_POS cp;
 					cp.tag = s[1].toInt();
@@ -234,7 +237,7 @@ void MyVTK::read_cell_positions(QString infileName, QString outfileName, bool sa
 					DCpos_list.append(cp);
 				} else if (s[0].compare("B") == 0) {
 					BOND_POS cp;
-					cp.TCtag = s[1].toInt();
+					cp.BCtag = s[1].toInt();
 					cp.DCtag = s[2].toInt();
 					bondpos_list.append(cp);
 				} else if (s[0].compare("E") == 0) {
@@ -259,9 +262,9 @@ void MyVTK::read_cell_positions(QString infileName, QString outfileName, bool sa
 //---------------------------------------------------------------------------------------------
 void MyVTK::init()
 {
-    T_Actor_list.clear();
+	B_Actor_list.clear();
 	D_Actor_list.clear();
-    B_Actor_list.clear();
+	Bnd_Actor_list.clear();
 }
 
 //---------------------------------------------------------------------------------------------
@@ -271,21 +274,21 @@ void MyVTK::cleanup()
 	int i;
 	vtkActor *actor;
 	LOG_MSG("VTK cleanup");
-	for (i = 0; i<T_Actor_list.length(); i++) {
-		actor = T_Actor_list[i];
+	for (i = 0; i<B_Actor_list.length(); i++) {
+		actor = B_Actor_list[i];
         ren->RemoveActor(actor);
 	}
 	for (i = 0; i<D_Actor_list.length(); i++) {
 		actor = D_Actor_list[i];
         ren->RemoveActor(actor);
 	}
-	for (i = 0; i<B_Actor_list.length(); i++) {
-		actor = B_Actor_list[i];
-        ren->RemoveActor(actor);
-	}	
-    T_Actor_list.clear();
+	for (i = 0; i<Bnd_Actor_list.length(); i++) {
+		actor = Bnd_Actor_list[i];
+	   ren->RemoveActor(actor);
+	}
+	B_Actor_list.clear();
 	D_Actor_list.clear();
-    B_Actor_list.clear();
+	Bnd_Actor_list.clear();
 	first_VTK = true;	
 }
 
@@ -293,9 +296,9 @@ void MyVTK::cleanup()
 //---------------------------------------------------------------------------------------------
 void MyVTK::renderCells(bool redo, bool zzz)
 {
-	process_Tcells();
+	process_Bcells();
     process_Dcells(redo);
-    process_bonds();
+//    process_bonds();
 	if (first_VTK) {
 		LOG_MSG("Initializing the renderer");
 		ren->ResetCamera();
@@ -306,23 +309,47 @@ void MyVTK::renderCells(bool redo, bool zzz)
 
 //---------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------
-void MyVTK::process_Tcells()
+void MyVTK::unpack(int x, double *rr, double *gg, double *bb)
+{
+	int z, r, g, b;
+
+	z = x;
+	r = z>>16;
+	z = r;
+	z = z<<16;
+
+	x = x - z;
+
+	z = x;
+	g = z>>8;
+	z = g;
+	z = z<<8;
+
+	b = x - z;
+	*rr = r/255.;
+	*gg = g/255.;
+	*bb = b/255.;
+}
+
+//---------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------
+void MyVTK::process_Bcells()
 {
 	int i, tag;
 	double r, g, b, genfac;
-	double TC_MAX_GEN = 15;
+	double BC_MAX_GEN = 30;
 	CELL_POS cp;
 	vtkActor *actor;
 	int axis_centre = -2;	// identifies the ellipsoid centre
 	int axis_end    = -3;	// identifies the ellipsoid extent in 5 directions
 	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
-	double TCColor[] = {0.0, 0.0, 1.0};
+	double BCColor[] = {0.0, 0.0, 1.0};
 
-    int na = T_Actor_list.length();
-    int np = TCpos_list.length();
+	int na = B_Actor_list.length();
+	int np = BCpos_list.length();
     int n = na;
 	for (i=0; i<np; i++) {
-        cp = TCpos_list[i];
+		cp = BCpos_list[i];
         tag = cp.tag;
         n = max(tag+1,n);
 	}
@@ -331,40 +358,47 @@ void MyVTK::process_Tcells()
 	for (i=0; i<n; i++)
 		active[i] = false;
 	for (i=0; i<np; i++) {
-        cp = TCpos_list[i];
+		cp = BCpos_list[i];
         tag = cp.tag;
         active[tag] = true;
 		if (tag >= na) {   // need to add actor, and possibly fill gaps
 			if (tag > na) {
                 for (int j=na; j<tag; j++)	//j in range(na,tag):
-                    T_Actor_list.append(0);
+					B_Actor_list.append(0);
 			}
 			actor = vtkActor::New();
-            actor->SetMapper(TcellMapper);
-            actor->GetProperty()->SetColor(TCColor);
+			actor->SetMapper(BcellMapper);
+//			actor->GetProperty()->SetColor(BCColor);
             ren->AddActor(actor);
-            T_Actor_list.append(actor);
+			B_Actor_list.append(actor);
             na = tag + 1;
 		}
-		if (cp.state == -1) {	// non-cognate
-			r = 0.5; g = 0.5; b = 0.5;
-		} else if (cp.state == axis_centre) {
-			r = 1; g = 1; b = 1;
-		} else if (cp.state == axis_end) {
-			r = 1; g = 0; b = 1;
-		} else if (cp.state == axis_bottom) {
-			r = 1; g = 1; b = 1;
-		} else if (cp.state == 0) {
+		if (cp.state < 0) {
+			if (cp.state == -1) {	// non-cognate
+				r = 0.5; g = 0.5; b = 0.5;
+			} else if (cp.state == axis_centre) {
+				r = 1; g = 1; b = 1;
+			} else if (cp.state == axis_end) {
+				r = 1; g = 0; b = 1;
+			} else if (cp.state == axis_bottom) {
+				r = 1; g = 1; b = 1;
+			}
+		} else {
+			unpack(cp.state, &r, &g, &b);
+		}
+		/*
+		else if (cp.state == 0) {
 			r = 0; g = 0; b = 1;
-		} else if (cp.state <= TC_MAX_GEN) {
-			genfac = (cp.state-1)/(TC_MAX_GEN-1);		// 0 - 1
+		} else if (cp.state <= BC_MAX_GEN) {
+			genfac = (cp.state-1)/(BC_MAX_GEN-1);		// 0 - 1
 			b = genfac*0.4;
 			g = 1 - b;
 			r = 0;
 		} else {
 			r = 1.0; g = 0.6; b = 0.0;
 		}
-        actor = T_Actor_list[tag];
+		*/
+		actor = B_Actor_list[tag];
         actor->GetProperty()->SetColor(r, g, b);
         actor->SetPosition(cp.x, cp.y, cp.z);
 		if (actor != 0) 
@@ -377,10 +411,10 @@ void MyVTK::process_Tcells()
 	}
 
 	for (int k=0; k<na; k++) {	// k in range(0,na):
-		if (T_Actor_list[k] != 0 && !active[k]) {     // need to remove actor from list
-            actor = T_Actor_list[k];
+		if (B_Actor_list[k] != 0 && !active[k]) {     // need to remove actor from list
+			actor = B_Actor_list[k];
             ren->RemoveActor(actor);
-            T_Actor_list[k] = 0;
+			B_Actor_list[k] = 0;
 		}
 	}
 }
@@ -472,33 +506,33 @@ void MyVTK::process_bonds()
 {
 	int i, j;
 	BOND_POS bp;
-	vtkActor *actor, *T_actor, *D_actor;
+	vtkActor *actor, *B_actor, *D_actor;
 	double bpos[3], v[3];
 	double Pi = 3.15159;
-	double *tcpos, *dcpos;
+	double *bcpos, *dcpos;
 	double bondColor[] = {0.5,0.0,0.0};
 
-    int na = B_Actor_list.length();
+	int na = Bnd_Actor_list.length();
     int np = bondpos_list.length();
 
     // First remove all old bonds (strictly speaking we should remove only those not in the new list)
 
 	for (int k=0; k<na; k++) {
-        ren->RemoveActor(B_Actor_list[k]);
+		ren->RemoveActor(Bnd_Actor_list[k]);
 	}
 
-    B_Actor_list.clear();    
+	Bnd_Actor_list.clear();
 
 	for (i=0; i<np; i++) {
         bp = bondpos_list[i];
 		actor = vtkActor::New();
         actor->SetMapper(bondMapper);
 		actor->GetProperty()->SetColor(bondColor);
-		T_actor = T_Actor_list[bp.TCtag];
-		if (T_actor != 0)
-	        tcpos = T_actor->GetPosition();
+		B_actor = B_Actor_list[bp.BCtag];
+		if (B_actor != 0)
+			bcpos = B_actor->GetPosition();
 		else {
-			sprintf(msg,"T_actor = 0 in bond: %d %d",i,bp.TCtag);
+			sprintf(msg,"B_actor = 0 in bond: %d %d",i,bp.BCtag);
 			LOG_MSG(msg);
 			exit(1);
 		}
@@ -512,8 +546,8 @@ void MyVTK::process_bonds()
 		}
 	
 		for (j=0; j<3; j++) {
-            bpos[j] = (tcpos[j] + dcpos[j])/2;
-            v[j] = tcpos[j] - dcpos[j];
+			bpos[j] = (bcpos[j] + dcpos[j])/2;
+			v[j] = bcpos[j] - dcpos[j];
 		}
         double v_mod = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 		double s[] = {1, v_mod, 1};
@@ -530,7 +564,7 @@ void MyVTK::process_bonds()
         actor->SetPosition(bpos);
         actor->RotateWXYZ(theta,v[2],0,-v[0]);
         ren->AddActor(actor);
-        B_Actor_list.append(actor);
+		Bnd_Actor_list.append(actor);
 	}
 }
 
@@ -580,7 +614,7 @@ bool MyVTK::nextFrame()
 		stop();
 		return false;
 	}
-	TCpos_list.clear();
+	BCpos_list.clear();
 	DCpos_list.clear();
 	bondpos_list.clear();
 	int k = 0;
@@ -598,7 +632,7 @@ bool MyVTK::nextFrame()
 				cp.z = s[4].toInt();
 				cp.diameter = s[5].toDouble();
 				cp.state = s[6].toDouble();
-				TCpos_list.append(cp);
+				BCpos_list.append(cp);
 			} else if (s[0].compare("D") == 0) {
 				CELL_POS cp;
 				cp.tag = s[1].toInt();
@@ -610,7 +644,7 @@ bool MyVTK::nextFrame()
 				DCpos_list.append(cp);
 			} else if (s[0].compare("B") == 0) {
 				BOND_POS cp;
-				cp.TCtag = s[1].toInt();
+				cp.BCtag = s[1].toInt();
 				cp.DCtag = s[2].toInt();
 				bondpos_list.append(cp);
 			} else if (s[0].compare("E") == 0) {

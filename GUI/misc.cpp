@@ -191,12 +191,15 @@ void ExecThread::run()
 }
 
 //-----------------------------------------------------------------------------------------
+// Note that storage for BC_list, DC_list, bond_list is provided in the GUI code
+// (see mainwindow.cpp and transfer.h).  The DLL fills in the data, and the number of elements
+// in the lists is returned in nBC_list, nDC_list, nbond_list.
 //-----------------------------------------------------------------------------------------
 void ExecThread::snapshot()
 {
 	mutex2.lock();
-	get_scene(&nTC_list,TC_list,&nDC_list,DC_list,&nbond_list,bond_list);
-	if (nTC_list > MAX_TC) {
+	get_scene(&nBC_list,BC_list,&nDC_list,DC_list,&nbond_list,bond_list);
+	if (nBC_list > MAX_BC) {
 		LOG_MSG("Error: MAX_TC exceeded");
 		exit(1);
 	}
