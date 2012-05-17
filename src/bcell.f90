@@ -127,7 +127,7 @@ nsteps_per_min = 1.0/DELTA_T
 NY = NX
 NZ = NX
 ngaps = 0
-max_ngaps = 5*NY*NZ
+max_ngaps = 100	! 5*NY*NZ
 ID_offset = BIG_INT/Mnodes
 nlist = 0
 MAX_COG = 0.5*NX*NY*NZ
@@ -571,8 +571,8 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 ! To test AddBcell()
 !-----------------------------------------------------------------------------------------
-subroutine add_random_cells(n, ctype, gen, stage, region)
-integer :: n, ctype, gen, stage, region
+subroutine add_random_cells(n, ctype, gen, stage, status, region)
+integer :: n, ctype, gen, stage, status, region
 integer :: k, x, y, z, site(3), slots, kcell
 integer :: kpar=0
 logical :: ok
@@ -586,7 +586,7 @@ do while (k < n)
     slots = getslots(site)
     if (occupancy(x,y,z)%indx(1) >= 0 .and. slots < BOTH) then
         if (dbug) write(*,'(a,7i6)') 'add_random_cells: ',site,occupancy(x,y,z)%indx,slots
-        call AddBcell(site,ctype,gen,stage,region,kcell,ok)
+        call AddBcell(site,ctype,gen,stage,status,region,kcell,ok)
         if (dbug) write(*,'(a,7i6)') 'after add_random_cells: ',site,occupancy(x,y,z)%indx,slots
         call checkslots('add_random_cells: ',site)
         k = k+1
@@ -741,7 +741,7 @@ end subroutine
 subroutine CellInflux(ninflow,ok)
 integer :: ninflow
 logical :: ok
-integer :: k, x, y, z, indx(2), site(3), kcell, ctype, gen, region, kpar=0
+integer :: k, x, y, z, indx(2), site(3), kcell, ctype, gen, status, region, kpar=0
 real :: R
 
 region = FOLLICLE
@@ -770,7 +770,8 @@ do while (k < ninflow)
         if (ctype /= NONCOG_TYPE_TAG) then
             ncogseed = ncogseed + 1
         endif
-        call AddBcell(site,ctype,gen,NAIVE,region,kcell,ok)
+        status = BCL6_LO
+        call AddBcell(site,ctype,gen,NAIVE,status,region,kcell,ok)
         if (.not.ok) then
 			call logger('Error: CellInflux: failed to add B cell')
 			return
@@ -789,7 +790,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine traffic(ok)
 logical :: ok
-integer :: x, y, z, k, kcell, indx(2), ctype, gen, stage, region, status, site(3), n, slot
+integer :: x, y, z, k, kcell, indx(2), ctype, gen, stage, region, site(3), n, slot
 integer :: node_inflow, node_outflow, add(3), net_inflow, ihr
 real(DP) :: R, df, prob
 real :: tnow, noncog_exit_prob
@@ -838,8 +839,8 @@ do while ( associated ( bdry ))
 				can_leave = .false.
 				p => cellist(kcell)%cptr
 				if (associated(p)) then
-					status = get_status(p)
-					if (status == PLASMA) then
+					stage = get_stage(p)
+					if (stage == PLASMA) then
 						can_leave = .true.
 					endif
 				else
@@ -867,9 +868,9 @@ do while ( associated ( bdry ))
     bdry => bdry%next
 enddo
 nadd_sites = nadd_sites - node_outflow
-if (mod(istep,4*60) == 0) then
-	write(nfout,*) nb,nx,noncog_exit_prob
-endif
+!if (mod(istep,4*60) == 0) then
+!	write(nfout,*) 'traffic: nb,nx,noncog_exit_prob
+!endif
 return
 
 ! Unused code follows
@@ -934,32 +935,26 @@ end function
 !-----------------------------------------------------------------------------------------
 ! The cell kcell in slot at esite(:) is a candidate to exit.  If it meets the criteria,
 ! left = .true.
-! Currently, when a T cell exits the LN its ID is set to 0, and a gap is recorded in cellist(:).
+! Currently, when a T cell exits the LN its ID is set to 0.
+! If use_gaplist is true, a gap is recorded in gaplist(:).
 !-----------------------------------------------------------------------------------------
 subroutine CellExit(kcell,slot,esite)
 integer :: kcell, slot, esite(3)
-!logical :: left
 integer :: x, y, z, ctype, gen, stage, region, status
 real :: tnow
 logical :: cognate, activated
 type(cog_type), pointer :: p
 
 tnow = istep*DELTA_T
-!left = .false.
 if (evaluate_residence_time) then
     cognate = .false.
 elseif (associated(cellist(kcell)%cptr)) then
     cognate = .true.
     p => cellist(kcell)%cptr
-!	call get_stage(p,stage,region)
 	stage = get_stage(p)
 	status = get_status(p)
     gen = get_generation(p)
     ctype = cellist(kcell)%ctype
-!    if (.not.exitOK(p,ctype)) then
-!        write(*,*) 'cell_exit: cognate exit suppressed: ',kcell
-!        return
-!    endif
 else
     cognate = .false.
 endif
@@ -982,18 +977,19 @@ if (cognate) then
 !    if (.not.evaluate_residence_time .and. activated) then
 !		call efferent(p,ctype)
 !	endif
-	ngaps = ngaps + 1
-	gaplist(ngaps) = kcell
-	cellist(kcell)%ID = 0
-    cognate_list(p%cogID) = 0
+!    cognate_list(p%cogID) = 0
     write(logmsg,'(a,3i6)') 'CellExit: cognate cell left: status,stage: ',kcell,status,stage
     call logger(logmsg)
-else
+    call set_stage(p,LEFT)
+	call set_region(p,REMOVED)
+endif
+!cellist(kcell)%ID = 0
+cellist(kcell)%exists = .false.
+if (use_gaplist .and. .not.cognate) then
+	cellist(kcell)%ID = 0
 	ngaps = ngaps + 1
 	gaplist(ngaps) = kcell
-	cellist(kcell)%ID = 0
 endif
-!left = .true.
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1204,23 +1200,23 @@ totalres%dN_EffCogTCGen(gen) = totalres%dN_EffCogTCGen(gen) + 1
 totalres%N_EffCogTC(ctype)   = totalres%N_EffCogTC(ctype) + 1
 totalres%N_EffCogTCGen(gen)  = totalres%N_EffCogTCGen(gen) + 1
 
-if (log_results) then
-    ! Record avidity statistics for exiting cells
-    avid = p%avidity
-    if (avid_count%logscale) then
-        avid = log10(avid)
-    endif
-    if (avid_count%nbins == 1) then
-        i = 1
-    else
-        !i = (avid-avidity_min)*1.01/avidity_step + 1
-        i = (avid-avid_count%binmin)/avid_count%binstep + 1.5
-        i = max(i,1)
-        !i = min(i,avidity_nlevels)
-        i = min(i,avid_count%nbins)
-    endif
-    avid_count%ndist(i) = avid_count%ndist(i) + 1
-endif
+!if (log_results) then
+!    ! Record avidity statistics for exiting cells
+!    avid = p%avidity
+!    if (avid_count%logscale) then
+!        avid = log10(avid)
+!    endif
+!    if (avid_count%nbins == 1) then
+!        i = 1
+!    else
+!        !i = (avid-avidity_min)*1.01/avidity_step + 1
+!        i = (avid-avid_count%binmin)/avid_count%binstep + 1.5
+!        i = max(i,1)
+!        !i = min(i,avidity_nlevels)
+!        i = min(i,avid_count%nbins)
+!    endif
+!    avid_count%ndist(i) = avid_count%ndist(i) + 1
+!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1255,7 +1251,8 @@ IL2sig = 0
 gendist = 0
 div_gendist = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     ntot = ntot + 1
     ctype = cellist(kcell)%ctype
@@ -1265,7 +1262,7 @@ do kcell = 1,nlist
 !		call get_stage(p,stage,region)
         stage = get_stage(p)
         nst(stage) = nst(stage) + 1
-        stim(stage) = stim(stage) + p%stimulation
+!        stim(stage) = stim(stage) + p%stimulation
 !        IL2sig(stage) = IL2sig(stage) + get_IL2store(p)
         gen = get_generation(p)
         if (gen < 0 .or. gen > BC_MAX_GEN) then
@@ -1275,11 +1272,11 @@ do kcell = 1,nlist
             return
         endif
         gendist(gen) = gendist(gen) + 1
-        if ((gen == 1 .and. p%stimulation > FIRST_DIVISION_THRESHOLD(1)) .or. &
-			(gen > 1 .and. p%stimulation > DIVISION_THRESHOLD(1))) then
-			div_gendist(gen) = div_gendist(gen) + 1
-        endif
-        max_TCR = max(p%stimulation,max_TCR)
+!        if ((gen == 1 .and. p%stimulation > FIRST_DIVISION_THRESHOLD(1)) .or. &
+!			(gen > 1 .and. p%stimulation > DIVISION_THRESHOLD(1))) then
+!			div_gendist(gen) = div_gendist(gen) + 1
+!        endif
+!        max_TCR = max(p%stimulation,max_TCR)
     elseif (stype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
     else
@@ -1397,31 +1394,18 @@ type (cog_type), pointer :: p
 ncog = 0
 noncog = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     ctype = cellist(kcell)%ctype
     stype = struct_type(ctype)
     if (stype == COG_TYPE_TAG) then
         ncog = ncog + 1
-        s = p%stimulation
+!        s = p%stimulation
     elseif (stype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
     else
         write(*,*) 'ERROR: compute_stim_dist: bad stype: ',ctype,stype
-        stop
-    endif
-enddo
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
-subroutine check_cognate_list
-integer :: k, kcell
-
-do k = 1,lastcogID
-    kcell = cognate_list(k)
-    if (kcell > nlist) then
-        write(*,*) 'check_cognate_list: bad cognate_list entry > nlist: ',lastcogID,k,kcell,nlist
         stop
     endif
 enddo
@@ -1441,7 +1425,8 @@ ntot2 = 0
 ncog1 = 0
 ncog2 = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     z = cellist(kcell)%site(3)
     cognate = (associated(cellist(kcell)%cptr))
     if (z < z0) then
@@ -1661,7 +1646,8 @@ tcrdist = 0
 ntot = 0
 ncog = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     ntot = ntot + 1
     ctype = cellist(kcell)%ctype
@@ -1669,27 +1655,27 @@ do kcell = 1,nlist
     if (stype == COG_TYPE_TAG) then
         ncog = ncog + 1
         ! TCR stimulation distribution
-        tcr = p%stimulation
-        i = tcr/dtcr + 1
-        i = min(i,TCR_nlevels)
-        tcrdist(i) = tcrdist(i) + 1
+!        tcr = p%stimulation
+!        i = tcr/dtcr + 1
+!        i = min(i,TCR_nlevels)
+!        tcrdist(i) = tcrdist(i) + 1
         ! T cell generation distribution
         gen = get_generation(p)
         gendist(gen) = gendist(gen) + 1
         ! T cell avidity distribution
-        avid = p%avidity
-        if (avidity_logscale) then
-            avid = log10(avid)
-        endif
-        if (avidity_nlevels == 1) then
-            i = 1
-        else
-            i = (avid-avidity_min)/avidity_step + 1.5
-!           write(nfout,'(a,2f8.4,3i7)') 'Count: ',p%avidity,avid,i,kcell,p%cogID
-            i = max(i,1)
-            i = min(i,avidity_nlevels)
-        endif
-        aviddist(i) = aviddist(i) + 1
+!        avid = p%avidity
+!        if (avidity_logscale) then
+!            avid = log10(avid)
+!        endif
+!        if (avidity_nlevels == 1) then
+!            i = 1
+!        else
+!            i = (avid-avidity_min)/avidity_step + 1.5
+!!           write(nfout,'(a,2f8.4,3i7)') 'Count: ',p%avidity,avid,i,kcell,p%cogID
+!            i = max(i,1)
+!            i = min(i,avidity_nlevels)
+!        endif
+!        aviddist(i) = aviddist(i) + 1
     endif
 enddo
 if (fix_avidity) then
@@ -1712,7 +1698,8 @@ type(cell_type),pointer :: cell
 
 do kcell = 1,nlist
     cell => cellist(kcell)
-    if (cell%ID == 0) cycle
+!    if (cell%ID == 0) cycle
+	if (.not.cell%exists) cycle
     cell%ctype = RES_TAGGED_CELL
 enddo
 end subroutine
@@ -1760,7 +1747,8 @@ integer :: kcell
 
 cave = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     cell => cellist(kcell)
     cave = cave + chemo_active_exit(cell)
 enddo
@@ -1875,7 +1863,8 @@ IL2sig = 0
 gendist = 0
 div_gendist = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
 !		call get_stage(p,stage,region)
@@ -1893,7 +1882,7 @@ do kcell = 1,nlist
     if (stype == COG_TYPE_TAG) then
         ncog(region) = ncog(region) + 1
         nst(stage) = nst(stage) + 1
-        stim(stage) = stim(stage) + p%stimulation
+!        stim(stage) = stim(stage) + p%stimulation
 !        IL2sig(stage) = IL2sig(stage) + get_IL2store(p)
         gen = get_generation(p)
         if (gen < 0 .or. gen > TC_MAX_GEN) then
@@ -1903,11 +1892,11 @@ do kcell = 1,nlist
             return
         endif
         gendist(gen) = gendist(gen) + 1
-        if ((gen == 1 .and. p%stimulation > FIRST_DIVISION_THRESHOLD(1)) .or. &
-			(gen > 1 .and. p%stimulation > DIVISION_THRESHOLD(1))) then
-			div_gendist(gen) = div_gendist(gen) + 1
-        endif
-        max_TCR = max(p%stimulation,max_TCR)
+!        if ((gen == 1 .and. p%stimulation > FIRST_DIVISION_THRESHOLD(1)) .or. & 
+!			(gen > 1 .and. p%stimulation > DIVISION_THRESHOLD(1))) then
+!			div_gendist(gen) = div_gendist(gen) + 1
+!        endif
+!        max_TCR = max(p%stimulation,max_TCR)
     elseif (stype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
     else
@@ -2046,7 +2035,8 @@ IL2sig = 0
 gendist = 0
 div_gendist = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
 !		call get_stage(p,stage,region)
@@ -2222,19 +2212,15 @@ k = k-1
 ! B cell section
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
-	if (kcell > 0) then
+!	if (kcell > 0) then
+	if (cellist(kcell)%exists) then
 		region = get_region(cellist(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
 		k = k+1
 		j = ninfo*(k-1)
 		site = cellist(kcell)%site
 		call BcellColour(kcell,r,g,b)
-!		gen = get_generation(cellist(kcell)%cptr)
-!		ibcstate = gen
-		! Need bcstate to convey non-activated status, i.e. 0 = non-activated
 		BC_list(j+1) = kc-1 + 7
-!	write(logmsg,*) 'cell list #: ',j+1,kc-1+7,site
-!	call logger(logmsg)
 		BC_list(j+2:j+4) = site
 		BC_list(j+5) = rgb(r,g,b)
 	endif
@@ -2265,11 +2251,12 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine BcellColour(kcell,r,g,b)
 integer :: kcell, r, g, b
-integer :: stage
+integer :: stage, status
 type(cog_type),pointer :: p
 
 p => cellist(kcell)%cptr
 stage = get_stage(p)
+status = get_status(p)
 select case(stage)
 case (NAIVE)
 	r = 40
@@ -2284,7 +2271,7 @@ case (TCELL_MET, EBI2_UP)
 	g = 170
 	b = 170
 case (DIVIDING)
-	if (BCL6_HI) then
+	if (status == BCL6_HI) then
 		r = 250
 		g = 250
 		b = 40
@@ -2405,8 +2392,8 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 real(DP) :: t1, t2, tmover=0, tfields=0
-integer :: k, kcell
-logical :: ok
+integer :: k, kcell, stage
+logical :: ok, sim_dbug
 logical, save :: first = .true.
 
 if (first) then
@@ -2415,21 +2402,30 @@ if (first) then
 	tfields = 0
 endif
 res = 0
-dbug = .false.
 ok = .true.
 istep = istep + 1
-if (dbug) then
+sim_dbug = .false.
+dbug = .false.
+!if (istep >= 55800) then
+!	dbug = .true.
+!	sim_dbug = .true.
+!endif
+if (sim_dbug) then
 	write(logmsg,*) 'simulate_step: ',istep
 	call logger(logmsg)
 endif
+
+if (sim_dbug) call check_cognate_list
 
 if (test_chemotaxis) then
 	if (istep == 1) then
 		do k = 1,lastcogID
 			kcell = cognate_list(k)
 			if (kcell > 0) then
-				call set_stage(cellist(kcell)%cptr,min(k,BCL6_UP))
-				call ReceptorLevel(kcell,NAIVE_TAG,GCC_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
+!				call set_stage(cellist(kcell)%cptr,min(k,BCL6_UP))
+				call set_stage(cellist(kcell)%cptr,PLASMA)
+				call set_status(cellist(kcell)%cptr,BCL6_LO)
+				call ReceptorLevel(kcell,NAIVE_TAG,ACTIVATED_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
 !				write(logmsg,'(a,i6,5f8.3)') 'Cognate cell receptor levels: ',kcell,cellist(kcell)%receptor_level
 !				call logger(logmsg)
 			endif
@@ -2437,7 +2433,8 @@ if (test_chemotaxis) then
 	endif
 !	do k = 1,lastcogID
 !		kcell = cognate_list(k)
-!		write(nfout,'(i4,i6,2x,3i4)') k,kcell,cellist(kcell)%site
+!		stage = get_stage(cellist(kcell)%cptr)
+!		write(nfout,'(i4,i6,2x,3i4)') k,kcell,stage
 !	enddo
 	call mover(ok)
 	return
@@ -2450,22 +2447,33 @@ if (mod(istep,240) == 0) then
     endif
     total_in = 0
     total_out = 0
-    call scanner
-	call cpu_time(t1)
+!    call scanner
+!	call cpu_time(t1)
     call UpdateFields
-	call cpu_time(t2)
-	tfields = t2 - t1
+!	call cpu_time(t2)
+!	tfields = t2 - t1
 !    write(*,'(a,f8.1,a,f8.1)') 'Times: mover: ',tmover,'  fields: ',tfields
     tmover = 0
 !    call CheckBdryList
+	call show_lineage(logID)
+!	call checker
 endif
 
-if (dbug) write(nflog,*) 'call mover'
+!if (.not.associated(cellist(1226)%cptr)) then
+!	write(*,*) 'simulate_step: cellist(1226)%cptr) not associated'
+!	stop
+!endif
+
+if (sim_dbug) write(nflog,*) 'call mover'
 call cpu_time(t1)
 call mover(ok)
 call cpu_time(t2)
 tmover = tmover + t2 - t1
-if (dbug) write(nflog,*) 'did mover'
+if (sim_dbug) write(nflog,*) 'did mover'
+if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
+	write(*,*) 'Not associated: (a): ',istep
+	stop
+endif
 if (.not.ok) then
 	call logger("mover returned error")
 	res = 1
@@ -2473,9 +2481,13 @@ if (.not.ok) then
 endif
 
 if (.not.evaluate_residence_time) then
-	if (dbug) write(nflog,*) 'call updater'
+	if (sim_dbug) write(nflog,*) 'call updater'
     call updater(ok)
-	if (dbug) write(nflog,*) 'did updater'
+	if (sim_dbug) write(nflog,*) 'did updater'
+	if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
+		write(*,*) 'Not associated: (b): ',istep
+		stop
+	endif
     if (.not.ok) then
 		call logger('updater returned error')
 		res = 1
@@ -2497,12 +2509,16 @@ if (use_traffic) then
 !		endif
 !		if (dbug) write(nflog,*) 'did portal_traffic'
 !    else
-		if (dbug) write(nflog,*) 'call traffic'
+		if (sim_dbug) write(nflog,*) 'call traffic'
         call traffic(ok)
 !        if (istep > 4*240) then
 !		    call CheckBdryList
 !		endif
-		if (dbug) write(nflog,*) 'did traffic'
+		if (sim_dbug) write(nflog,*) 'did traffic'
+		if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
+			write(*,*) 'Not associated: (c): ',istep
+			stop
+		endif
 	    if (.not.ok) then
 			call logger('traffic returned error')
 			res = 1
@@ -2510,11 +2526,15 @@ if (use_traffic) then
 		endif
 !    endif
 endif
-if (dbug) call check_xyz(3)
+if (sim_dbug) call check_xyz(3)
 
-if (dbug) write(nflog,*) 'call balancer'
+if (sim_dbug) write(nflog,*) 'call balancer'
 call balancer(ok)
-if (dbug) write(nflog,*) 'did balancer' 
+if (sim_dbug) write(nflog,*) 'did balancer' 
+if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
+	write(*,*) 'Not associated: (d): ',istep
+	stop
+endif
 if (.not.ok) then
 	call logger('balancer returned error')
 	res = 1

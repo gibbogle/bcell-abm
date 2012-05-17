@@ -591,32 +591,32 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine BcellDeath(kcell)
 integer :: kcell
-integer :: k, idc, site(3), indx(2), ctype, stype, region
+integer :: k, idc, site(3), indx(2)
 logical :: cognate
 
 !write(logmsg,*) 'BcellDeath: ',kcell
 !call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
-if (cognate) then
-!	call get_region(cellist(kcell)%cptr,region)
-	region = get_region(cellist(kcell)%cptr)
-endif
-
-cellist(kcell)%ID = 0
+!cellist(kcell)%ID = 0
+cellist(kcell)%exists = .false.
 totalres%dN_Dead = totalres%dN_Dead + 1
 totalres%N_Dead = totalres%N_Dead + 1
-ctype = cellist(kcell)%ctype
-stype = struct_type(ctype)
-if (stype == COG_TYPE_TAG) then
-    cognate_list(cellist(kcell)%cptr%cogID) = 0
+if (cognate) then
+!	write(logmsg,*) 'BcellDeath: cognate: ',kcell,cellist(kcell)%cptr%cogID
+!	call logger(logmsg)
+	call set_stage(cellist(kcell)%cptr,DEAD)
+	call set_region(cellist(kcell)%cptr,REMOVED)
 endif
-ngaps = ngaps + 1
-if (ngaps > max_ngaps) then
-    write(logmsg,*) 'BcellDeath: ngaps > max_ngaps'
-    call logger(logmsg)
-    stop
+if (use_gaplist .and. .not.cognate) then
+	cellist(kcell)%ID = 0
+	ngaps = ngaps + 1
+	if (ngaps > max_ngaps) then
+		write(logmsg,*) 'BcellDeath: ngaps > max_ngaps'
+		call logger(logmsg)
+		stop
+	endif
+	gaplist(ngaps) = kcell
 endif
-gaplist(ngaps) = kcell
 
 NBcells = NBcells - 1
 site = cellist(kcell)%site
@@ -711,12 +711,12 @@ if (status == BCL6_LO) then
 		call set_stage(p1,DIVIDING)
 		p1%stagetime = tnow + DivisionTime()
 	elseif (R < prob_gcc) then
-		call set_status(p1,BCL6_HI)
+!		call set_status(p1,BCL6_HI)
 		call set_stage(p1,GCC_COMMIT)
 		p1%stagetime = tnow
 	else
-		call set_status(p1,PLASMA)
 		call set_stage(p1,PLASMA)
+		call ReceptorLevel(kcell,ACTIVATED_TAG,ANTIGEN_TAG,1.0,0.0,1.0,cellist(kcell)%receptor_level)	! instantaneous change
 		p1%stagetime = tnow
 	endif
 else
@@ -727,14 +727,15 @@ ctype = cellist(kcell)%ctype
 site = cellist(kcell)%site
 indx = occupancy(site(1),site(2),site(3))%indx
 
-call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,region,ok)
+call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,status,region,ok)
 if (.not.ok) return
 
 p2 => cellist(icnew)%cptr
 
-p2%stimulation = p1%stimulation
 p2%generation = p1%generation
 p2%region = p1%region
+p2%ID = cellist(kcell)%ID	! progeny cells keep the cog_type ID - this enables lineage to be tracked
+cellist(icnew)%receptor_level = cellist(kcell)%receptor_level
 cellist(icnew)%entrytime = tnow
 if (status == BCL6_LO) then
 	prob_gcc = get_GccProb(gen)
@@ -744,16 +745,15 @@ if (status == BCL6_LO) then
 		call set_stage(p2,DIVIDING)
 		p2%stagetime = tnow + DivisionTime()
 	elseif (R < prob_gcc) then
-		call set_status(p2,BCL6_HI)
+!		call set_status(p2,BCL6_HI)
 		call set_stage(p2,GCC_COMMIT)
-		p2%stagetime = tnow
+		p2%stagetime = tnow + T_BCL6_UP
 	else
-		call set_status(p2,PLASMA)
 		call set_stage(p2,PLASMA)
+		call ReceptorLevel(icnew,ACTIVATED_TAG,ANTIGEN_TAG,1.0,0.0,1.0,cellist(icnew)%receptor_level)		
 		p2%stagetime = tnow
 	endif
 else
-	call set_status(p2,status)
 	call set_stage(p2,DIVIDING)
 	p2%stagetime = tnow + DivisionTime()
 endif
@@ -773,10 +773,11 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 ! Create a new B cell at site
 ! We could give a progeny cell (the result of cell division) the same ID as its parent.
+! Currently status just has two values: BCL6_LO, BCL6_HI
 !-----------------------------------------------------------------------------------------
-subroutine CreateBcell(kcell,cell,site,ctype,gen,stage,region,ok)
+subroutine CreateBcell(kcell,cell,site,ctype,gen,stage,status,region,ok)
 type(cell_type) :: cell
-integer :: kcell, site(3), ctype, gen, stage, region
+integer :: kcell, site(3), ctype, gen, stage, status, region
 logical :: ok
 integer :: stype, cogID, i
 real :: tnow, param1, param2
@@ -786,13 +787,13 @@ ok = .true.
 tnow = istep*DELTA_T
 stype = struct_type(ctype)
 !write(*,*) 'CreateBcell: ',kcell,ctype,stype
+cell%exists = .true.
 cell%entrytime = tnow
 if (stype == NONCOG_TYPE_TAG) then
-    if (dbug) then
-        write(*,*) 'CreateBcell: ',kcell,site,associated(cell%cptr)
-    endif
     if (associated(cell%cptr)) then
-        deallocate(cell%cptr)
+!        deallocate(cell%cptr)
+		write(*,*) 'Error: CreateBcell: cptr already associated for non-cognate cell: ',kcell
+		stop
     endif
 elseif (stype == COG_TYPE_TAG) then
     if (.not.associated(cell%cptr)) then
@@ -800,19 +801,18 @@ elseif (stype == COG_TYPE_TAG) then
     endif
     param1 = log(BC_AVIDITY_MEDIAN)
     param2 = log(BC_AVIDITY_SHAPE)
-!    cell%cptr%status = 0
     call set_generation(cell%cptr,gen)
-!    call set_stage_region(cell%cptr,stage,region)
 	call set_stage(cell%cptr,stage)
+	call set_status(cell%cptr,status)
 	call set_region(cell%cptr,region)
-    if (fix_avidity) then
-        i = mod(navid,avidity_nlevels)
-        navid = navid + 1
-        cell%cptr%avidity = avidity_level(i+1)
-    else
-        cell%cptr%avidity = rv_lognormal(param1,param2,kpar)
-    endif
-    cell%cptr%stimulation = 0
+!    if (fix_avidity) then
+!        i = mod(navid,avidity_nlevels)
+!        navid = navid + 1
+!        cell%cptr%avidity = avidity_level(i+1)
+!    else
+!        cell%cptr%avidity = rv_lognormal(param1,param2,kpar)
+!    endif
+!    cell%cptr%stimulation = 0
     cell%cptr%status = BCL6_LO	! default
 !    if (use_cytokines) then
 !        call IL2_init_state(cell%cptr%IL_state,cell%cptr%IL_statep)
@@ -841,9 +841,6 @@ elseif (stype == COG_TYPE_TAG) then
         cogID = lastcogID
         cell%cptr%cogID = cogID
         cognate_list(cogID) = kcell
-!    else
-!        cell%cptr%cogID = 0
-!    endif
 else
     write(logmsg,*) 'ERROR: CreateBcell: bad ctype: ',ctype
     call logger(logmsg)
@@ -852,6 +849,12 @@ endif
 cell%receptor_level = receptor%level(NAIVE_TAG)
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
+if (stype == COG_TYPE_TAG) then		! by default the cog_type ID is the same as naive cell ID
+	cell%cptr%ID = cell%ID			! this is overridden when a cell is created by cell division
+	if (logID == 0) then
+		logID = cell%ID
+	endif
+endif
 cell%site = site
 cell%ctype = ctype
 cell%step = 0
@@ -861,8 +864,8 @@ end subroutine
 !--------------------------------------------------------------------------------
 ! Add a cell (kcell) with characteristics (ctype, gen, stage) at site.
 !--------------------------------------------------------------------------------
-subroutine AddBcell(site,ctype,gen,stage,region,kcell,ok)
-integer :: site(3), ctype, gen, stage, region, kcell
+subroutine AddBcell(site,ctype,gen,stage,status,region,kcell,ok)
+integer :: site(3), ctype, gen, stage, status, region, kcell
 logical :: ok
 integer :: indx(2)
 
@@ -880,10 +883,10 @@ else
 	endif
     kcell = nlist
 endif
-if (dbug) then
-    write(*,'(a,9i7)') 'AddBcell: ',istep,kcell,site,ctype,gen,stage,region
-endif
-call CreateBcell(kcell,cellist(kcell),site,ctype,gen,stage,region,ok)
+!if (dbug) then
+!    write(*,'(a,9i7)') 'AddBcell: ',istep,kcell,site,ctype,gen,stage,region
+!endif
+call CreateBcell(kcell,cellist(kcell),site,ctype,gen,stage,status,region,ok)
 if (.not.ok) return
 
 indx = occupancy(site(1),site(2),site(3))%indx
@@ -959,7 +962,7 @@ end subroutine
 subroutine PlaceCells(ok)
 logical :: ok
 integer :: id, cogid, x, y, z, site(3), ctype
-integer :: idc, kdc, k, x2, y2, z2, gen, stage, region
+integer :: idc, kdc, k, x2, y2, z2, gen, stage, status, region
 integer :: xdc, ydc, zdc, xmin, xmax, ymin, ymax, zmin, zmax, nzlim, nassigned
 real(DP) :: R
 real :: d, d2, p1, p2, tnow, prox, tmins
@@ -973,6 +976,7 @@ ok = .false.
 
 NBcells = 0
 IDTEST = 0
+logID = 0
 tnow = 0
 nlist = 0
 do x = 1,NX
@@ -1016,6 +1020,7 @@ do x = 1,NX
                 site = (/x,y,z/)
                 gen = 1
                 stage = NAIVE
+                status = BCL6_LO
                 region = FOLLICLE
                 ctype = 1
                 if (evaluate_residence_time) then
@@ -1030,7 +1035,7 @@ do x = 1,NX
                         ncogseed = ncogseed + 1
                     endif
                 endif
-                call CreateBcell(k,cellist(k),site,ctype,gen,stage,region,ok)
+                call CreateBcell(k,cellist(k),site,ctype,gen,stage,status,region,ok)
                 if (.not.ok) return
                 occupancy(x,y,z)%indx(1) = k
                 NBcells = NBcells + 1
@@ -1051,7 +1056,7 @@ enddo
 done = .true.
 enddo
 deallocate(permc)
-call make_cognate_list(ok)
+!call make_cognate_list(ok)		! do not use this now - all cognate cells are kept in the lists (for fate tracking)
 if (.not.ok) return
 
 write(nfout,*) 'nlist,RESIDENCE_TIME: ',nlist,RESIDENCE_TIME
@@ -1145,7 +1150,7 @@ end subroutine
 ! Previously (1) was implemented.  Now implement (2) for activated
 ! cognate cells, BCL6lo and BCL6hi, with generation-dependent rates.
 !---------------------------------------------------------------------
-subroutine updater(ok)
+subroutine Updater(ok)
 logical :: ok
 integer :: kcell, stage, iseq, tag, kfrom, kto, k, ncog, ntot
 integer :: site(3), site2(3), freeslot, indx(2), status, DC(2), idc
@@ -1169,15 +1174,18 @@ tmplastcogID = lastcogID
 do k = 1,tmplastcogID
     kcell = cognate_list(k)
     if (kcell == 0) then
+		write(*,*) 'This can never happen'
         cycle
     endif
-    ncog = ncog + 1
     p => cellist(kcell)%cptr
     if (.not.associated(p)) then
-        write(logmsg,*) 'ERROR: updater: p not associated: ',kcell
+        write(logmsg,*) 'ERROR: updater: p not associated: ',k,kcell
 	    call logger(logmsg)
         stop
     endif
+    stage = get_stage(p)
+    if (stage == LEFT .or. stage == DEAD) cycle
+    ncog = ncog + 1
 
 	! Cell death
 !    if (tnow > p%dietime) then
@@ -1191,7 +1199,6 @@ do k = 1,tmplastcogID
         cycle
     endif
 
-	stage = get_stage(p)
 	if (stage == ANTIGEN_MET) then
 		t2 = p%stagetime
 		t1 = t2 - T_CCR7_UP
@@ -1248,7 +1255,7 @@ end subroutine
 !    Variable length determined by a probability distribution
 !      EBI2_UP -> DIVIDING, BCL6_UP -> DIVIDING, DIVIDING -> DIVIDING determined by division time distribution.
 !--------------------------------------------------------------------------------------
-subroutine updatestage(kcell,tnow,divide_flag)
+subroutine UpdateStage(kcell,tnow,divide_flag)
 integer :: kcell
 logical :: divide_flag
 real :: tnow
@@ -1300,6 +1307,7 @@ if (tnow > nextstagetime) then		! time constraint to move to next stage is met
         call set_stage(p,BCL6_UP)
 		p%stagetime = tnow + T_BCL6_UP
 	case (BCL6_UP)
+		call set_status(p,BCL6_HI)
 		call set_stage(p,DIVIDING)
         p%stagetime = tnow + max(0.,DivisionTime() - T_BCL6_UP)		
 	case (FINISHED)

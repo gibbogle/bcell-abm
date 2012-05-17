@@ -67,8 +67,10 @@ integer, parameter :: DIVIDING    = 6
 integer, parameter :: GCC_COMMIT  = 7
 integer, parameter :: PLASMA      = 8
 integer, parameter :: BCL6_UP     = 9
-integer, parameter :: FINISHED    = 10
-integer, parameter :: STAGELIMIT  = 10
+integer, parameter :: DEAD        = 10
+integer, parameter :: LEFT        = 11
+integer, parameter :: FINISHED    = 12
+integer, parameter :: STAGELIMIT  = 12
 
 integer, parameter :: BCL6_LO = 1
 integer, parameter :: BCL6_HI = GCC_COMMIT
@@ -128,6 +130,7 @@ real, parameter :: BIG_TIME = 100000
 real, parameter :: BALANCER_INTERVAL = 10
 integer, parameter :: SCANNER_INTERVAL = 100
 real, parameter :: DELTA_T = 0.25       ! minutes
+logical, parameter :: use_gaplist = .true.
 logical, parameter :: use_add_count = .true.    ! keep count of sites to add/remove, do the adjustment at regular intervals 
 logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
@@ -154,6 +157,7 @@ logical :: COMPUTE_OUTFLOW = .false.
 
 ! B cell region
 integer, parameter :: FOLLICLE = 1
+integer, parameter :: REMOVED = 2
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
@@ -271,8 +275,9 @@ end type
 
 type cog_type
     sequence
-	real :: avidity			! level of TCR avidity with DC
-	real :: stimulation		! TCR stimulation level
+	integer :: ID			! ID of the originating naive cell
+!	real :: avidity			! level of TCR avidity with DC
+!	real :: stimulation		! TCR stimulation level
 !    real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
 	real :: dietime			! time that the cell dies
 	real :: dividetime		! time that the cell divides
@@ -294,6 +299,7 @@ end type
 type cell_type
     sequence
     integer :: ID
+    logical :: exists
     integer :: site(3)
     integer :: step
     integer(2) :: ctype
@@ -597,6 +603,7 @@ real :: restime_tot
 real, allocatable :: Tres_dist(:)
 type(counter_type) :: avid_count,avid_count_total
 logical :: firstSummary
+integer :: logID
 
 ! Travel time computation
 integer :: ntravel
@@ -661,10 +668,6 @@ logical :: stopped, clear_to_send, simulation_start, par_zig_init
 logical :: dbug = .false.
 logical :: use_portal_egress			! use fixed exit portals rather than random exit points
 logical :: FIXED_NEXITS = .false.		! the number of exit portals is held fixed
-!real :: base_exit_prob = 0.00097		! prob of exit of cell at bdry site (Tres = 24)
-!real :: base_exit_prob = 0.00195		! prob of exit of cell at bdry site (Tres = 12) OK for NO chemotaxis
-!real :: base_exit_prob = 0.0017		! prob of exit of cell at bdry site (Tres = 12) with chemotaxis (all suscept = 0.1)
-!real :: base_exit_prob = 0.0014		! prob of exit of cell at bdry site (Tres = 12) with chemotaxis (all suscept > 0.1)
 real :: base_exit_prob = 0.0014		! testing different chemo_K
 real :: INLET_R_FRACTION = 0.7			! fraction of blob radius within which ingress occurs
 real :: INLET_EXIT_LIMIT = 5			! if RELAX_INLET_EXIT_PROXIMITY, this determines how close an inlet point can be to an exit portal.
@@ -836,6 +839,9 @@ end function
 
 !-----------------------------------------------------------------------------------------
 ! Squeeze gaps out of cellist array, adjusting occupancy array.
+! A gap is indicated by cellist(k)%ID = 0.  Note that a gap should never correspond
+! to a cognate cell, since we keep info for cognate cells after they leave or die.
+! If use_gaplist = false, ngaps is always = 0, and there is no squeezing.
 !-----------------------------------------------------------------------------------------
 subroutine squeezer(force)
 logical :: force
@@ -849,11 +855,17 @@ if (dbug) write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nlist
 n = 0
 do k = 1,nlist
     if (cellist(k)%ID == 0) then    ! a gap
+		if (associated(cellist(k)%cptr)) then
+			write(*,*) 'Error: squeezer: gap cell is cognate: ',k,cellist(k)%cptr%cogID
+			stop
+		endif
         n = n+1
-!        write(*,*) 'gap at : ',k
     endif
 enddo
-
+if (n /= ngaps) then
+	write(*,*) 'Error: squeezer: inconsistent gap counts: ',n,ngaps
+	stop
+endif
 last = nlist
 k = 0
 n = 0
@@ -876,10 +888,9 @@ do
         enddo
         if (n == ngaps) exit
         call copycell2cell(cellist(last),cellist(k),k)
-!        cellist(k) = cellist(last)
 		if (associated(cellist(last)%cptr)) then
-!			call get_region(cellist(last)%cptr,region)
 			region = get_region(cellist(last)%cptr)
+			deallocate(cellist(last)%cptr)
 		else
 			region = FOLLICLE
 		endif
@@ -898,8 +909,31 @@ do
 enddo
 nlist = nlist - ngaps
 ngaps = 0
-if (dbug) write(nflog,*) 'squeezed: ',n,nlist
+if (dbug) then
+	write(nflog,*) 'squeezed: ',n,nlist
+	if (istep >= 55800) then
+		call check_cognate_list
+	endif
+	write(*,'(a,L)') 'cellist(25537)%cptr associated?: ', associated(cellist(25537)%cptr)
+endif
+end subroutine
 
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine check_cognate_list
+integer :: k, kcell
+
+do k = 1,lastcogID
+    kcell = cognate_list(k)
+    if (kcell > nlist) then
+        write(*,*) 'check_cognate_list: bad cognate_list entry > nlist: ',lastcogID,k,kcell,nlist
+        stop
+    endif
+    if (.not.associated(cellist(kcell)%cptr)) then
+		write(*,*) 'check_cognate_list: cptr not associated: istep: ',istep,lastcogID,k,kcell
+		stop
+	endif
+enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1159,7 +1193,8 @@ integer function cell_count()
 integer :: kcell, ntot
 ntot = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle             ! skip gaps in the list
+!    if (cellist(kcell)%ID == 0) cycle             ! skip gaps in the list
+    if (.not.cellist(kcell)%exists) cycle
     ntot = ntot + 1
 enddo
 cell_count = ntot
@@ -1345,6 +1380,41 @@ get_generation = p%generation
 end function
 
 !-----------------------------------------------------------------------------------------
+! Log the stage and state of all cells in the lineage of the naive cell with %ID = id
+!-----------------------------------------------------------------------------------------
+subroutine show_lineage(id)
+integer :: id
+integer :: k, kcell, gen, stage, status
+type (cog_type), pointer :: p
+logical, save :: first = .true.
+
+if (first) then
+	write(nfout,*) 'Progeny of cognate cell: ID: ',id
+	first = .false.
+endif
+write(nfout,*) 'lineage: istep: ',istep
+do k = 1,lastcogID
+	kcell = cognate_list(k)
+	if (kcell < 1) then
+		write(logmsg,*) 'Error: show_lineage: kcell < 1: ',kcell,k,logID
+		call logger(logmsg)
+		stop
+	endif
+	p => cellist(kcell)%cptr
+	if (.not.associated(p)) then
+		write(logmsg,*) 'Error: show_lineage: p not associated: ',kcell,k
+		call logger(logmsg)
+		stop
+	endif
+	if (p%ID /= id) cycle
+	stage = get_stage(p)
+	status = get_status(p)
+	gen = get_generation(p)	
+	write(nfout,'(i6,i6,3i4)') k, kcell, gen, stage, status
+enddo
+end subroutine
+
+!-----------------------------------------------------------------------------------------
 ! Display the properties of a cognate cell.  The calling program must ascertain that kcell
 ! is cognate.
 !-----------------------------------------------------------------------------------------
@@ -1374,8 +1444,6 @@ write(logmsg,'(a,i8,a,i2,a,i2)') '   cogID: ',p%cogID,' gen: ',gen,' stage: ', s
 call logger(logmsg)
 write(logmsg,'(a,4f10.2)') '   times: entry,die,div,stage: ',bcell%entrytime,p%dietime,p%dividetime,p%stagetime
 call logger(logmsg)
-write(logmsg,'(a,3f8.2)') 'avidity, stimulation: ', p%avidity,p%stimulation
-call logger(logmsg)
 
 end subroutine
 
@@ -1394,7 +1462,8 @@ type (cog_type), pointer :: p
 ok = .true.
 cognate_list(1:lastcogID) = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     ctype = cellist(kcell)%ctype
     stype = struct_type(ctype)
     if (stype == COG_TYPE_TAG) then
@@ -2015,7 +2084,8 @@ integer :: kcell, xyzsum(3)
 
 xyzsum = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     xyzsum = xyzsum + cellist(kcell)%site
 enddo
 write(nfres,'(2i6,3i12)') istep,k,xyzsum
@@ -2058,7 +2128,8 @@ integer :: kcell, site(3)
 
 tot = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     site = cellist(kcell)%site
     tot(site(3)) = tot(site(3)) + 1
 enddo
@@ -2155,7 +2226,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine checker
-integer :: ic,x,y,z,slots,slot,cells,k,indx(2),site(3)
+integer :: kcell,x,y,z,slots,slot,cells,k,indx(2),site(3)
 integer, allocatable :: tot(:)
 logical :: occ(2)
 
@@ -2189,16 +2260,17 @@ do x = 1,NX
     enddo
 enddo
 
-do ic = 1,nlist
-    if (cellist(ic)%ID == 0) cycle  ! gap
-    site = cellist(ic)%site
+do kcell = 1,nlist
+!    if (cellist(kcell)%ID == 0) cycle  ! gap
+    if (.not.cellist(kcell)%exists) cycle
+    site = cellist(kcell)%site
     indx = occupancy(site(1),site(2),site(3))%indx
-    if (ic == indx(1)) then
+    if (kcell == indx(1)) then
         slot = 1
-    elseif (ic == indx(2)) then
+    elseif (kcell == indx(2)) then
         slot = 2
     else
-        write(*,'(a,7i6)') 'ERROR: checker: bad indx: ',ic,site,indx
+        write(*,'(a,7i6)') 'ERROR: checker: bad indx: ',kcell,site,indx
         stop
     endif
 enddo
@@ -2279,7 +2351,8 @@ integer :: kcell, ctype, n1, n2
 n1 = 0
 n2 = 0
 do kcell = 1,nlist
-    if (cellist(kcell)%ID == 0) cycle
+!    if (cellist(kcell)%ID == 0) cycle
+    if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
 		n1 = n1 + 1

@@ -194,7 +194,7 @@ real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
 logical :: ischemo, cognate
 
-dbug = .false.
+!dbug = .false.
 !if (kcell == 11803) then
 !    dbug = .true.
 !endif
@@ -279,7 +279,7 @@ stype = struct_type(int(cell%ctype))     ! COG_TYPE_TAG or NONCOG_TYPE_TAG
 
 ! Compute jump probabilities in the absence of chemotaxis
 site1 = cell%site
-if (dbug) write(nfout,*) kcell,site1
+!if (dbug) write(nfout,*) kcell,site1
 lastdir1 = cell%lastdir
 p = 0
 savesite2a = 0
@@ -454,7 +454,8 @@ do kcell = 1,nlist
 	    z_hi = zoffset(slice+1)
 	endif
     cell => cellist(kcell)
-    if (cell%ID == 0) cycle             ! skip gaps in the list
+!    if (cell%ID == 0) cycle             ! skip gaps in the list
+	if (.not.cell%exists) cycle		! skip gaps in the list
     if (associated(cell%cptr)) then
 !		call get_stage(cell%cptr,stage,region)
 		stage = get_stage(cell%cptr)
@@ -512,7 +513,8 @@ if (istep == 1) then    ! must be executed when the blob size changes
     xcount = 0
     do kcell = 1,nlist
         cell => cellist(kcell)
-        if (cell%ID == 0) cycle             ! skip gaps in the list
+!        if (cell%ID == 0) cycle             ! skip gaps in the list
+		if (.not.cell%exists) cycle
         i = cellist(kcell)%site(1)
         xcount(i) = xcount(i) + 1
     enddo
@@ -564,7 +566,8 @@ do kcell = 1,nlist
 	    x_hi = xlim(sweep+2*kpar+1)
 	endif
     cell => cellist(kcell)
-    if (cell%ID == 0) cycle             ! skip gaps in the list
+!    if (cell%ID == 0) cycle             ! skip gaps in the list
+	if (.not.cell%exists) cycle
     if (cell%step == istep) cycle
     site1 = cell%site
     xlocal = site1(1)

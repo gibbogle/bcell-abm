@@ -126,7 +126,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P diffusion coeff",
  "S1P diffusion coefficient"},
 
-{"S1P_HALFLIFE", 15, 0, 0,
+{"S1P_HALFLIFE", 10, 0, 0,
  "S1P halflife",
  "S1P halflife (hours)"},
 
@@ -162,7 +162,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CCL21 halflife",
  "CCL21 halflife (hours)"},
 
-{"CCL21_STRENGTH", 0.1, 0, 0,
+{"CCL21_STRENGTH", 0.05, 0, 0,
  "CCL21 strength",
  "Relative strength of CCL21 chemotactic influence"},
 
@@ -190,7 +190,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY halflife",
  "Oxysterol halflife (hours)"},
 
-{"OXY_STRENGTH", 0.1, 0, 0,
+{"OXY_STRENGTH", 0.05, 0, 0,
  "OXY strength",
  "Relative strength of Oxysterol chemotactic influence"},
 
