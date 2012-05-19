@@ -127,7 +127,7 @@ nsteps_per_min = 1.0/DELTA_T
 NY = NX
 NZ = NX
 ngaps = 0
-max_ngaps = 100	! 5*NY*NZ
+max_ngaps = NY*NZ
 ID_offset = BIG_INT/Mnodes
 nlist = 0
 MAX_COG = 0.5*NX*NY*NZ
@@ -978,8 +978,8 @@ if (cognate) then
 !		call efferent(p,ctype)
 !	endif
 !    cognate_list(p%cogID) = 0
-    write(logmsg,'(a,3i6)') 'CellExit: cognate cell left: status,stage: ',kcell,status,stage
-    call logger(logmsg)
+!    write(logmsg,'(a,3i6)') 'CellExit: cognate cell left: status,stage: ',kcell,status,stage
+!    call logger(logmsg)
     call set_stage(p,LEFT)
 	call set_region(p,REMOVED)
 endif
@@ -988,6 +988,10 @@ cellist(kcell)%exists = .false.
 if (use_gaplist .and. .not.cognate) then
 	cellist(kcell)%ID = 0
 	ngaps = ngaps + 1
+	if (ngaps > max_ngaps) then
+		call logger('Error: gaplist dimension exceeded')
+		stop
+	endif
 	gaplist(ngaps) = kcell
 endif
 end subroutine
@@ -2751,8 +2755,8 @@ if (allocated(cellist)) deallocate(cellist,stat=ierr)
 if (allocated(DClist)) deallocate(DClist,stat=ierr)
 if (allocated(FDClist)) deallocate(FDClist,stat=ierr)
 if (ierr /= 0) then
-    write(*,*) 'cellist deallocate error: ',ierr
-    stop
+    write(logmsg,*) 'deallocate error: ',ierr
+    call logger(logmsg)
 endif
 ierr = 0
 if (allocated(gaplist)) deallocate(gaplist,stat=ierr)
@@ -2780,6 +2784,7 @@ if (allocated(ODEdiff%icoef)) deallocate(ODEdiff%icoef)
 !if (allocated(inblob)) deallocate(inblob)
 !if (allocated(sitelist)) deallocate(sitelist)
 !if (allocated(neighbours)) deallocate(neighbours)
+call logger('deallocated all arrays')
 
 ! Close all open files
 inquire(unit=nfout,OPENED=isopen)
@@ -2795,11 +2800,12 @@ inquire(nfdcbind,OPENED=isopen)
 if (isopen) close(nfdcbind)
 inquire(nfchemo,OPENED=isopen)
 if (isopen) close(nfchemo)
+call logger('closed files')
 
 if (par_zig_init) then
 	call par_zigfree
 endif
-
+call logger('freed par_zig')
 end subroutine
 
 !-----------------------------------------------------------------------------------------
