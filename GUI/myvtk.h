@@ -24,6 +24,10 @@
 #include <vtkSmartPointer.h>
 #include <vtkImageCast.h>
 
+#include <vtkAppendPolyData.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
+
 //#include <vtkConfigure.h>
 
 using namespace std;
@@ -49,6 +53,7 @@ public:
 	MyVTK(QWidget *);
 	~MyVTK();
 
+	void createMappers();
 	void read_cell_positions(QString, QString, bool);
 	void get_cell_positions(bool fast);
 	void init();
@@ -79,6 +84,7 @@ public:
 	vtkPolyDataMapper *BcellMapper;
 	vtkPolyDataMapper *DcellMapper;
 	vtkPolyDataMapper *bondMapper;
+	vtkPolyDataMapper *FDCmapper;
 	vtkMPEG2Writer *mpg;
 //	vtkSmartPointer<vtkPNGWriter> writer;
 //	vtkSmartPointer<vtkBMPWriter> writer;

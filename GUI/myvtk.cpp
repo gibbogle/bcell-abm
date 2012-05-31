@@ -101,26 +101,7 @@ MyVTK::MyVTK(QWidget *page)
 	iren->Initialize();
 
 	// Create mappers
-	vtkSphereSource *Bcell = vtkSphereSource::New();
-	Bcell->SetThetaResolution(12);
-	Bcell->SetPhiResolution(12);
-	Bcell->SetRadius(0.5);
-	BcellMapper = vtkPolyDataMapper::New();
-
-	BcellMapper->SetInputConnection(Bcell->GetOutputPort());
-
-	vtkSphereSource *Dcell = vtkSphereSource::New();
-    Dcell->SetThetaResolution(12);
-    Dcell->SetPhiResolution(12);
-    Dcell->SetRadius(1.0);
-	DcellMapper = vtkPolyDataMapper::New();
-	DcellMapper->SetInputConnection(Dcell->GetOutputPort());
-	vtkCylinderSource *bond = vtkCylinderSource::New();
-    bond->SetResolution(12);
-    bond->SetRadius(0.15);
-    bond->SetHeight(1);
-	bondMapper = vtkPolyDataMapper::New();
-	bondMapper->SetInputConnection(bond->GetOutputPort());
+	createMappers();
 
 	// Create image filter for save Snapshot()
 	w2img = vtkWindowToImageFilter::New();
@@ -140,6 +121,106 @@ MyVTK::MyVTK(QWidget *page)
 //-----------------------------------------------------------------------------------------
 MyVTK::~MyVTK()
 {
+}
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::createMappers()
+{
+	vtkSphereSource *Bcell = vtkSphereSource::New();
+	Bcell->SetThetaResolution(12);
+	Bcell->SetPhiResolution(12);
+	Bcell->SetRadius(0.5);
+	BcellMapper = vtkPolyDataMapper::New();
+
+	BcellMapper->SetInputConnection(Bcell->GetOutputPort());
+
+	vtkSphereSource *Dcell = vtkSphereSource::New();
+	Dcell->SetThetaResolution(12);
+	Dcell->SetPhiResolution(12);
+	Dcell->SetRadius(1.0);
+	DcellMapper = vtkPolyDataMapper::New();
+	DcellMapper->SetInputConnection(Dcell->GetOutputPort());
+	vtkCylinderSource *bond = vtkCylinderSource::New();
+	bond->SetResolution(12);
+	bond->SetRadius(0.15);
+	bond->SetHeight(1);
+	bondMapper = vtkPolyDataMapper::New();
+	bondMapper->SetInputConnection(bond->GetOutputPort());
+
+	double rSphere0 = 0.5;
+	double rSphere1 = 0.3;
+	double rCylinder = 0.2;
+	// create sphere geometry
+	vtkSphereSource *sphere0 = vtkSphereSource::New();
+	sphere0->SetRadius(rSphere0);
+	sphere0->SetThetaResolution(18);
+	sphere0->SetPhiResolution(18);
+	sphere0->SetCenter(0.0,0.0,0.0);
+	vtkPolyData *sData0 = sphere0->GetOutput();
+
+	vtkSphereSource *sphere1 = vtkSphereSource::New();
+	sphere1->SetRadius(rSphere1);
+	sphere1->SetThetaResolution(18);
+	sphere1->SetPhiResolution(18);
+	sphere1->SetCenter(0.0,-1.0,0.0);
+	vtkPolyData *sData1 = sphere1->GetOutput();
+
+	vtkSphereSource *sphere2 = vtkSphereSource::New();
+	sphere2->SetRadius(rSphere1);
+	sphere2->SetThetaResolution(18);
+	sphere2->SetPhiResolution(18);
+	sphere2->SetCenter(0.0,1.0,0.0);
+	vtkPolyData *sData2 = sphere2->GetOutput();
+
+	// create cylinder geometry
+	vtkCylinderSource *cylinder = vtkCylinderSource::New();
+	cylinder->SetCenter(0.0, 0.0, 0.0);
+	cylinder->SetRadius(rCylinder);
+	cylinder->SetHeight(2.0);
+	cylinder->SetResolution(18);
+	vtkPolyData *cData = cylinder->GetOutput();
+
+	// Append the data
+	vtkAppendPolyData* append1 = vtkAppendPolyData::New();
+	append1->AddInput(cData);
+	append1->AddInput(sData1);
+	append1->AddInput(sData2);
+
+	vtkPolyData *dumbell1 = append1->GetOutput();
+
+	vtkTransform *t2 = vtkTransform::New();
+	t2->PostMultiply();
+	t2->RotateZ(90);
+	vtkTransformPolyDataFilter *tf2 = vtkTransformPolyDataFilter::New();
+	tf2->SetTransform(t2);
+	tf2->SetInput(dumbell1);
+	vtkPolyData *dumbell2 = tf2->GetOutput();
+
+	vtkTransform *t3 = vtkTransform::New();
+	t3->PostMultiply();
+	t3->RotateX(90);
+	vtkTransformPolyDataFilter *tf3 = vtkTransformPolyDataFilter::New();
+	tf3->SetTransform(t3);
+	tf3->SetInput(dumbell1);
+	vtkPolyData *dumbell3 = tf3->GetOutput();
+
+	vtkAppendPolyData* append2 = vtkAppendPolyData::New();
+	append2->AddInput(sData0);
+	append2->AddInput(dumbell1);
+	append2->AddInput(dumbell2);
+	append2->AddInput(dumbell3);
+
+	// Rendering objects.
+	FDCmapper = vtkPolyDataMapper::New();
+	FDCmapper->SetInput(append2->GetOutput());
+
+	// Is this OK?
+	sphere0->Delete();
+	sphere1->Delete();
+	sphere2->Delete();
+	append1->Delete();
+	append2->Delete();
 }
 
 //-----------------------------------------------------------------------------------------
