@@ -7,10 +7,6 @@
 module global
 
 use omp_lib
-!use omp_CD69
-!use omp_IL2
-!use omp_IL7
-!use omp_IL_dummy
 use par_zig_mod
 use winsock
 
@@ -31,31 +27,6 @@ integer, parameter :: TRAFFIC_MODE_2 = 2
 integer, parameter :: EXIT_EVERYWHERE = 1
 integer, parameter :: EXIT_LOWER_SURFACE = 2
 integer, parameter :: EXIT_BLOB_PORTALS = 3
-
-!integer, parameter :: TASK_TAG = 1
-!integer, parameter :: CELL_TAG = 2
-!integer, parameter :: LOC_TAG  = 3
-!integer, parameter :: OCC_TAG  = 4
-!integer, parameter :: OCNT_TAG = 5
-!integer, parameter :: CCNT_TAG = 6
-!integer, parameter :: ADD_TAG   = 8
-!integer, parameter :: CYT_L2R_TAG   = 10
-!integer, parameter :: CYT_R2L_TAG   = 11
-!integer, parameter :: GLOBAL1_TAG   = 12
-!integer, parameter :: GLOBAL2_TAG   = 13
-!integer, parameter :: WX_TAG   = 19
-!integer, parameter :: CYT_INFO_TAG   = 20
-!integer, parameter :: CYT_DATA_TAG   = 21
-
-!integer, parameter :: RES1_TAG   = 22
-!integer, parameter :: RES2_TAG   = 23
-!integer, parameter :: RES3_TAG   = 24
-!integer, parameter :: RES4_TAG   = 25
-!integer, parameter :: RES5_TAG   = 26
-!integer, parameter :: VIS1_TAG   = 27
-!integer, parameter :: VIS2_TAG   = 28
-!integer, parameter :: MOL1_TAG   = 29
-!integer, parameter :: MOL2_TAG   = 30
 
 ! B cell activation stage
 integer, parameter :: NAIVE		  = 1
@@ -104,7 +75,6 @@ integer, parameter :: EBI2     = 3		! OXY
 integer, parameter :: CXCR5    = 4		! CXCL13
 integer, parameter :: S1PR2    = 5		! S1P (negative)
 
-!real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,1.,0., .2,3.,1.,1.,0., .2,0.,3.,1.,0., 0.,0.,0.,1.,2. /), (/5,4/)) ! my guess
 real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Taka
 
 integer, parameter :: NCTYPES = 4
@@ -140,7 +110,6 @@ real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the l
 real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the lattice, NOT the ROI
 
 ! Diffusion parameters
-
 logical, parameter :: use_ode_diffusion = .false.	! otherwise use the original method in fields.f90 
 integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion computation
 
@@ -153,7 +122,6 @@ integer, parameter :: NGEN_EXIT = 8     ! minimum non-NAIVE T cell generation pe
 real, parameter :: CHEMO_MIN = 0.05		! minimum level of chemotactic influence (at r = chemo_radius)
 integer :: exit_rule = 1                ! 1 = use NGEN_EXIT, 2 = use EXIT_THRESHOLD, 3 = use S1P1
 logical :: COMPUTE_OUTFLOW = .false.
-!real, parameter :: exit_prox = 4
 
 ! B cell region
 integer, parameter :: FOLLICLE = 1
@@ -161,7 +129,7 @@ integer, parameter :: REMOVED = 2
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
-integer, parameter :: BASE_NFDC = 10
+integer, parameter :: BASE_NFDC = 50
 logical, parameter :: use_FDCs = .true.
 
 ! Differentiation probabilities
@@ -175,17 +143,6 @@ character*(13), parameter :: pausefile = 'pause_dll'
 !==============================================================================================================
 
 ! Run parameters
-
-!logical, parameter :: vary_vascularity = .true.
-!logical, parameter :: use_chemotaxis = .false. ! now based on exit_region == EXIT_CHEMOTAXIS
-!logical, parameter :: fix_avidity = .true.
-!integer, parameter :: avidity_nlevels = 8
-!!logical, parameter :: avidity_logscale = .true.
-!!real, parameter :: avidity_min = -1    ! if avidity_logscale then avidity_min is log10(actual min)
-!!real, parameter :: avidity_step = 0.185861   ! and log10(actual max) = log10(actual min) + (nlevels-1)*avidity_step
-!logical, parameter :: avidity_logscale = .false.
-!real, parameter :: avidity_min = 0.3
-!real, parameter :: avidity_step = 0.2
 
 ! Parameters and switches for calibration
 logical, parameter :: calibrate_motility = .false.
@@ -233,16 +190,9 @@ integer, parameter :: TCR_nlevels = 10
 real, parameter :: TCR_limit = 2000
 integer, parameter :: MAX_AVID_LEVELS = 30
 
-!-------------------------------------------------------------
-! Cytokine section
-!integer, parameter :: N_CYT = 2
-!integer, parameter :: CYT_TAG(1:N_CYT) = (/IL2_TAG, IL7_TAG/)
-!integer, parameter :: CYT_NP = IL2_NP + IL7_NP
-! diffusion calibration
-!integer, parameter :: N_CYT = 1
-!integer, parameter :: CYT_TAG(1:N_CYT) = (/IL2_TAG/)
-!integer, parameter :: CYT_NP = 0    !IL2_NP
-!logical, parameter :: CD25_SWITCH = .true.
+type vector3_type
+	real :: x, y, z
+end type
 
 ! Ex-globalvar definitions
 integer :: NBcells0
@@ -253,8 +203,7 @@ integer :: Lastexit
 integer :: NDC
 integer :: NDCalive
 integer :: NFDC
-real :: aRadius
-real :: bRadius
+type(vector3_type) :: Radius
 real :: InflowTotal
 real :: OutflowTotal
 real :: VEGFmass
@@ -276,23 +225,14 @@ end type
 type cog_type
     sequence
 	integer :: ID			! ID of the originating naive cell
-!	real :: avidity			! level of TCR avidity with DC
-!	real :: stimulation		! TCR stimulation level
 !    real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
 	real :: dietime			! time that the cell dies
 	real :: dividetime		! time that the cell divides
 	real :: stagetime		! time that a cell can pass to next stage
-!	real :: stimrate        ! rate of TCR stimulation
-!	real :: CD69            ! level of CD69 expression
-!	real :: S1P1            ! level of S1P1 expression
-!	real :: CCR7            ! level of CCR7 expression
-!    real :: IL_state(CYT_NP)    ! receptor model state variable values
-!    real :: IL_statep(CYT_NP)   ! receptor model state variable time derivative values
 	integer(2) :: generation
 	integer(2) :: stage
 	integer(2) :: region
 	integer(2) :: status	! BCL6_LO, BCL6_HI, PLASMA
-!    integer :: status       ! holds data in bytes: 1=stage, 2=generation
 	integer :: cogID		! index in the list of cognate cells
 end type
 
@@ -330,12 +270,9 @@ type FDC_type
     integer :: ID               ! unique ID number
     integer :: site(3)          ! FDC location
     integer :: nsites
-!    integer :: nbound           ! current number of bound T cells
-!    integer :: ncogbound        ! current number of bound cognate T cells
 !    real :: density             ! current antigen density
 !    real :: dietime             ! time DC will die
 !    real :: stimulation         ! amount of stimulation provided by a DC
-!    logical :: capable          ! can DC deliver TCR stimulation?
 	real :: secretion
     logical :: alive            ! is FDC alive?
 end type
@@ -343,29 +280,16 @@ end type
 type boundary_type
     integer :: site(3)
     logical :: chemo_influx(MAX_CHEMO)
-!    real :: chemo_rate(MAX_CHEMO)
-!    logical :: S1P
-!    real :: S1Prate
-!    logical :: CXCL13
-!    real :: CXCL13rate
-!    logical :: CCL21
-!    real :: CCL21rate
-!    logical :: OXY
-!    real :: OXYrate
     logical :: entry_ok
     logical :: exit_ok
-!    type (boundary_type), pointer :: previous
     type (boundary_type), pointer :: next
 end type
 
 type occupancy_type
     integer(2) :: DC(0:DCDIM-1)     ! DC(0) = number of near DCs, DC(k) = ID of kth near DC
     integer :: indx(2)
-!    integer :: exitnum          ! > 0 => index of closest exit, = 0 => no close exit, < 0 => an exit
     integer :: FDC_nbdry				! number of FDCs that the site is adjacent to
     type (boundary_type), pointer :: bdry
-!    real :: chemo_conc
-!    real :: chemo_grad(3)
 end type
 
 type exit_type
@@ -386,16 +310,6 @@ type counter_type
     integer, allocatable :: ndist(:)
     real :: total
 end type
-
-!TYPE winsockport
-!    LOGICAL           :: is_open
-!    INTEGER           :: handle
-!    TYPE(T_IN_ADDR)   :: ip_addr    ! server IP address u_long: wp%ip_addr.S_addr = inet_addr(ip_address)
-!    INTEGER   :: ip_addr    ! server IP address u_long: wp%ip_addr.S_addr = inet_addr(ip_address)
-!    INTEGER           :: ip_port    ! IP port on server
-!	INTEGER           :: protocol   ! TCP or UDP for ethernet
-!END TYPE winsockport
-
 
 !---------------------------------------------------
 ! Parameters to read from cell parameters input file
@@ -420,14 +334,6 @@ integer :: TC_MAX_GEN = 20              ! maximum number of TC generations
 real :: DC_ANTIGEN_MEAN = 10			! mean DC antigen density
 real :: DC_ANTIGEN_SHAPE = 1.2			! DC antigen density shape param
 real :: DC_ANTIGEN_MEDIAN				! median DC antigen density
-!real :: DC_LIFETIME_MEAN = 3.5			! days
-!real :: DC_LIFETIME_SHAPE  = 1.2		! days
-!real :: DC_ACTIV_TAPER = 12				! time (hours) over which DC activity decays to zero
-!real :: DC_BIND_DELAY = 2.5				! delay after unbinding before next binding (mins)
-!real :: DC_BIND_ALFA = 0.95				! binding prob parameter
-!real :: DC_MULTIBIND_PROB = 0.0			! reducing factor to bind prob for each current DC binding
-!real :: DC_DENS_BY_STIM = 0.0002        ! rate of reduction of density by TCR stimulation
-!real :: DC_DENS_HALFLIFE                ! half-life of DC activity (hours)
 
 integer :: optionA
 integer :: optionB
@@ -469,7 +375,7 @@ real :: Inflammation_level = 1.0		! This is the level of inflammation (scaled la
 integer :: exit_region                   ! determines blob region for cell exits
 real :: efactor                         ! If constant_efactor = true, this is the factor for the p correction
 integer :: VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
-real :: chemo_radius					! radius of chemotactic influence (um)
+real :: chemo_radius					! radius of exit chemotactic influence (um)
 real :: chemo_K_exit                    ! level of chemotactic influence towards exits
 
 logical :: fix_avidity                  ! true if avidity takes discrete values, false if a distribution is used
@@ -523,14 +429,10 @@ real :: K2_CD69 = 0.01
 ! DC parameters
 logical, parameter :: DC_motion = .false.
 logical, parameter :: RANDOM_DCFLUX = .false.
-!integer, parameter :: cDCDIM = 4        ! MUST be an even number
 integer, parameter :: NDCsites = 7		! Number of lattice sites occupied by the DC core (soma). In fact DC vol = 1400 = 5.6*250
-!integer, parameter :: NDCcore = 7      ! In fact DC vol = 1400 = 5.6*250
 real, parameter :: DC_DCprox = 2.0      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
 real, parameter :: bdry_DCprox = 2.0	! closest placement of DC to bdry, units DC_RADIUS
 real, parameter :: bdry_FDCprox = 4.0	! closest placement of DC to bdry, units DC_RADIUS
-!real, parameter :: exit_DCprox = 4.0    ! closest placement of DC to exit, units sites
-!real, parameter :: exit_prox = 4.0      ! closest placement of exit to exit, units chemo_radius
 
 ! Egress parameters
 real :: exit_fraction = 1.0/1000.       ! number of exits as a fraction of T cell population
@@ -539,14 +441,6 @@ real :: Ksurfaceportal = 40			! calibration factor for number of surface portals
 !---------------------------------------------------
 ! end of more parameters to be read from input file
 !---------------------------------------------------
-
-! Cytokine data
-!real, allocatable :: cyt(:,:,:,:)
-!real, allocatable :: cyt_constit(:), cyt_mols(:), dcyt_mols(:)
-!real :: cyt0(MAX_CYT) = (/3.0,1.0,1.0,1.0,1.0,1.0/)
-!real :: K_diff(MAX_CYT), delta_diff(MAX_CYT)     ! = D.dt/(dx*dx)
-!integer :: Ncytokines, cytokines(MAX_CYT), cyt_seq(MAX_CYT), NP_offset(MAX_CYT+1)
-!real :: cyt_init(MAX_CYT), cyt_mean(MAX_CYT)
 
 ! Geometry data
 integer :: NY, NZ
@@ -561,7 +455,6 @@ real :: Vc, Ve
 ! Motility data
 integer :: nreldir, njumpdirs
 integer :: jumpvec(3,27)    ! 14 is no-jump case (0,0,0)
-!integer :: jumpvec2D(3,8)
 integer :: reldir(6,MAXRELDIR)
 real(DP) :: dirprob(0:MAXRELDIR)
 integer :: DCoffset(3,NDCsites)
@@ -570,12 +463,10 @@ integer :: nreldir2D, njumpdirs2D
 integer :: reldir2D(8,8)
 real(DP) :: dirprob2D(0:8)
 logical :: diagonal_jumps
-real :: ep_factor      ! (25k) 2.4 when K1_S1P1 = 0.01, 2.8 when K1_S1P1 = 0.001  ! based on no-DC case!
-                       ! (50k) 2.3 when K1_S1P1 = 0.01, chemo_K_exit = 0.3
 
 ! Chemotaxis data
 integer :: chemo_N
-real :: chemo_exp
+!real :: chemo_exp
 real, allocatable :: chemo_r(:,:,:)
 real, allocatable :: chemo_p(:,:,:,:)
 
@@ -780,13 +671,12 @@ endif
 end function
 
 !-----------------------------------------------------------------------------------------
-! To determine if a site falls within the ellipsoid with major axis radius = aRadius
-! Currently the ellipsoid is football-shaped, i.e. the ellipsoid equation is:
-! x^2/a^2 + (y^2 + z^2)/b^2 <= 1
-! (Possibly it should be instead a flattened sphere, with only one short axis, the y-axis.)
+! To determine if a site falls within the ellipsoid with major axis radius = Radius%x
+! Currently the ellipsoid is shaped like a flattened football, i.e. the ellipsoid equation is:
+! (x^2+ z^2)/a^2 + y^2/b^2 <= 1
 ! Axis orientation: 
 ! The y-axis is on the line passing through the centres of the paracortex and the follicle.
-! The x-axis is parallel to the long axis of the follicle.
+! The x-axis is parallel to one long axis of the follicle.
 ! The z-axis is perpendicular to the x- and y-axes. 
 !
 !-----------------------------------------------------------------------------------------
@@ -795,7 +685,7 @@ integer :: site(3)
 real :: r(3)
 
 r = site - Centre
-if (r(1)*r(1)/(aRadius*aRadius) + (r(2)*r(2) + r(3)*r(3))/(bRadius*bRadius) <= 1) then
+if (r(1)*r(1)/(Radius%x*Radius%x) + r(2)*r(2)/(Radius%y*Radius%y) + r(3)*r(3)/(Radius%z*Radius%z) <= 1) then
     InsideEllipsoid = .true.
 else
     InsideEllipsoid = .false.
@@ -1049,6 +939,18 @@ tooNearFDC = .false.
 end function
 
 !-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine SetRadius(n)
+integer :: n
+real :: aRadius
+
+aRadius = (ELLIPSE_RATIO**2*n*3/(4*PI))**0.33333
+Radius%x = aRadius
+Radius%y = aRadius/ELLIPSE_RATIO
+Radius%z = aRadius
+end subroutine
+
+!-----------------------------------------------------------------------------------------
 ! Distance from the centre to the ellipsoid surface (approx) in the direction given by r(:)
 ! v(:) = (x,y,z) is a point on the surface if x^2/a^2 + (y^2 + z^2)/b^2 = 1
 ! Let v(:) = beta*r(:), then
@@ -1059,7 +961,7 @@ real function EllipsoidRadius(r)
 real :: r(3)
 real :: beta
 
-beta = 1./sqrt(r(1)*r(1)/(aRadius*aRadius) + (r(2)*r(2) + r(3)*r(3))/(bRadius*bRadius))
+beta = 1./(r(1)*r(1)/(Radius%x*Radius%x) + r(2)*r(2)/(Radius%y*Radius%y) + r(3)*r(3)/(Radius%z*Radius%z))
 EllipsoidRadius = beta*norm(r)
 end function
 
@@ -1698,39 +1600,6 @@ enddo
 end subroutine
 
 !--------------------------------------------------------------------------------
-! Need to compare chemo_probs() with chemo_probs_pre().
-! Good news!  They are in agreement.
-! Note: originally vsum was the offset vector of the cell from the attracting site.  
-! This has been changed.  Now vsum is the normalised net chemokine gradient vector,
-! and the probabilities of jumps in directions close to the net gradient vector are
-! greatest.  If the angle between a jump direction and the gradient vector exceeds
-! pi/2 (i.e. the dot product (cosine) is negative) the jump probability is set to 0.
-!--------------------------------------------------------------------------------
-subroutine test_chemo
-integer :: k,rv(3)
-real(DP) :: p0(MAXRELDIR+1), p(MAXRELDIR+1)
-real :: v(3), vsum(3), f
-
-f = 1
-p0 = 1
-
-vsum = (/1., .0, .0/)
-v = vsum/norm(vsum)
-rv = chemo_N*v
-p = p0
-write(*,*) 'chemo_probs_pre'
-call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
-write(*,'(7f8.4)') p
-p = p0
-write(*,*) 'chemo_probs'
-call chemo_probs(p,v,f)
-!write(*,'(7f8.4)') p
-do k = 1,njumpdirs
-	write(*,'(4i4,f8.4)') k,jumpvec(:,k),p(k)
-enddo
-end subroutine
-
-!--------------------------------------------------------------------------------
 ! Original interpretation, in terms of exit chemotaxis:
 ! The chemotactic step probabilities for all possible sites within an exit's
 ! SOI are precomputed.  The array is indexed by the offset of each site from
@@ -1886,73 +1755,7 @@ endif
 end subroutine
 
 
-!--------------------------------------------------------------------------------
-! Computes the functional dependence of chemotactic effect on distance r from
-! the exit.  r is in units of site spacing.
-!--------------------------------------------------------------------------------
-real function chemo_g(r)
-real :: r
 
-chemo_g = min(1.0,(1.0/r)**chemo_exp)
-end function
-
-!--------------------------------------------------------------------------------
-! Determines the degree to which a cell is subject to chemotaxis.
-! (Determined by CD69 level, or S1P1 level.)
-! If use_chemotaxis is true, i.e. chemotaxis is used to control cell exit, any cell
-! that gets close enough to the exit will leave the paracortex.  Is this
-! acceptable?
-! For a noncognate cell, should rise from 0 to 1 in an hour or so.
-!--------------------------------------------------------------------------------
-real function chemo_active_exit(cell)
-type(cell_type), pointer :: cell
-real :: tnow, t
-
-if (turn_off_chemotaxis) then
-    chemo_active_exit = 0
-    return
-endif
-
-if (TAGGED_EXIT_CHEMOTAXIS) then
-    tnow = istep*DELTA_T
-    t = tnow - cell%entrytime
-    if (cell%ctype == RES_TAGGED_CELL) then     ! testing effect of S1P1
-        chemo_active_exit = (1 - exp(-K1_S1P1*t))*TAGGED_CHEMO_ACTIVITY
-    else
-		chemo_active_exit = 0
-	endif
-	return
-endif
-
-!if (associated(cell%cptr)) then     ! cognate cell
-!    chemo_active_exit = cell%cptr%S1P1
-!else
-!    tnow = istep*DELTA_T
-!    t = tnow - cell%entrytime
-!    chemo_active_exit = 1 - exp(-K1_S1P1*t)
-!endif
-end function
-
-!--------------------------------------------------------------------------------
-! Returns the level of CCR7 ligand (i.e. CCL19/21) at a distance r sites from an
-! exit site, within the exit SOI.  The value must be in the range (0,1).
-! The parameters CCR7_R1 and CCR7_R2 specify the range of r over which the
-! ligand level ranges linearly from 0 to 1.  This is a simple way to program a
-! decreased level of CCR7 near an exit, following Cyster's ideas.
-! Note: currently this always returns 1
-!--------------------------------------------------------------------------------
-real function CCR7_ligand(r)
-real :: r
-real, parameter :: CCR7_R1 = 0, CCR7_R2 = 0
-
-if (r < CCR7_R1) then
-    CCR7_ligand = 0
-elseif (r < CCR7_R2) then
-    CCR7_ligand = (r - CCR7_R1)/(CCR7_R2 - CCR7_R1)
-else
-    CCR7_ligand = 1
-endif
-end function
 
 
 !-----------------------------------------------------------------------------------------
@@ -2188,7 +1991,7 @@ do k = 1,nlist
         n = n+1
         site = cell%site
         if (.not.taggable(site)) then
-            write(*,*) 'Bad tagged cell: ',site,d2,aRadius*aRadius
+            write(*,*) 'Bad tagged cell: ',site,d2,Radius%x*Radius%x
         endif
     endif
 enddo

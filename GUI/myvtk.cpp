@@ -212,8 +212,8 @@ void MyVTK::createMappers()
 	append2->AddInput(dumbell3);
 
 	// Rendering objects.
-	FDCmapper = vtkPolyDataMapper::New();
-	FDCmapper->SetInput(append2->GetOutput());
+	FDcellMapper = vtkPolyDataMapper::New();
+	FDcellMapper->SetInput(append2->GetOutput());
 
 	// Is this OK?
 	sphere0->Delete();
@@ -535,8 +535,9 @@ void MyVTK::process_Dcells(bool redo)
                     D_Actor_list.append(0);
 			}
 			actor = vtkActor::New();
-            actor->SetMapper(DcellMapper);
-            actor->GetProperty()->SetColor(DCColor);
+//            actor->SetMapper(DcellMapper);
+			actor->SetMapper(FDcellMapper);
+			actor->GetProperty()->SetColor(DCColor);
 
             ren->AddActor(actor);
             D_Actor_list.append(actor);

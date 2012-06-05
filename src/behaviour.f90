@@ -445,7 +445,7 @@ call ShowChemokines
 
 chemo_radius = chemo_radius/DELTA_X				! convert from um to lattice grids
 chemo_N = max(3,int(chemo_radius + 0.5))	    ! convert from um to lattice grids
-chemo_exp = log(1/CHEMO_MIN)/log(chemo_radius)
+!chemo_exp = log(1/CHEMO_MIN)/log(chemo_radius)
 
 sigma = log(divide_shape1)
 divide_dist1%p1 = log(60*divide_mean1/exp(sigma*sigma/2))
@@ -1068,12 +1068,10 @@ if (NBcells /= nlist) then
 endif
 Nsites = NBcells 
 NBcells0 = NBcells
-aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
-bRadius = aRadius/ELLIPSE_RATIO
+call SetRadius(Nsites)
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
 
 end subroutine
-
 
 !---------------------------------------------------------------------
 !---------------------------------------------------------------------
@@ -1085,7 +1083,7 @@ integer :: k, x, y, z, nb
 real :: r0, r
 
 ok = .false.		
-r0 = aRadius
+r0 = Radius%x
 do k = -10,10
 	r = r0 + k*0.5
 	x = x0 + u(1)*r
@@ -1332,7 +1330,7 @@ x = v(1)
 y = v(2)
 z = v(3)
 if (y < 0) return
-r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
+r2 = (x/Radius%x)**2 + (y/Radius%y)**2+ (z/Radius%z)**2
 if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	AntigenEncounter = .true.
 	write(logmsg,*) 'AntigenEncounter: ',kcell,site
@@ -1356,7 +1354,7 @@ x = v(1)
 y = v(2)
 z = v(3)
 if (y > 0) return
-r2 = (x/aRadius)**2 + (y**2 + z**2)/bRadius**2
+r2 = (x/Radius%x)**2 + (y/Radius%y)**2+ (z/Radius%z)**2
 if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	TCellEncounter = .true.
 	write(logmsg,*) 'TCellEncounter: ',kcell,site

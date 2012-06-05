@@ -86,11 +86,6 @@ do x = 1,NX
                 site = (/x,y,z/)
                 bdry%site = site
                 bdry%chemo_influx = .false.
-!                bdry%chemo_rate = 0
-!                bdry%S1P = .false.
-!                bdry%CXCL13 = .false.
-!                bdry%CCL21 = .false.
-!                bdry%OXY = .false.
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,bdrylist)
                 call AssignBdryRole(site,bdry)
@@ -123,11 +118,6 @@ do x = 1,NX
                 site = (/x,y,z/)
                 bdry%site = site
                 bdry%chemo_influx = .false.
-!                bdry%chemo_rate = 0
-!                bdry%S1P = .false.
-!                bdry%CXCL13 = .false.
-!                bdry%CCL21 = .false.
-!                bdry%OXY = .false.
                 nullify(bdry%next)
                 call bdrylist_insert(bdry,checklist)
                 call AssignBdryRole(site,bdry)
@@ -153,33 +143,24 @@ type (boundary_type), pointer :: bdry
 real, parameter :: S1Pfraction = 0.25
 
 bdry%chemo_influx = .false.
-!bdry%chemo_rate = 0
-!bdry%S1P = .false.
-!bdry%CCL21 = .false.
-!bdry%OXY = .false.
-!bdry%CXCL13 = .false.
 site = bdry%site
 dy = site(2) - Centre(2)
 if (dy > 0) then
 	bdry%chemo_influx(S1P) = .true.
 	bdry%chemo_influx(OXY) = .true.
-!    bdry%S1P = .true.
-!    bdry%OXY = .true.
 else
-    if (dy > -S1Pfraction*bRadius) then
+    if (dy > -S1Pfraction*Radius%y) then
 		bdry%chemo_influx(S1P) = .true.
-!        bdry%S1P = .true.
     else
 		bdry%chemo_influx(CCL21) = .true.
-!	    bdry%CCL21 = .true.
     endif
 endif
-if (dy > -ENTRY_ALPHA*bRadius) then
+if (dy > -ENTRY_ALPHA*Radius%y) then
     bdry%entry_ok = .false.
 else
     bdry%entry_ok = .true.
 endif
-if (dy > -EXIT_ALPHA*bRadius) then
+if (dy > -EXIT_ALPHA*Radius%y) then
     bdry%exit_ok = .false.
 else
     bdry%exit_ok = .true.
@@ -227,7 +208,7 @@ do while ( associated ( bdry ))
     y2 = r(2)**2
     z2 = r(3)**2
     dp = sqrt(x2 + y2 + z2)
-    t = sqrt(1/(x2/aRadius**2 + (y2+z2)/bRadius**2))
+    t = sqrt(1/(x2/Radius%x**2 + y2/Radius%y**2 + z2/Radius%z**2))
     dpq = (t-1)*dp
     if (dpq > dmax) then
         psite = site
@@ -272,18 +253,12 @@ endif
 site = psite + jumpvec(:,kmin)
 occupancy(site(1),site(2),site(3))%indx = 0
 Nsites = Nsites + 1
-aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
-bRadius = aRadius/ELLIPSE_RATIO
+call SetRadius(Nsites)
 if (isbdry(site(1),site(2),site(3))) then   ! add it to the bdrylist
     nbdry = nbdry + 1
     allocate(bdry)
     bdry%site = site
     bdry%chemo_influx = .false.
-!    bdry%chemo_rate = 0
-!    bdry%S1P = .false.
-!    bdry%CXCL13 = .false.
-!    bdry%CCL21 = .false.
-!    bdry%OXY = .false.
     nullify(bdry%next)
     call bdrylist_insert(bdry,bdrylist)
     call AssignBdryRole(site,bdry)
@@ -370,7 +345,7 @@ do while ( associated ( bdry ))
     y2 = r(2)**2
     z2 = r(3)**2
     dp = sqrt(x2 + y2 + z2)
-    t = sqrt(1/(x2/aRadius**2 + (y2+z2)/bRadius**2))
+    t = sqrt(1/(x2/Radius%x**2 + y2/Radius%y**2 + z2/Radius%z**2))
     dpq = (t-1)*dp
     if (dpq < dmin) then
         psite = site
@@ -419,8 +394,7 @@ site = psite + jumpvec(:,kmax)
 call ClearSite(site)
 occupancy(site(1),site(2),site(3))%indx = OUTSIDE_TAG
 Nsites = Nsites - 1
-aRadius = (ELLIPSE_RATIO**2*Nsites*3/(4*PI))**0.33333
-bRadius = aRadius/ELLIPSE_RATIO
+call SetRadius(Nsites)
 if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from the bdrylist
     call bdrylist_delete(site, bdrylist)
     nullify(occupancy(site(1),site(2),site(3))%bdry)
@@ -437,11 +411,6 @@ if (associated(occupancy(site(1),site(2),site(3))%bdry)) then   ! remove it from
             allocate(bdry)
             bdry%site = site
             bdry%chemo_influx = .false.
-!            bdry%chemo_rate = 0
-!            bdry%S1P = .false.
-!            bdry%CXCL13 = .false.
-!            bdry%CCL21 = .false.
-!            bdry%OXY = .false.
             nullify(bdry%next)
             call bdrylist_insert(bdry,bdrylist)
             call AssignBdryRole(site,bdry)
@@ -533,15 +502,6 @@ do x = 1,NX
 			if (associated(bdry)) then
 				nb2 = nb2 + 1
 				dy = y - Centre(2)
-!				if (dy > -EXIT_ALPHA*bRadius) then
-!					if (bdry%exit_ok) then
-!						write(*,*) 'Error: bdry%exit_ok wrongly true: ',x,y,z, dy, -EXIT_ALPHA*bRadius
-!					endif
-!				else
-!					if (.not.bdry%exit_ok) then
-!						write(*,*) 'Error: bdry%exit_ok wrongly false: ',x,y,z, dy, -EXIT_ALPHA*bRadius
-!					endif
-!				endif
 			else
 				if (isbdry(x,y,z)) then
 					write(logmsg,*) 'Error: boundary site not in list: ',x,y,z

@@ -113,7 +113,7 @@ logical :: ok
 integer :: x,y,z,k
 integer :: MAXX, z1, z2
 integer :: cog_size !, noncog_size
-real :: d, rr(3)
+real :: d, rr(3), aRadius
 type(cog_type) :: cog
 
 ok = .false.
@@ -147,7 +147,9 @@ if (2*aRadius > NX-2) then
 	call logger(logmsg)
     return
 endif
-bRadius = aRadius/ELLIPSE_RATIO
+Radius%x = aRadius
+Radius%y = aRadius/ELLIPSE_RATIO
+Radius%z = aRadius
 
 max_nlist = 1.5*NX*NY*NZ
 
@@ -339,13 +341,13 @@ end subroutine
 !--------------------------------------------------------------------------------
 ! Makes an approximate count of the number of sites of the spherical blob that
 ! are in the xth slice.  Uses the area of the slice.
-! The blob centre is at (x0,y0,z0), and the blob radius is R = aRadius
+! The blob centre is at (x0,y0,z0), and the blob radius is R = Radius%x
 !--------------------------------------------------------------------------------
 integer function slice_count(x)
 integer :: x
 real :: r2
 
-r2 = aRadius**2 - (x-x0)**2
+r2 = Radius%x**2 - (x-x0)**2
 if (r2 < 0) then
     slice_count = 0
 else
@@ -1165,7 +1167,6 @@ if ((abs(nadd_total) > nadd_limit) .or. (tnow > lastbalancetime + BALANCER_INTER
 !        if (use_diffusion) then
 !            call setup_minmax
 !        endif
-!        if (dbug) write(nflog,'(a,2i6)') 'balancer: nadd_total, radius: ',nadd_total,int(aRadius)
 !    endif
 !    if (use_portal_egress) then
 !		call adjustExits
@@ -1744,23 +1745,6 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
-subroutine check_chemoactivity(cave)
-real :: cave
-type (cell_type), pointer :: cell
-integer :: kcell
-
-cave = 0
-do kcell = 1,nlist
-!    if (cellist(kcell)%ID == 0) cycle
-    if (.not.cellist(kcell)%exists) cycle
-    cell => cellist(kcell)
-    cave = cave + chemo_active_exit(cell)
-enddo
-cave = cave/NBcells
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
 subroutine test_cum_prob
 real :: m = 30, s = 2.0
 real :: p1, p2, a
@@ -2167,39 +2151,39 @@ do k = 1,7
 		site = (/x, y, z/)
 		ibcstate = axis_centre
 	case (2)
-		x = Centre(1) - aRadius - 2
+		x = Centre(1) - Radius%x - 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (3)
-		x = Centre(1) + aRadius + 2
+		x = Centre(1) + Radius%x + 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (4)
 		x = Centre(1) + 0.5
-		y = Centre(2) - bRadius - 2
+		y = Centre(2) - Radius%y - 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_bottom
 	case (5)
 		x = Centre(1) + 0.5
-		y = Centre(2) + bRadius + 2
+		y = Centre(2) + Radius%y + 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (6)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
-		z = Centre(3) - bRadius - 2
+		z = Centre(3) - Radius%z - 2
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (7)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
-		z = Centre(3) + bRadius + 2
+		z = Centre(3) + Radius%z + 2
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	end select

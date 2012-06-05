@@ -84,7 +84,7 @@ public:
 	vtkPolyDataMapper *BcellMapper;
 	vtkPolyDataMapper *DcellMapper;
 	vtkPolyDataMapper *bondMapper;
-	vtkPolyDataMapper *FDCmapper;
+	vtkPolyDataMapper *FDcellMapper;
 	vtkMPEG2Writer *mpg;
 //	vtkSmartPointer<vtkPNGWriter> writer;
 //	vtkSmartPointer<vtkBMPWriter> writer;
