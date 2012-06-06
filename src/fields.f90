@@ -10,26 +10,6 @@ save
 
 integer, parameter :: MAX_BDRY = 20000
 
-! The following are no longer used
-!real, parameter :: S1P_KDIFFUSION = 0.001
-!real, parameter :: S1P_KDECAY = 0.000005
-!real, parameter :: OXY_KDIFFUSION = 0.001
-!real, parameter :: OXY_KDECAY = 0.000005
-!real, parameter :: CCL21_KDIFFUSION = 0.001
-!real, parameter :: CCL21_KDECAY = 0.00001
-!real, parameter :: CXCL13_KDIFFUSION = 1.0
-!real, parameter :: CXCL13_KDECAY = 1.0
-!
-!real :: BdryS1PConc = 1.0
-!real :: BdryOXYConc = 1.0
-!real :: BdryCCL21Conc = 1.0
-!real :: BdryCXCL13Conc = 1.0
-!
-!real, allocatable :: S1P_conc(:,:,:), S1P_grad(:,:,:,:), S1P_influx(:,:,:)
-!real, allocatable :: CXCL13_conc(:,:,:), CXCL13_grad(:,:,:,:), CXCL13_influx(:,:,:)
-!real, allocatable :: CCL21_conc(:,:,:), CCL21_grad(:,:,:,:), CCL21_influx(:,:,:)
-!real, allocatable :: OXY_conc(:,:,:), OXY_grad(:,:,:,:), OXY_influx(:,:,:)
-
 contains
 
 !----------------------------------------------------------------------------------------
@@ -271,21 +251,6 @@ else
 endif
 ok = .true.
 return
-
-!cmin = 1.0e10
-!cmax = 0
-!do x = 1,NX
-!	do y = 1,NY
-!		do z = 1,NZ
-!			if (occupancy(x,y,z)%indx(1) >= 0) then
-!				cmin = min(cmin,S1P_conc(x,y,z))
-!				cmax = max(cmin,S1P_conc(x,y,z))
-!			endif
-!		enddo
-!	enddo
-!enddo
-!write(*,*) 'S1P_conc: min, max: ',cmin,cmax
-!stop
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -544,18 +509,10 @@ endif
 set = .false.
 do ic = 1,MAX_CHEMO
 	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
-!		if (bdry%chemo_influx(ic)) then
-!			cbnd = chemo(ic)%bdry_conc
-!		else
-!			cbnd = -1
-!		endif 
 		if (bdry%chemo_influx(ic)) then
 			chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
 			set(ic) = .true.
-!			write(*,*) 'Set conc: ',chemo(ic)%bdry_conc,site
 		endif
-		! Need to set gradient!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!		call AverageBdryConc(bdry,chemo(i)%conc,chemo(i)%grad,site,cbnd)
 	endif
 enddo
 do ic = 1,MAX_CHEMO
@@ -575,38 +532,6 @@ do ic = 1,MAX_CHEMO
 		endif
 	endif
 enddo
-!if (use_S1P) then
-!	if (bdry%S1P) then
-!		cbnd = BdryS1PConc
-!	else
-!		cbnd = -1
-!	endif 
-!	call AverageBdryConc(bdry,S1P_conc,S1P_grad,site,cbnd)
-!endif
-!if (use_OXY) then
-!	if (bdry%OXY) then
-!		cbnd = BdryOXYConc
-!	else
-!		cbnd = -1
-!	endif 
-!	call AverageBdryConc(bdry,OXY_conc,OXY_grad,site,cbnd)
-!endif
-!if (use_CCL21) then
-!	if (bdry%CCL21) then
-!		cbnd = BdryCCL21Conc
-!	else
-!		cbnd = -1
-!	endif 
-!	call AverageBdryConc(bdry,CCL21_conc,CCL21_grad,site,cbnd)
-!endif
-!if (use_CXCL13) then
-!	if (bdry%CXCL13) then
-!		cbnd = BdryCXCL13Conc
-!	else
-!		cbnd = -1
-!	endif 
-!	call AverageBdryConc(bdry,CXCL13_conc,CXCL13_grad,site,cbnd)
-!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -626,18 +551,6 @@ do i = 1,MAX_CHEMO
 		call AverageConc(chemo(i)%conc,chemo(i)%grad,site)
 	endif
 enddo
-!if (use_S1P) then
-!	call AverageConc(S1P_conc,S1P_grad,site)
-!endif
-!if (use_OXY) then
-!	call AverageConc(OXY_conc,OXY_grad,site)
-!endif
-!if (use_CCL21) then
-!	call AverageConc(CCL21_conc,CCL21_grad,site)
-!endif
-!if (use_CXCL13) then
-!	call AverageConc(CXCL13_conc,CXCL13_grad,site)
-!endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -854,7 +767,6 @@ do ic = 1,MAX_CHEMO
 				site = ODEdiff%varsite(i,:)
 				if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0) then
 					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
-!					write(*,'(a,4i4,i6,f8.1)') chemo(ic)%name,i,site,occupancy(site(1),site(2),site(3))%FDC_nbdry,chemo(ic)%bdry_conc
 				endif
 			enddo
 		endif
@@ -876,10 +788,7 @@ call BdryConcentrations
 if (use_ODE_diffusion) then
 	call SolveSteadystate_B
 else
-!	call SolveSteadystate_A(ic,chemo(ic)%diff_coef,chemo(ic)%decay_rate,chemo(ic)%conc)
 	call SolveSteadystate_A
-	! Now compute the gradient field.
-!	call gradient(chemo(i)%conc,chemo(i)%grad)
 endif
 gmax = 0
 do ichemo = 1,MAX_CHEMO
@@ -1013,7 +922,6 @@ end subroutine
 ! Method A.
 ! On entry C contains the starting concentration field, which may be 0.
 !----------------------------------------------------------------------------------------
-!subroutine SolveSteadystate_A(ichemo,Kdiffusion,Kdecay,C)
 subroutine SolveSteadystate_A
 type(chemokine_type), pointer :: Cptr
 integer :: ichemo
@@ -1243,27 +1151,6 @@ do z = 1,NZ
 				        bdry_conc = .true.
 					endif
 				enddo
-
-!                if (ichemo == S1P .and. occupancy(x,y,z)%bdry%S1P) then
-!                    C(x,y,z) = BdryS1PConc
-!                    Ctemp(x,y,z) = C(x,y,z)
-!                    bdry_conc = .true.
-!                endif
-!                if (ichemo == OXY .and. occupancy(x,y,z)%bdry%OXY) then
-!                    C(x,y,z) = BdryOXYConc
-!                    Ctemp(x,y,z) = C(x,y,z)
-!                    bdry_conc = .true.
-!                endif
-!                if (ichemo == CCL21 .and. occupancy(x,y,z)%bdry%CCL21) then
-!                    C(x,y,z) = BdryCCL21Conc
-!                    Ctemp(x,y,z) = C(x,y,z)
-!                    bdry_conc = .true.
-!                endif
-!                if (ichemo == CXCL13 .and. occupancy(x,y,z)%bdry%CXCL13) then
-!                    C(x,y,z) = BdryCXCL13Conc
-!                    Ctemp(x,y,z) = C(x,y,z)
-!                    bdry_conc = .true.
-!                endif
             endif
             if (.not.bdry_conc) then
 			    sum = 0
