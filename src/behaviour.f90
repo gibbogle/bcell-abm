@@ -1331,6 +1331,8 @@ y = v(2)
 z = v(3)
 if (y < 0) return
 r2 = (x/Radius%x)**2 + (y/Radius%y)**2+ (z/Radius%z)**2
+!write(*,'(a,3i4,3f6.1)') 'site,Centre: ',site,Centre
+!write(*,'(a,3i4,4f6.1)') 'r2: ',x,y,z,Radius,r2
 if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	AntigenEncounter = .true.
 	write(logmsg,*) 'AntigenEncounter: ',kcell,site

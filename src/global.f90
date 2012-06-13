@@ -944,7 +944,7 @@ subroutine SetRadius(n)
 integer :: n
 real :: aRadius
 
-aRadius = (ELLIPSE_RATIO**2*n*3/(4*PI))**0.33333
+aRadius = (ELLIPSE_RATIO*n*3/(4*PI))**0.33333
 Radius%x = aRadius
 Radius%y = aRadius/ELLIPSE_RATIO
 Radius%z = aRadius
