@@ -4,20 +4,20 @@
 PROGRAM bcell_main
 use main_mod
 use global
+implicit none
 integer :: ncpu, res, summarydata(100)
-character*(128) :: infile,outfile
+character*(128) :: infile, outfile, runfile
 character*(64) :: travelfile = 'travel_time_dist.out'
 integer :: status, nlen, cnt, i, inbuflen, outbuflen
 integer :: jstep, hour, ntot, ncog, inflow
 character*(128) :: b, c, progname
 real :: vasc
 
-call process_command_line(ncpu,infile,outfile)
+runfile = 'bcell_main.out'
+open(nfrun,file=runfile,status='replace')
+call disableTCP
 
-outfile = 'bcell_main.out'
-!resfile = 'para.res'
-inbuflen = len(infile)
-outbuflen = len(outfile)
+outfile = 'bcell_abm.res'
 
 call get_command (b, nlen, status)
 if (status .ne. 0) then
@@ -61,7 +61,11 @@ do i = 1, cnt
     endif
 end do
 
+inbuflen = len(infile)
+outbuflen = len(outfile)
 write(*,*) 'call execute'
+write(nfrun,*) 'infile: ',infile
+write(nfrun,*) 'outfile: ',outfile
 call execute(ncpu,infile,inbuflen,outfile,outbuflen)
 !call get_dimensions(NX,NY,NZ,Nsteps)
 do jstep = 1,Nsteps
@@ -79,6 +83,7 @@ do jstep = 1,Nsteps
 		inflow = summaryData(7)
 		vasc = summaryData(8)/100.
 		write(*,'(4(a,i6),a,f6.2)') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog,' inflow/hr: ',inflow,' vasc: ',vasc	
+		write(nfrun,'(4(a,i6),a,f6.2)') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog,' inflow/hr: ',inflow,' vasc: ',vasc	
 	endif
 enddo
 end

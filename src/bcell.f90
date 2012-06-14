@@ -1539,59 +1539,6 @@ do k = 1,n
 enddo
 end subroutine
 
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
-subroutine old_process_command_line
-integer :: i, cnt, len, status
-character :: c*(64), b*(256)
-character*(64) :: progname
-
-call get_command (b, len, status)
-if (status .ne. 0) then
-    write (*,*) 'get_command failed with status = ', status
-    stop
-end if
-!write (*,*) 'command line = ', b (1:len)
-call get_command_argument (0, c, len, status)
-if (status .ne. 0) then
-    write (*,*) 'Getting command name failed with status = ', status
-    stop
-end if
-!write (*,*) 'command name = ', c (1:len)
-progname = c(1:len)
-cnt = command_argument_count ()
-!write (*,*) 'number of command arguments = ', cnt
-if (cnt < 1) then
-    write(*,*) 'Use: ',trim(progname),' num_cpu'
-    stop
-!    Mnodes = 4      ! for profiling
-!    write(*,*) 'Ruuning with Mnodes = ',Mnodes
-endif
-do i = 1, cnt
-    call get_command_argument (i, c, len, status)
-    if (status .ne. 0) then
-        write (*,*) 'get_command_argument failed: status = ', status, ' arg = ', i
-        stop
-    end if
-!    write (*,*) 'command arg ', i, ' = ', c (1:len)
-    if (i == 1) then
-!!!        read(c(1:len),'(i)') Mnodes
-        read(c(1:len),*) Mnodes
-        write(*,*) 'Requested threads: ',Mnodes
-    elseif (i == 2) then
-        inputfile = c(1:len)
-        write(*,*) 'Input file: ',inputfile
-    elseif (i == 3) then
-        outputfile = c(1:len)
-        write(*,*) 'Output file: ',outputfile
-!    elseif (i == 4) then
-!        resultfile = c(1:len)
-!        write(*,*) 'Result file: ',resultfile 
-    endif
-end do
-write (*,*) 'command line processed'
-end subroutine
-
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -2293,85 +2240,13 @@ rgb = ishft(r,16) + ishft(g,8) + b
 end function
 
 !-----------------------------------------------------------------------------------------
-! Now this is used only to set use_TCP = .false.
-! The lines
-!    call get_command (b, len, status)
-!    call get_command_argument (0, c, len, status)
-! were failing with gfortran (don't know why), but in any case there was no need to
-! get the command line arguments in this way.
 !-----------------------------------------------------------------------------------------
-subroutine process_command_line(ncpu,infile,outfile)
-!DEC$ ATTRIBUTES DLLEXPORT :: process_command_line
-!DEC$ ATTRIBUTES STDCALL, REFERENCE, MIXED_STR_LEN_ARG, ALIAS:"PROCESS_COMMAND_LINE" :: process_command_line
-integer :: i, cnt, len, status
-integer :: ncpu
-character :: c*(64), b*(256)
-character*(64) :: infile,outfile
-character*(64) :: progname
+subroutine disableTCP
+!DEC$ ATTRIBUTES DLLEXPORT :: disableTCP
+!DEC$ ATTRIBUTES STDCALL, REFERENCE, MIXED_STR_LEN_ARG, ALIAS:"DISABLETCP" :: disableTCP
 
-!write(*,*) 'process_command_line'
-use_TCP = .false.   ! because this is called from para_main()							! --> use_TCP
-
-return
-
-ncpu = 3
-infile = 'omp_para.inp'
-outfile = 'omp_para.out'
-!resfile = 'result.out'
-!runfile = ' '
-
-call get_command (b, len, status)
-if (status .ne. 0) then
-    write (logmsg,'(a,i4)') 'get_command failed with status = ', status
-    call logger(logmsg)
-    stop
-end if
-call logger('command: ')
-call logger(b)
-c = ''
-call get_command_argument (0, c, len, status)
-if (status .ne. 0) then
-    write (*,*) 'Getting command name failed with status = ', status
-    write(*,*) c
-    stop
-end if
-progname = c(1:len)
-cnt = command_argument_count ()
-if (cnt < 1) then
-    write(*,*) 'Use: ',trim(progname),' num_cpu'
-    stop
-endif
-
-do i = 1, cnt
-    call get_command_argument (i, c, len, status)
-    if (status .ne. 0) then
-        write (*,*) 'get_command_argument failed: status = ', status, ' arg = ', i
-        stop
-    end if
-    if (i == 1) then
-!        read(c(1:len),'(i)') ncpu
-        read(c(1:len),*) ncpu															! --> ncpu
-        write(*,*) 'Requested threads: ',ncpu
-    elseif (i == 2) then
-        infile = c(1:len)																! --> infile
-        write(*,*) 'Input file: ',infile
-    elseif (i == 3) then
-        outfile = c(1:len)																! --> outfile
-        write(*,*) 'Output file: ',outfile
-!    elseif (i == 4) then
-!        resfile = c(1:len)																! --> resfile
-!        write(*,*) 'Result file: ',resfile
-    endif
-end do
-
+use_TCP = .false.   ! because this is called from bcell_main()	
 end subroutine
-
-!-----------------------------------------------------------------------------------------
-! Until I find a time function in gfortran
-!----------------------------------------------------------------------------------------- 
-!real(8) function timef()
-!timef = 0
-!end function
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -2443,7 +2318,7 @@ if (mod(istep,240) == 0) then
 !    write(*,'(a,f8.1,a,f8.1)') 'Times: mover: ',tmover,'  fields: ',tfields
     tmover = 0
 !    call CheckBdryList
-	call show_lineage(logID)
+!	call show_lineage(logID)
 !	call checker
 endif
 
