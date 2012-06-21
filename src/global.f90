@@ -246,8 +246,9 @@ type cell_type
 	integer(2) :: lastdir
     real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
     real :: receptor_level(MAX_RECEPTOR)  ! level of receptor (susceptibility to the chemokine signal)
-!    type(cog_type),    pointer :: cptr => NULL()    ! pointer to cognate cell data
-    type(cog_type),    pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
+!    type(cog_type),pointer :: cptr => NULL()    ! pointer to cognate cell data
+    type(cog_type),pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
+!    type(cog_type),allocatable :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
 end type
 
 type DC_type
@@ -735,12 +736,13 @@ end function
 !-----------------------------------------------------------------------------------------
 subroutine squeezer(force)
 logical :: force
-integer :: last, k, site(3), indx(2), i, n, region
+integer :: last, k, site(3), indx(2), i, n, region, res
+logical :: ok
 
 !write(*,*) 'squeezer'
 if (ngaps == 0) return
 if (.not.force .and. (ngaps < max_ngaps/2)) return
-if (dbug) write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nlist
+write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nlist
 
 n = 0
 do k = 1,nlist
@@ -799,13 +801,6 @@ do
 enddo
 nlist = nlist - ngaps
 ngaps = 0
-if (dbug) then
-	write(nflog,*) 'squeezed: ',n,nlist
-	if (istep >= 55800) then
-		call check_cognate_list
-	endif
-	write(*,'(a,L)') 'cellist(25537)%cptr associated?: ', associated(cellist(25537)%cptr)
-endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -840,10 +835,14 @@ subroutine copycell2cell(cell_from,cell_to,kcell)
 integer :: kcell
 type(cell_type) :: cell_from, cell_to
 integer :: ctype, stype, kcog
+logical :: new_version = .true.
 
 ctype = cell_from%ctype
 stype = struct_type(ctype)
 
+if (new_version) then
+	cell_to = cell_from
+endif
 if (stype == NONCOG_TYPE_TAG .and. associated(cell_to%cptr)) then
     deallocate(cell_to%cptr)
 endif
@@ -859,10 +858,16 @@ elseif (stype /= NONCOG_TYPE_TAG) then
     call logger(logmsg)
     stop
 endif
-cell_to%ID = cell_from%ID
-cell_to%site = cell_from%site
-cell_to%ctype = cell_from%ctype
-cell_to%lastdir = cell_from%lastdir
+if (.not.new_version) then
+	cell_to%ID = cell_from%ID
+	cell_to%exists = cell_from%exists
+	cell_to%site = cell_from%site
+	cell_to%step = cell_from%step
+	cell_to%ctype = cell_from%ctype
+	cell_to%lastdir = cell_from%lastdir
+	cell_to%entrytime = cell_from%entrytime
+	cell_to%receptor_level = cell_from%receptor_level
+endif
 if (cell_from%ctype == 0) then
     write(logmsg,*) 'ERROR: copycell2cell: ctype = 0'
     call logger(logmsg)
@@ -1287,7 +1292,7 @@ end function
 subroutine show_lineage(id)
 integer :: id
 integer :: k, kcell, gen, stage, status
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 logical, save :: first = .true.
 
 if (first) then
@@ -1322,8 +1327,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine show_cognate_cell(kcell)
 integer :: kcell
-type (cog_type), pointer :: p
-!integer :: cogID
+type(cog_type), pointer :: p
 type(cell_type) :: bcell
 integer :: gen, stage, region
 
@@ -1338,9 +1342,7 @@ write(logmsg,*) 'Cognate cell: ',p%cogID,kcell,cellist(kcell)%ID
 call logger(logmsg)
 write(logmsg,'(a,i10,a,3i4,a,i2)') '  ID: ',bcell%ID,' site: ',bcell%site,' ctype: ',bcell%ctype
 call logger(logmsg)
-!gen = get_generation(p)
-gen = p%generation
-!call get_stage(p,stage,region)
+gen = get_generation(p)
 stage = get_stage(p)
 write(logmsg,'(a,i8,a,i2,a,i2)') '   cogID: ',p%cogID,' gen: ',gen,' stage: ', stage
 call logger(logmsg)
@@ -1358,7 +1360,7 @@ end subroutine
 subroutine make_cognate_list(ok)
 logical :: ok
 integer :: kcell, ctype, stype, cogID
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 
 !write(*,*) 'make_cognate_list: ', lastcogID
 ok = .true.
@@ -2083,6 +2085,33 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
+subroutine checkcellcount(ok)
+logical :: ok
+integer :: kcell, ntot
+
+ok = .true.
+ntot = 0
+do kcell = 1,nlist
+	if (cellist(kcell)%exists /= (cellist(kcell)%ID /= 0)) then
+		if (.not.associated(cellist(kcell)%cptr)) then
+			write(logmsg,*) 'Error: checkcellcount: inconsistent %exists, %ID: ',kcell,cellist(kcell)%exists,cellist(kcell)%ID
+			call logger(logmsg)
+			ok = .false.
+			return
+		endif
+	endif
+    if (.not.cellist(kcell)%exists) cycle
+	ntot = ntot + 1
+enddo
+if (ntot /= NBcells) then
+	write(logmsg,*) 'Error: inconsistent cell counts: NBcells, ntot: ',NBcells,ntot
+	call logger(logmsg)
+	ok = .false.
+endif
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine checkcellsite(kcell)
 integer :: kcell
 integer :: id,site(3)
@@ -2148,7 +2177,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine check_cells
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: kcell, ctype, n1, n2
 
 n1 = 0

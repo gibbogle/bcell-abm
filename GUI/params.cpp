@@ -59,7 +59,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Lattice size",
 "Dimension of the lattice (number of sites in X, Y and Z directions).  Typically 4*BLOB_RADIUS is OK."},
 
-{"BLOB_RADIUS", 23.1, 15.0, 50.0,
+{"BLOB_RADIUS", 18.1, 15.0, 50.0,
 "Initial blob size",
 "The radius of the initial ellipsoidal blob of B cells, as number of sites.  (18.38, 23.1, 29.1, 36.7 -> 25k, 50k, 100k, 200k sites)"},
 

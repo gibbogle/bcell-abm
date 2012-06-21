@@ -201,6 +201,7 @@ logical :: ischemo, cognate
 tnow = istep*DELTA_T
 cell => cellist(kcell)
 cognate = associated(cell%cptr)
+!cognate = allocated(cell%cptr)
 	
 id = cell%id
 site1 = cell%site
@@ -457,6 +458,7 @@ do kcell = 1,nlist
 !    if (cell%ID == 0) cycle             ! skip gaps in the list
 	if (.not.cell%exists) cycle		! skip gaps in the list
     if (associated(cell%cptr)) then
+!    if (allocated(cell%cptr)) then
 !		call get_stage(cell%cptr,stage,region)
 		stage = get_stage(cell%cptr)
 		region = get_region(cell%cptr)

@@ -76,8 +76,8 @@ end subroutine
 ! When a cognate cell has contact with a cognate DC its lifetime is immediately limited.
 ! NOTE: This is not used.  For Bcells we are using death rates (see DeathProbability())
 !--------------------------------------------------------------------------------------
-real function BClifetime(ptr)
-type (cog_type), pointer :: ptr
+real function BClifetime(p)
+type(cog_type), pointer :: p
 integer :: gen, stage
 real :: p1, p2
 integer :: kpar = 0
@@ -86,12 +86,12 @@ BClifetime = BIG_TIME
 return
 
 !call get_stage(ptr,stage,region)
-stage = get_stage(ptr)
+stage = get_stage(p)
 if (stage == NAIVE) then
     BClifetime = BIG_TIME
     return
 endif
-gen = get_generation(ptr)
+gen = get_generation(p)
 if (gen < 1 .or. gen > BC_MAX_GEN) then
     write(logmsg,*) 'BClifetime: bad gen: ',gen
     call logger(logmsg)
@@ -1150,7 +1150,7 @@ end subroutine
 !---------------------------------------------------------------------
 subroutine Updater(ok)
 logical :: ok
-integer :: kcell, stage, iseq, tag, kfrom, kto, k, ncog, ntot
+integer :: kcell, stage, iseq, tag, kfrom, kto, k, ncog, ntot, ndie
 integer :: site(3), site2(3), freeslot, indx(2), status, DC(2), idc
 integer :: tmplastcogID
 real :: tnow, dstim, S, cyt_conc, mols_pM, Ctemp, dstimrate, stimrate
@@ -1158,7 +1158,7 @@ real :: t1, t2, die_prob
 logical :: divide_flag, producing, first, dbg, unbound, flag, flag1
 real(DP) :: R
 integer :: kpar = 0
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 
 ok = .true.
 dbg = .false.
@@ -1166,6 +1166,7 @@ flag = .false.
 flag1 = .false.
 ntot = 0
 ncog = 0
+ndie = 0
 tnow = istep*DELTA_T
 ! Only cognate cells considered
 tmplastcogID = lastcogID
@@ -1194,6 +1195,7 @@ do k = 1,tmplastcogID
 	R = par_uni(kpar)
 	if (R < die_prob) then
         call BcellDeath(kcell)
+        ndie = ndie + 1
         cycle
     endif
 
@@ -1235,6 +1237,7 @@ do k = 1,tmplastcogID
         endif
     endif
 enddo
+if (dbug .and. ndie > 0) write(nfout,*) 'ndie: ',ndie
 end subroutine
 
 !--------------------------------------------------------------------------------------

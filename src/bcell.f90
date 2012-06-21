@@ -168,7 +168,6 @@ do k = 1,max_nlist
 	nullify(cellist(k)%cptr)
 enddo
 
-
 call make_reldir
 
 nz_excess = 0
@@ -234,8 +233,6 @@ integer, allocatable :: scount(:)
 integer, allocatable :: wz(:), ztotal(:)
 integer :: Mslices
 real :: dNT, diff1, diff2
-!integer, save :: lastNBcells = 0
-!type(cell_type), pointer :: cell
 logical :: show = .false.
 
 !write(*,*) 'make_split: Mnodes: ',Mnodes,use_blob
@@ -799,8 +796,8 @@ real :: tnow, noncog_exit_prob
 logical :: can_leave, left
 integer :: kpar=0
 integer :: nb, nc, nx
-type (boundary_type), pointer :: bdry
-type (cog_type), pointer :: p
+type(boundary_type), pointer :: bdry
+type(cog_type), pointer :: p
 
 ok = .true.
 !write(*,*) 'traffic'
@@ -870,9 +867,9 @@ do while ( associated ( bdry ))
     bdry => bdry%next
 enddo
 nadd_sites = nadd_sites - node_outflow
-!if (mod(istep,4*60) == 0) then
-!	write(nfout,*) 'traffic: nb,nx,noncog_exit_prob
-!endif
+if (dbug) then
+	write(nfout,'(a,5i6,f8.4)') 'traffic: ',istep,nbcells,node_inflow,nb,nx,noncog_exit_prob
+endif
 return
 
 ! Unused code follows
@@ -1109,7 +1106,7 @@ integer :: kpar = 0
 logical :: blob_changed
 
 ok = .true.
-!write(*,*) 'balancer: ',istep
+if (dbug) write(*,*) 'balancer: ',istep
 
 blob_changed = .false.
 tnow = istep*DELTA_T
@@ -1175,19 +1172,14 @@ else
     call set_globalvar
 endif
 return
-
-
 end subroutine
-
-
-
 
 !--------------------------------------------------------------------------------
 ! Counts efferent cognate cells, and records their generation distribution.
 ! Only activated cells (stage >= CLUSTERS) are counted
 !--------------------------------------------------------------------------------
 subroutine efferent(p,ctype)
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: ctype, gen, i
 real :: avid
 
@@ -1234,7 +1226,7 @@ logical :: ok
 integer :: kcell, ctype, stype, ncog, noncog, ntot, stage, region, i, iseq, error
 integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead
 real :: stim(FINISHED), IL2sig(FINISHED), tgen, tnow, fac, act, cyt_conc, mols_pM
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: nst(FINISHED)
 integer, allocatable :: gendist(:)
 integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
@@ -1394,7 +1386,7 @@ end subroutine
 subroutine compute_stim_dist
 integer :: kcell, ctype, stype, ncog, noncog
 real :: s
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 
 ncog = 0
 noncog = 0
@@ -1582,7 +1574,7 @@ subroutine write_results
 integer :: kcell, ctype, stype, ncog, ntot, i
 integer :: gen
 real :: tcr, avid, dtcr, hour
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: gendist(BC_MAX_GEN),aviddist(MAX_AVID_LEVELS),tcrdist(tcr_nlevels)
 character*(60) :: fmtstr = '(f6.2,2i8,4x,15f7.4,4x,10f7.4,4x,10f7.4,4x,10i7)'
 
@@ -1772,7 +1764,7 @@ logical :: ok
 integer :: kcell, ctype, stype, ncog(2), noncog, ntot, nbnd, stage, region, i, iseq, error
 integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nact
 real :: stim(2*STAGELIMIT), IL2sig(2*STAGELIMIT), tgen, tnow, fac, act, cyt_conc, mols_pM
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: nst(FINISHED)
 integer, allocatable :: gendist(:)
 integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
@@ -1944,7 +1936,7 @@ logical :: ok
 integer :: kcell, ctype, stype, ncog, noncog, ntot, nbnd, stage, region, i, iseq, error
 integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nvasc
 real :: stim(2*STAGELIMIT), IL2sig(2*STAGELIMIT), tgen, tnow, fac, act, cyt_conc, mols_pM
-type (cog_type), pointer :: p
+type(cog_type), pointer :: p
 integer :: nst(FINISHED)
 integer, allocatable :: gendist(:)
 integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
@@ -1974,7 +1966,6 @@ do kcell = 1,nlist
     if (.not.cellist(kcell)%exists) cycle
     p => cellist(kcell)%cptr
     if (associated(p)) then
-!		call get_stage(p,stage,region)
 		stage = get_stage(p)
 		region = get_region(p)
 	else
@@ -2187,7 +2178,7 @@ end subroutine
 subroutine BcellColour(kcell,r,g,b)
 integer :: kcell, r, g, b
 integer :: stage, status
-type(cog_type),pointer :: p
+type(cog_type), pointer :: p
 
 p => cellist(kcell)%cptr
 stage = get_stage(p)
@@ -2269,14 +2260,17 @@ ok = .true.
 istep = istep + 1
 sim_dbug = .false.
 dbug = .false.
-!if (istep >= 55800) then
-!	dbug = .true.
-!	sim_dbug = .true.
-!endif
+if (istep < 0) then
+	dbug = .true.
+	sim_dbug = .true.
+endif
 if (sim_dbug) then
 	write(logmsg,*) 'simulate_step: ',istep
 	call logger(logmsg)
 endif
+
+!write(logmsg,*) 'simulate_step: ',istep
+!call logger(logmsg)
 
 if (sim_dbug) call check_cognate_list
 
@@ -2289,8 +2283,6 @@ if (test_chemotaxis) then
 				call set_stage(cellist(kcell)%cptr,PLASMA)
 				call set_status(cellist(kcell)%cptr,BCL6_LO)
 				call ReceptorLevel(kcell,NAIVE_TAG,ACTIVATED_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
-!				write(logmsg,'(a,i6,5f8.3)') 'Cognate cell receptor levels: ',kcell,cellist(kcell)%receptor_level
-!				call logger(logmsg)
 			endif
 		enddo
 	endif
@@ -2319,13 +2311,12 @@ if (mod(istep,240) == 0) then
     tmover = 0
 !    call CheckBdryList
 !	call show_lineage(logID)
-!	call checker
+	call checkcellcount(ok)
+	if (.not.ok) then
+		res = 1
+		return
+	endif
 endif
-
-!if (.not.associated(cellist(1226)%cptr)) then
-!	write(*,*) 'simulate_step: cellist(1226)%cptr) not associated'
-!	stop
-!endif
 
 if (sim_dbug) write(nflog,*) 'call mover'
 call cpu_time(t1)
@@ -2333,10 +2324,6 @@ call mover(ok)
 call cpu_time(t2)
 tmover = tmover + t2 - t1
 if (sim_dbug) write(nflog,*) 'did mover'
-if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
-	write(*,*) 'Not associated: (a): ',istep
-	stop
-endif
 if (.not.ok) then
 	call logger("mover returned error")
 	res = 1
@@ -2347,10 +2334,6 @@ if (.not.evaluate_residence_time) then
 	if (sim_dbug) write(nflog,*) 'call updater'
     call updater(ok)
 	if (sim_dbug) write(nflog,*) 'did updater'
-	if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
-		write(*,*) 'Not associated: (b): ',istep
-		stop
-	endif
     if (.not.ok) then
 		call logger('updater returned error')
 		res = 1
@@ -2362,26 +2345,9 @@ if (use_traffic) then
     if (vary_vascularity) then
         call vascular
     endif
-!    if (use_portal_egress) then
-!		if (dbug) write(nflog,*) 'call portal_traffic'
-!        call portal_traffic(ok)
-!	    if (.not.ok) then
-!			call logger('portal_traffic returned error')
-!			res = 1
-!			return
-!		endif
-!		if (dbug) write(nflog,*) 'did portal_traffic'
-!    else
 		if (sim_dbug) write(nflog,*) 'call traffic'
         call traffic(ok)
-!        if (istep > 4*240) then
-!		    call CheckBdryList
-!		endif
 		if (sim_dbug) write(nflog,*) 'did traffic'
-		if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
-			write(*,*) 'Not associated: (c): ',istep
-			stop
-		endif
 	    if (.not.ok) then
 			call logger('traffic returned error')
 			res = 1
@@ -2391,12 +2357,22 @@ if (use_traffic) then
 endif
 if (sim_dbug) call check_xyz(3)
 
-if (sim_dbug) write(nflog,*) 'call balancer'
+if (sim_dbug) then
+	write(nflog,*) 'call balancer'
+	call checkcellcount(ok)
+	if (.not.ok) then
+		res = 1
+		return
+	endif
+endif
 call balancer(ok)
-if (sim_dbug) write(nflog,*) 'did balancer' 
-if (sim_dbug .and. .not.associated(cellist(11840)%cptr)) then
-	write(*,*) 'Not associated: (d): ',istep
-	stop
+if (sim_dbug) then
+	write(nflog,*) 'did balancer' 
+	call checkcellcount(ok)
+	if (.not.ok) then
+		res = 1
+		return
+	endif
 endif
 if (.not.ok) then
 	call logger('balancer returned error')
