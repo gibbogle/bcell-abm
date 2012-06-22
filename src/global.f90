@@ -98,7 +98,6 @@ integer, parameter :: nfcell = 10, nfout = 11, nfvec = 12, nfpath = 13, nfres = 
 						nftraffic = 16, nfrun = 17, nftravel = 18, nfcmgui = 19, nfpos = 20, nflog=21, nfchemo=22
 real, parameter :: BIG_TIME = 100000
 real, parameter :: BALANCER_INTERVAL = 10
-integer, parameter :: SCANNER_INTERVAL = 100
 real, parameter :: DELTA_T = 0.25       ! minutes
 logical, parameter :: use_gaplist = .true.
 logical, parameter :: use_add_count = .true.    ! keep count of sites to add/remove, do the adjustment at regular intervals 
@@ -115,7 +114,6 @@ integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion com
 
 ! B cell parameters
 integer, parameter :: traffic_mode = TRAFFIC_MODE_2
-logical, parameter :: use_blob = .true.
 logical, parameter :: random_cognate = .false.          ! number of cognate seed cells is random or determined
 integer, parameter :: MMAX_GEN = 20     ! max number of generations (for array dimension only)
 integer, parameter :: NGEN_EXIT = 8     ! minimum non-NAIVE T cell generation permitted to exit (exit_rule = 1)
@@ -445,8 +443,8 @@ real :: Ksurfaceportal = 40			! calibration factor for number of surface portals
 
 ! Geometry data
 integer :: NY, NZ
-integer, allocatable :: xdomain(:),xoffset(:),zdomain(:),zoffset(:)
-integer, allocatable :: nz_sites(:), nz_totsites(:), nz_cells(:), nz_excess(:)
+integer, allocatable :: zdomain(:),zoffset(:)
+integer :: blobrange(3,2)
 real :: DELTA_X, PI
 real :: TagRadius
 real :: x0,y0,z0   ! centre in global coordinates (units = grids)
@@ -741,7 +739,7 @@ logical :: ok
 
 !write(*,*) 'squeezer'
 if (ngaps == 0) return
-if (.not.force .and. (ngaps < max_ngaps/2)) return
+if (.not.force .and. (ngaps < max_ngaps/10)) return
 write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nlist
 
 n = 0
@@ -835,7 +833,9 @@ subroutine copycell2cell(cell_from,cell_to,kcell)
 integer :: kcell
 type(cell_type) :: cell_from, cell_to
 integer :: ctype, stype, kcog
-logical :: new_version = .true.
+integer :: region_to, region_from
+logical :: new_version = .false.
+logical :: check = .false.
 
 ctype = cell_from%ctype
 stype = struct_type(ctype)
@@ -867,6 +867,27 @@ if (.not.new_version) then
 	cell_to%lastdir = cell_from%lastdir
 	cell_to%entrytime = cell_from%entrytime
 	cell_to%receptor_level = cell_from%receptor_level
+endif
+if (check) then
+	if (cell_to%ID /= cell_from%ID) then
+	    write(logmsg,*) 'copycell2cell: check: bad ID: ',cell_to%ID,cell_from%ID
+	    call logger(logmsg)
+	    stop
+	endif
+	if (cell_to%exists /= cell_from%exists) then
+	    write(logmsg,*) 'copycell2cell: check: bad exists: ',cell_to%exists,cell_from%exists
+	    call logger(logmsg)
+	    stop
+    endif
+    if (stype == COG_TYPE_TAG) then
+        region_to = get_region(cell_to%cptr)
+        region_from = get_region(cell_from%cptr)
+        if (region_to /= region_from) then
+    	    write(logmsg,*) 'copycell2cell: check: bad region: ',region_to,region_from
+	        call logger(logmsg)
+	        stop
+	    endif
+	endif       
 endif
 if (cell_from%ctype == 0) then
     write(logmsg,*) 'ERROR: copycell2cell: ctype = 0'

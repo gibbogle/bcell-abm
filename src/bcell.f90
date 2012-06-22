@@ -134,8 +134,6 @@ MAX_COG = 0.5*NX*NY*NZ
 
 allocate(zoffset(0:2*Mnodes))
 allocate(zdomain(NZ))
-allocate(xoffset(0:2*Mnodes))
-allocate(xdomain(NX))
 x0 = (NX + 1.0)/2.        ! global value
 y0 = (NY + 1.0)/2.
 z0 = (NZ + 1.0)/2.
@@ -158,10 +156,6 @@ allocate(FDClist(MAX_FDC))
 allocate(occupancy(NX,NY,NZ))
 allocate(cellist(max_nlist))
 allocate(gaplist(max_ngaps))
-allocate(nz_sites(NZ))
-allocate(nz_totsites(NZ))
-allocate(nz_cells(NZ))
-allocate(nz_excess(NZ))
 allocate(cognate_list(MAX_COG))
 
 do k = 1,max_nlist
@@ -170,7 +164,6 @@ enddo
 
 call make_reldir
 
-nz_excess = 0
 Centre = (/x0,y0,z0/)   ! now, actually the global centre (units = grids)
 ncogseed = 0
 lastcogID = 0
@@ -216,7 +209,7 @@ ok = .true.
 end subroutine
 
 !--------------------------------------------------------------------------------
-! Generates the arrays wz(), zoffset() and zdomain().
+! Generates the arrays zoffset() and zdomain().
 ! The domains (slices) are numbered 0,...,2*Mnodes-1
 ! wz(k) = width of the slice for kth domain
 ! zoffset(k) = offset of kth domain occupancy array in the occupancy array.
@@ -226,6 +219,10 @@ end subroutine
 ! same number of available sites.
 ! This is the initial split, which will continue to be OK if:
 ! not using a blob, or Mnodes <= 2
+! blobrange(:,:) holds the info about the ranges of x, y and z that the blob occupies.
+! blobrange(1,1) <= x <= blobrange(1,2)
+! blobrange(2,1) <= y <= blobrange(2,2)
+! blobrange(3,1) <= z <= blobrange(3,2)
 !--------------------------------------------------------------------------------
 subroutine make_split
 integer :: k, wsum, kdomain, nsum, Ntot, N, last, x, y, z
@@ -235,75 +232,68 @@ integer :: Mslices
 real :: dNT, diff1, diff2
 logical :: show = .false.
 
-!write(*,*) 'make_split: Mnodes: ',Mnodes,use_blob
+!write(*,*) 'make_split: Mnodes: ',Mnodes
 if (Mnodes == 1) then
     Mslices = 1
     zdomain = 0
     return
 endif
 Mslices = 2*Mnodes
+dNT = abs(NBcells - lastNBcells)/real(lastNBcells+1)
+if (dNT < 0.03) then
+!   write(*,*) 'debugging make_split: ',NBcells,lastNBcells,dNT
+    return
+endif
+lastNBcells = NBcells
 allocate(wz(0:Mslices))
 allocate(ztotal(0:Mslices))
 allocate(scount(NX))
-if (use_blob) then
-    dNT = abs(NBcells - lastNBcells)/real(lastNBcells+1)
-    if (dNT < 0.03) then
-!       write(*,*) 'debugging make_split: ',NBcells,lastNBcells,dNT
-        return
-    endif
-    lastNBcells = NBcells
-    if (show) write(*,*) 'make_split: dNT: ',dNT
-    nsum = 0
-    do z = 1,NZ
-        k = 0
-        do y = 1,NY
-            do x = 1,NX
-                if (occupancy(x,y,z)%indx(1) /= OUTSIDE_TAG) then
-                    k = k + 1
-                endif
-            enddo
-        enddo
-        scount(z) = k
-        nsum = nsum + scount(z)
-    enddo
-    Ntot = nsum
-    N = Ntot/Mslices
-    nsum = 0
-    last = 0
+blobrange(:,1) = 99999
+blobrange(:,2) = 0
+nsum = 0
+do z = 1,NZ
     k = 0
-    do z = 1,NZ
-        nsum = nsum + scount(z)
-        if (nsum >= (k+1)*N) then
-            diff1 = nsum - (k+1)*N
-            diff2 = diff1 - scount(z)
-            if (abs(diff1) < abs(diff2)) then
-                wz(k) = z - last
-                last = z
-            else
-                wz(k) = z - last - 1
-                last = z - 1
+    do y = 1,NY
+        do x = 1,NX
+            if (occupancy(x,y,z)%indx(1) /= OUTSIDE_TAG) then
+                k = k + 1
+                blobrange(1,1) = min(blobrange(1,1),x)
+                blobrange(1,2) = max(blobrange(1,2),x)
+                blobrange(2,1) = min(blobrange(2,1),y)
+                blobrange(2,2) = max(blobrange(2,2),y)
+                blobrange(3,1) = min(blobrange(3,1),z)
+                blobrange(3,2) = max(blobrange(3,2),z)
             endif
-            k = k+1
-            if (k == Mslices-1) exit
-        endif
+        enddo
     enddo
-    wz(Mslices-1) = NZ - last
-    if (show) then
-        write(*,*) 'Ntot, N: ',Ntot,N
-        write(*,'(10i6)') scount
+    scount(z) = k
+    nsum = nsum + scount(z)
+enddo
+Ntot = nsum
+N = Ntot/Mslices
+nsum = 0
+last = 0
+k = 0
+do z = 1,NZ
+    nsum = nsum + scount(z)
+    if (nsum >= (k+1)*N) then
+        diff1 = nsum - (k+1)*N
+        diff2 = diff1 - scount(z)
+        if (abs(diff1) < abs(diff2)) then
+            wz(k) = z - last
+            last = z
+        else
+            wz(k) = z - last - 1
+            last = z - 1
+        endif
+        k = k+1
+        if (k == Mslices-1) exit
     endif
-else
-    wz = NZ/Mslices
-    wsum = 0
-    do k = 0,Mslices-1
-        wsum = wsum + wz(k)
-    enddo
-    do k = 0,Mslices-1
-        if (wsum < NZ) then
-            wz(k) = wz(k) + 1
-            wsum = wsum + 1
-        endif
-    enddo
+enddo
+wz(Mslices-1) = NZ - last
+if (show) then
+    write(*,*) 'Ntot, N: ',Ntot,N
+    write(*,'(10i6)') scount
 endif
 zoffset(0) = 0
 do k = 1,Mslices-1
@@ -335,10 +325,12 @@ deallocate(ztotal)
 deallocate(scount)
 end subroutine
 
+
 !--------------------------------------------------------------------------------
 ! Makes an approximate count of the number of sites of the spherical blob that
 ! are in the xth slice.  Uses the area of the slice.
 ! The blob centre is at (x0,y0,z0), and the blob radius is R = Radius%x
+! NOT USED
 !--------------------------------------------------------------------------------
 integer function slice_count(x)
 integer :: x
@@ -589,143 +581,6 @@ do while (k < n)
         if (dbug) write(*,'(a,7i6)') 'after add_random_cells: ',site,occupancy(x,y,z)%indx,slots
         call checkslots('add_random_cells: ',site)
         k = k+1
-    endif
-enddo
-
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-! Scans the cell list and builds the counts nz_sites() and nz_excess().
-! nz_sites(k)  = number of available sites at the slice z = k
-! nz_excess(k) = total excess of cells over sites in the paracortex zone with z >= k
-! These values are used in jumper() to adjust the jump probabilities.  The probability
-! of jumps in the -z direction is increased by an increment that is proportional to
-! nz_excess(k)/nz_sites(k)
-! This version is to quantify the cell distribution in the blob.
-!-----------------------------------------------------------------------------------------
-subroutine scanner
-integer :: x, y, z, ns, nc, nst, nct, indx(2), k
-integer :: yfraction(NY), ynsb(NY), yncb(NY)
-real, allocatable, save :: ysum(:)
-integer, save :: nh = 0
-integer :: excess, nextra, i, idn, imin=0, nz1, nz2
-real :: eratio(NZ), nz_sites0(NZ)
-real :: df, dfmin
-integer :: nsb, ncb, nsbt, ncbt
-type (boundary_type), pointer :: bdry
-
-if (nh == 0) then
-	allocate(ysum(NY))
-	ysum = 0
-endif
-yfraction = 0
-ynsb = 0
-yncb = 0
-nct = 0
-nst = 0
-nsbt = 0
-ncbt = 0
-k = 0
-do y = 1,NY
-    ns = 0
-    nc = 0
-	nsb = 0
-	ncb = 0
-    do z = 1,NZ
-        do x = 1,NX
-            indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle       ! OUTSIDE_TAG or DC
-            ns = ns+1
-            if (indx(1) > 0) nc = nc+1
-            if (indx(2) > 0) nc = nc+1
-            bdry => occupancy(x,y,z)%bdry
-            if (associated(bdry)) then
-				if (bdry%exit_OK) then
-		            nsb = nsb + 1
-			        if (indx(1) > 0) ncb = ncb+1
-				    if (indx(2) > 0) ncb = ncb+1
-				endif
-			endif	
-        enddo
-    enddo
-    nst = nst + ns
-    nct = nct + nc
-    nsbt = nsbt + nsb
-    ncbt = ncbt + ncb
-    if (ns > 0) then
-		k = k+1
-		yfraction(k) = (100.*nc)/(2.*ns) + 0.5
-		ynsb(k) = nsb
-		yncb(k) = ncb
-	endif
-!    nz_sites(z) = ns
-!    nz_cells(z) = nc
-!    excess = excess + nc - ns
-!    nz_excess(z) = excess
-enddo
-nh = nh + 1
-ysum = ysum + yfraction
-write(nfout,'(a,f8.2)') 'Hour: ',istep*DELTA_T/60
-write(nfout,'(25i3)') int(ysum(1:k)/nh)
-write(nfout,'(25i4)') int(ynsb(1:k/2))
-write(nfout,'(25i4)') int(yncb(1:k/2))
-write(nfout,'(a,f8.4)') 'Fraction of exit sites occupied: ',real(ncbt)/(2*nsbt)
-write(nfout,*) 'Total exit sites, exit cells: ',nsbt,ncbt
-NXcells = ncbt
-return
-
-nz_excess = 0
-excess = 0
-nextra = nst - nct
-! This is the imbalance between number of sites and number of T cells
-! resulting from (a) DC sites and (b) sites to be added (nadd_sites)
-! We need to adjust either nz_sites(:) or nz_cells(:) to bring them into balance,
-! so that eratio(:) can be computed correctly to generate a drift.
-! The complication arises because we want to spread the adjustment over the slices
-! in a way that is proportionate to the number of sites in the slice.
-! Choose to adjust nz_sites(:) (arbitrarily).
-
-if (nextra /= 0) then
-    if (nextra > 0) then
-        idn = -1
-    else
-        idn = 1
-    endif
-    nz_sites0 = nz_sites    ! This conveys approx the shape of the blob - we want to maintain this
-    do k = 1,abs(nextra)    ! we need to remove/add this many sites from/to nz_sites(:)
-        dfmin = 1.0e10
-        do i = 1,NZ
-            if (nz_sites(i) == 0) cycle
-            df = abs(real(nz_sites(i) + idn)/nz_sites0(i) - 1)
-            if (df < dfmin) then
-                dfmin = df
-                imin = i
-            endif
-        enddo
-        nz_sites(imin) = nz_sites(imin) + idn
-        nst = nst + idn
-    enddo
-    nz_excess = 0
-    excess = 0
-    do z = NZ,1,-1
-        excess = excess + nz_cells(z) - nz_sites(z)
-        nz_excess(z) = excess
-    enddo
-endif
-nz1 = NZ
-nz2 = 1
-do z = NZ,1,-1
-    if (z == NZ) then
-        nz_totsites(z) = nz_sites(z)
-    else
-        nz_totsites(z) = nz_sites(z) + nz_totsites(z+1)
-    endif
-    if (nz_sites(z) > 0) then
-        eratio(z) = 100*nz_excess(z)/real(nz_totsites(z))
-        nz1 = min(z,nz1)
-        nz2 = max(z,nz2)
-    else
-        eratio(z) = 0
     endif
 enddo
 
@@ -1158,9 +1013,10 @@ if ((abs(nadd_total) > nadd_limit) .or. (tnow > lastbalancetime + BALANCER_INTER
 	endif
     lastbalancetime = tnow
     nadd_sites = 0
-!    if (blob_changed) then
-!		if (dbug) write(nflog,*) 'call make_split'
-!        call make_split
+    if (blob_changed) then
+		if (dbug) write(nflog,*) 'call make_split'
+        call make_split
+    endif
 !        if (use_diffusion) then
 !            call setup_minmax
 !        endif
@@ -1975,7 +1831,7 @@ do kcell = 1,nlist
 	if (region == FOLLICLE) then
 	    ntot = ntot + 1
 	else
-		write(logmsg,*) 'kcell, region: ',kcell,region
+		write(logmsg,*) 'Error: get_summary: kcell, region: ',kcell,region
 		call logger(logmsg)
 		stop
 	endif
@@ -2302,7 +2158,6 @@ if (mod(istep,240) == 0) then
     endif
     total_in = 0
     total_out = 0
-!    call scanner
 !	call cpu_time(t1)
     call UpdateFields
 !	call cpu_time(t2)
@@ -2552,7 +2407,6 @@ endif
 
 call set_globalvar
 call make_split
-!call scanner
 call init_counters
 if (save_input) then
     call save_inputfile(inputfile)
@@ -2580,9 +2434,7 @@ logical :: isopen
 
 call logger('doing wrapup ...')
 ierr = 0
-if (allocated(xoffset)) deallocate(xoffset)
 if (allocated(zoffset)) deallocate(zoffset)
-if (allocated(xdomain)) deallocate(xdomain)
 if (allocated(zdomain)) deallocate(zdomain)
 if (allocated(occupancy)) deallocate(occupancy)
 if (allocated(Tres_dist)) deallocate(Tres_dist)
@@ -2595,10 +2447,6 @@ if (ierr /= 0) then
 endif
 ierr = 0
 if (allocated(gaplist)) deallocate(gaplist,stat=ierr)
-if (allocated(nz_sites)) deallocate(nz_sites)
-if (allocated(nz_totsites)) deallocate(nz_totsites)
-if (allocated(nz_cells)) deallocate(nz_cells)
-if (allocated(nz_excess)) deallocate(nz_excess)
 if (allocated(cognate_list)) deallocate(cognate_list)
 if (allocated(life_dist)) deallocate(life_dist)
 if (allocated(divide_dist)) deallocate(divide_dist)

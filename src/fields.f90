@@ -930,10 +930,159 @@ real :: dx2diff, total, maxchange, maxchange_par, total_par
 real, parameter :: alpha = 0.5
 real, parameter :: tol = 1.0e-5		! max change in C at any site as fraction of average C
 integer :: nc, nc_par, k, it, n, kpar
+integer :: zlim(2,16), dz, z1, z2, zfr, zto	! max 16 threads
+real, allocatable :: C_par(:,:,:)
+integer :: nt = 10000
+
+! This is extremely crude.  We really want to determine the actual blob extent
+! and define the slices to contain approximately the same number of cells.
+! The recomputation of the slice boundaries should be done whenever the 
+! number of active sites changes (from balancer())
+! (As is done in the paracortex model.)
+dz = NZ/Mnodes + 0.5
+do k = 1,Mnodes
+	zlim(1,k) = (k-1)*dz + 1
+	zlim(2,k) = k*dz
+enddo
+zlim(2,Mnodes) = NZ
+
+do ichemo = 1,MAX_CHEMO
+	if (.not.chemo(ichemo)%used) cycle
+	Cptr => chemo(ichemo)
+	Kdiffusion = Cptr%diff_coef
+	Kdecay = Cptr%decay_rate
+	do it = 1,nt
+		maxchange = 0
+		total = 0
+		nc = 0
+		!$omp parallel do private(z1,z2,n,C_par,maxchange_par,total_par,nc_par)
+		do kpar = 0,Mnodes-1
+!			z1 = zlim(1,kpar+1)
+!			z2 = zlim(2,kpar+1)
+	        if (Mnodes == 1) then
+	            z1 = blobrange(3,1)
+	            z2 = blobrange(3,2)
+	        else
+    	        z1 = zoffset(2*kpar) + 1
+	            z2 = zoffset(2*kpar+2)
+	        endif
+			n = z2 - z1 + 1
+			allocate(C_par(NX,NY,n))
+			call par_steadystate_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,z1,z2,maxchange_par,total_par,nc_par,kpar)
+			Cptr%conc(:,:,z1:z2) = C_par(:,:,1:n)
+			deallocate(C_par)
+			nc = nc + nc_par
+			total = total + total_par
+			maxchange = max(maxchange,maxchange_par)
+		enddo
+		if (maxchange < tol*total/nc) then
+			write(logmsg,'(a,a,a,i4)') 'Convergence reached for: ',chemo(ichemo)%name,' # of iterations: ',it
+			call logger(logmsg)
+			exit
+		endif
+	enddo
+	call gradient(Cptr%conc,Cptr%grad)
+enddo
+end subroutine	
+
+!----------------------------------------------------------------------------------------
+! A different approach from that used in bone-abm.
+! The bdry gridcells that are adjacent to a chemokine-rich region (i.e. there are 
+! chemokine-secreting cells near the boundary) are given a fixed concentration.
+! All boundaries are no-flux.
+! This is a simplified approach.  We need only keep track of the boundary.
+! The concentrations in a specified chemokine influx bdry site are input parameters.
+! Note:  It is only the ratio Kdecay/Kdiffusion that matters.
+! Method A solves in an iterative fashion dC/dt = 0, with specified concentrations
+! in the source gridcells.
+!----------------------------------------------------------------------------------------
+subroutine par_steadystate_A(ichemo,C,Kdiffusion,Kdecay,Ctemp,z1,z2,maxchange,total,nc,kpar)
+integer :: ichemo
+real :: C(:,:,:), Ctemp(:,:,:)
+integer :: z1, z2, kpar
+real :: Kdiffusion, Kdecay
+real :: dx2diff, total, maxchange, dC, sum, dV
+real, parameter :: alpha = 0.7
+integer :: x, y, z, xx, yy, zz, nb, nc, k, zpar, indx(2), i
+logical :: source_site
+
+!write(*,*) 'par_steadystate: ',ichemo,z1,z2
+dx2diff = DELTA_X**2/Kdiffusion
+dV = DELTA_X**3
+
+maxchange = 0
+total = 0
+nc = 0
+do zpar = 1,z2-z1+1
+	z = zpar + z1-1
+!	do y = 1,NY
+    do y = blobrange(2,1),blobrange(2,2)
+!		do x = 1,NX
+        do x = blobrange(3,1),blobrange(3,2)
+		    indx = occupancy(x,y,z)%indx
+            if (indx(1) < 0) cycle      ! outside or DC
+            source_site = .false.
+            if (associated(occupancy(x,y,z)%bdry)) then
+                ! Check for chemo bdry site - no change to the concentration at such a site
+                do i = 1,MAX_CHEMO
+	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
+		                C(x,y,z) = chemo(i)%bdry_conc
+			            Ctemp(x,y,zpar) = C(x,y,z)
+				        source_site = .true.
+					endif
+				enddo
+			elseif (ichemo == CXCL13 .and. occupancy(x,y,z)%FDC_nbdry > 0) then
+                C(x,y,z) = chemo(ichemo)%bdry_conc
+	            Ctemp(x,y,zpar) = C(x,y,z)
+		        source_site = .true.
+            endif
+            if (.not.source_site) then
+			    sum = 0
+			    nb = 0
+			    do k = 1,6
+				    xx = x + neumann(1,k)
+				    yy = y + neumann(2,k)
+				    zz = z + neumann(3,k)
+				    if (outside_xyz(xx,yy,zz)) cycle
+    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+				    nb = nb + 1
+				    sum = sum + C(xx,yy,zz)
+			    enddo
+			    Ctemp(x,y,zpar) = alpha*(DELTA_X*Kdiffusion*sum)/(Kdecay*dV + nb*DELTA_X*Kdiffusion) + (1-alpha)*C(x,y,z)
+			    dC = abs(Ctemp(x,y,zpar) - C(x,y,z))
+			    maxchange = max(dC,maxchange)
+			endif
+			nc = nc + 1
+			total = total + Ctemp(x,y,zpar)
+		enddo
+	enddo
+enddo
+!write(*,*) 'maxchange, average: ',maxchange,total/nc
+
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! Solve for steady-state chemokine concentrations, given levels at source sites, using
+! Method A.
+! On entry C contains the starting concentration field, which may be 0.
+!----------------------------------------------------------------------------------------
+subroutine SolveSteadystate_A_old
+type(chemokine_type), pointer :: Cptr
+integer :: ichemo
+real :: Kdiffusion, Kdecay
+real :: dx2diff, total, maxchange, maxchange_par, total_par
+real, parameter :: alpha = 0.5
+real, parameter :: tol = 1.0e-5		! max change in C at any site as fraction of average C
+integer :: nc, nc_par, k, it, n, kpar
 integer :: xlim(2,16), dx, x1, x2, xfr, xto	! max 16 threads
 real, allocatable :: C_par(:,:,:)
 integer :: nt = 10000
 
+! This is extremely crude.  We really want to determine the actual blob extent
+! and define the slices to contain approximately the same number of cells.
+! The recomputation of the slice boundaries should be done whenever the 
+! number of active sites changes (from balancer())
+! (As is done in the paracortex model.)
 dx = NX/Mnodes + 0.5
 do k = 1,Mnodes
 	xlim(1,k) = (k-1)*dx + 1
@@ -973,7 +1122,6 @@ do ichemo = 1,MAX_CHEMO
 enddo
 end subroutine	
 
-
 !----------------------------------------------------------------------------------------
 ! A different approach from that used in bone-abm.
 ! The bdry gridcells that are adjacent to a chemokine-rich region (i.e. there are 
@@ -985,7 +1133,7 @@ end subroutine
 ! Method A solves in an iterative fashion dC/dt = 0, with specified concentrations
 ! in the source gridcells.
 !----------------------------------------------------------------------------------------
-subroutine par_steadystate_A(ichemo,C,Kdiffusion,Kdecay,Ctemp,x1,x2,maxchange,total,nc,kpar)
+subroutine par_steadystate_A_old(ichemo,C,Kdiffusion,Kdecay,Ctemp,x1,x2,maxchange,total,nc,kpar)
 integer :: ichemo
 real :: C(:,:,:), Ctemp(:,:,:)
 integer :: x1, x2, kpar
@@ -1047,6 +1195,7 @@ enddo
 !write(*,*) 'maxchange, average: ',maxchange,total/nc
 
 end subroutine
+
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine gradient(C,grad)
@@ -1057,9 +1206,12 @@ logical :: missed
 real, parameter :: MISSING_VAL = 1.0e10
 
 grad = 0
-do z = 1,NZ
-	do y = 1,NY
-		do x = 1,NX
+!do z = 1,NZ
+!	do y = 1,NY
+!		do x = 1,NX
+do z = blobrange(3,1),blobrange(3,2)
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
 			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			x1 = x - 1
 			x2 = x + 1
@@ -1092,9 +1244,12 @@ do z = 1,NZ
 		enddo
 	enddo
 enddo
-do z = 1,NZ
-	do y = 1,NY
-		do x = 1,NX
+!do z = 1,NZ
+!	do y = 1,NY
+!		do x = 1,NX
+do z = blobrange(3,1),blobrange(3,2)
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
 			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			do i = 1,3
 				if (grad(i,x,y,z) == MISSING_VAL) then
@@ -1123,6 +1278,9 @@ enddo
 end subroutine
 
 !----------------------------------------------------------------------------------------
+! Updates concentrations through a timestep dt, solving the diffusion-decay eqtn by a 
+! simple explicit method.  This assumes concentration boundary conditions.
+! Could be parallelized?
 !----------------------------------------------------------------------------------------
 subroutine evolve(ichemo,Kdiffusion,Kdecay,C,dt)
 integer :: ichemo
@@ -1136,9 +1294,12 @@ logical :: bdry_conc
 
 dV = DELTA_X**3
 allocate(Ctemp(NX,NY,NZ))
-do z = 1,NZ
-	do y = 1,NY
-		do x = 1,NX
+!do z = 1,NZ
+!	do y = 1,NY
+!		do x = 1,NX
+do z = blobrange(3,1),blobrange(3,2)
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
 			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
 			C0 = C(x,y,z)
             bdry_conc = .false.
@@ -1171,7 +1332,7 @@ do z = 1,NZ
 	enddo
 enddo
 C = Ctemp
-deallocate(Ctemp)
+deallocate(Ctemp) 
 
 end subroutine
 
