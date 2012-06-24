@@ -250,8 +250,6 @@ if (ischemo) then
 	! This is an approximation to increase speed - it enables a table lookup.
 	! Note that we use only the direction of v (magnitude is insignificant at this stage,
 	! since it is accounted for in f)
-!	v = chemo_N*vsum/norm(vsum)	! this is a quick approximation, needs checking!!!!
-    ! Note: need to ensure that chemo_N is set.  How big?
     if (norm(vsum) > 0) then
 		f = min(1.0,norm(vsum))     ! Note: f is in (0-1)
 		v = vsum/norm(vsum)
@@ -455,11 +453,8 @@ do kcell = 1,nlist
 	    z_hi = zoffset(slice+1)
 	endif
     cell => cellist(kcell)
-!    if (cell%ID == 0) cycle             ! skip gaps in the list
 	if (.not.cell%exists) cycle		! skip gaps in the list
     if (associated(cell%cptr)) then
-!    if (allocated(cell%cptr)) then
-!		call get_stage(cell%cptr,stage,region)
 		stage = get_stage(cell%cptr)
 		region = get_region(cell%cptr)
 		if (region /= FOLLICLE) cycle
@@ -483,11 +478,8 @@ do kcell = 1,nlist
 		call logger(logmsg)
         stop
     endif
-	if (use_chemotaxis) then
-		call chemo_jumper(kcell,indx,slot,go,kpar)
-	else
-		call jumper(kcell,indx,slot,go,kpar)
-	endif
+	call chemo_jumper(kcell,indx,slot,go,kpar)
+!	call jumper(kcell,indx,slot,go,kpar)
     cell%step = istep
 enddo
 end subroutine
@@ -515,7 +507,6 @@ if (istep == 1) then    ! must be executed when the blob size changes
     xcount = 0
     do kcell = 1,nlist
         cell => cellist(kcell)
-!        if (cell%ID == 0) cycle             ! skip gaps in the list
 		if (.not.cell%exists) cycle
         i = cellist(kcell)%site(1)
         xcount(i) = xcount(i) + 1
@@ -558,7 +549,6 @@ do sweep = 0,nsweeps-1
 
 !$omp parallel PRIVATE(kcell,kpar,cell,x_lo,x_hi,site1,xlocal,indx,slot,go,cnt)
 kpar = omp_get_thread_num()
-!write(*,*) 'kpar: ',kpar
 do kcell = 1,nlist
 	if (Mnodes == 1) then
 	    x_lo = 1
@@ -568,7 +558,6 @@ do kcell = 1,nlist
 	    x_hi = xlim(sweep+2*kpar+1)
 	endif
     cell => cellist(kcell)
-!    if (cell%ID == 0) cycle             ! skip gaps in the list
 	if (.not.cell%exists) cycle
     if (cell%step == istep) cycle
     site1 = cell%site

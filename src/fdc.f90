@@ -274,7 +274,6 @@ do k = 1,NDC
             do x = xmin,xmax
                 d2 = (x-xdc)*(x-xdc) + y2 + z2
                 added = .false.
-                ! The following procedure is correct only if DCRadius <= chemo_radius
 	            if (d2 <= DCRadius*DCRadius) then
 	                kdc = occupancy(x,y,z)%DC(0)
 	                if (kdc < 0) cycle			! this is a DC site
@@ -285,13 +284,6 @@ do k = 1,NDC
 						added = .true.
 					endif
 				endif
-!	            if (.not.added .and. (d2 <= chemo_radius*chemo_radius)) then
-!	                kdc = occupancy(x,y,z)%cDC(0)
-!		            if (kdc == cDCDIM-1) cycle   ! all possible DC assigned
-!		            kdc = kdc + 1
-!		            occupancy(x,y,z)%cDC(kdc) = idc
-!	                occupancy(x,y,z)%cDC(0) = kdc
-!	            endif
             enddo
         enddo
     enddo

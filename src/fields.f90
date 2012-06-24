@@ -599,7 +599,7 @@ end subroutine
 subroutine GetEntrySite(site,ok)
 integer :: site(3)
 logical :: ok
-integer :: ibdry, k, it, bsite(3), indx(2), nt = 100, kpar=0
+integer :: ibdry, k, it, bsite(3), indx(2), nt = 1000, kpar=0
 type (boundary_type), pointer :: bdry
 
 it = 0

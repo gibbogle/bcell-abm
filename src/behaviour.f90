@@ -25,21 +25,8 @@ contains
 ! when used.  Program time is in minutes.
 !--------------------------------------------------------------------------------------
 subroutine setup_dists
-!real :: divide_median1, divide_median2
-!real :: divide_shape1, divide_shape2
-!real :: life_tc1 = 15, life_tc2 = 18
-!real :: life_median1 = 48, life_median2 = 24
-!real :: life_median1 = 196, life_median2 = 196      !<------------- Note: hard-coded values
-!real :: life_shape1 = 1.5, life_shape2 = 1.4
 real :: T_half_lo, T_half_hi
 integer :: i
-
-!life_dist(1)%class = EXPONENTIAL_DIST
-!life_dist(i)%p1 = life_tc1
-!do i = 1,TC_MAX_GEN
-!	life_dist(i)%class = EXPONENTIAL_DIST
-!	life_dist(i)%p1 = life_tc2
-!enddo
 
 allocate(life_dist(BC_MAX_GEN))        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 allocate(divide_dist(BC_MAX_GEN))      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -85,7 +72,6 @@ integer :: kpar = 0
 BClifetime = BIG_TIME
 return
 
-!call get_stage(ptr,stage,region)
 stage = get_stage(p)
 if (stage == NAIVE) then
     BClifetime = BIG_TIME
@@ -95,7 +81,6 @@ gen = get_generation(p)
 if (gen < 1 .or. gen > BC_MAX_GEN) then
     write(logmsg,*) 'BClifetime: bad gen: ',gen
     call logger(logmsg)
-!    stop
 endif
 p1 = life_dist(gen)%p1
 p2 = life_dist(gen)%p2
@@ -119,20 +104,14 @@ integer :: kpar = 0
 dividetime = 0
 p1 = divide_dist(gen)%p1
 p2 = divide_dist(gen)%p2
-!write(*,*) 'dividetime: ',istep,gen,divide_dist(gen)%p1,divide_dist(gen)%p2
 select case (divide_dist(gen)%class)
 case (NORMAL_DIST)
 	dividetime = rv_normal(p1,p2,kpar)
 case (LOGNORMAL_DIST)
-!    write(*,*) 'dividetime: ',istep,gen,p1,p2
 	dividetime = rv_lognormal(p1,p2,kpar)
-!	write(*,*) 'dividetime: ',dividetime
 case (CONSTANT_DIST)
 	dividetime = p1
 end select
-!if (ictype == CD8_CELL) then
-!	dividetime = dividetime*CD8_DIVTIME_FACTOR
-!endif
 end function
 
 !--------------------------------------------------------------------------------------
@@ -184,7 +163,6 @@ integer :: kpar=0
 
 sum = 0
 do k = 1,12
-!    call random_number(R)
     R = par_uni(kpar)
     sum = sum + R
 enddo
@@ -212,8 +190,6 @@ real(DP) function cum_prob_lognormal(a,p1,p2)
 real :: a, p1, p2
 real(DP) :: b, prob
 
-!p1 = log(m)
-!p2 = log(s)
 b = (log(a) - p1)/p2
 prob = 0.5 + 0.5*erf(b/sqrt(2.0))
 cum_prob_lognormal = prob
@@ -283,13 +259,12 @@ end subroutine
 !----------------------------------------------------------------------------------------
 subroutine read_Bcell_params(ok)
 logical :: ok
-real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
+real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2, chemo_radius
 integer :: i, ic, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
 integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
 
 ok = .true.
-!call logger('Reading B cell parameter file: '//inputfile)
 open(nfcell,file=inputfile,status='old')
 read(nfcell,*) BC_AVIDITY_MEDIAN            ! median of avidity distribution (only if fix_avidity = false)
 read(nfcell,*) BC_AVIDITY_SHAPE			    ! shape -> 1 gives normal dist with small variance
@@ -344,8 +319,7 @@ read(nfcell,*) chemo(CXCL13)%bdry_conc
 read(nfcell,*) chemo(CXCL13)%diff_coef
 read(nfcell,*) chemo(CXCL13)%halflife
 read(nfcell,*) receptor(CXCR5)%strength
-!read(nfcell,*) VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
-read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um)
+read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um) NOT USED
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs
@@ -356,7 +330,6 @@ read(nfcell,*) fixedfile					! file with "fixed" parameter values
 close(nfcell)
 
 ! Chemokines
-use_chemotaxis = .true.
 chemo(S1P)%name    = 'S1P'
 chemo(CCL21)%name  = 'CCL21'
 chemo(OXY)%name    = 'OXY'
@@ -405,21 +378,11 @@ if (usetraffic == 1) then
 else
 	USE_TRAFFIC = .false.
 endif
-!if (usechemo == 1) then
-!	use_chemotaxis = .true.
-!	! Interim measure:
-!	chemo_K = 1.0
-!else
-!	use_chemotaxis = .false.
-!	chemo_K_exit = 0
-!endif
 if (computedoutflow == 1) then
 	computed_outflow = .true.
 else
 	computed_outflow = .false.
 endif
-!exit_region = EXIT_LOWER_SURFACE
-use_portal_egress = .false.
 
 call read_fixed_BCparams(ok)
 if (.not.ok) then
@@ -443,22 +406,12 @@ call logger(logmsg)
 write(nfout,*) iuse
 call ShowChemokines
 
-chemo_radius = chemo_radius/DELTA_X				! convert from um to lattice grids
-chemo_N = max(3,int(chemo_radius + 0.5))	    ! convert from um to lattice grids
-!chemo_exp = log(1/CHEMO_MIN)/log(chemo_radius)
-
 sigma = log(divide_shape1)
 divide_dist1%p1 = log(60*divide_mean1/exp(sigma*sigma/2))
 divide_dist1%p2 = sigma
 sigma = log(divide_shape2)
 divide_dist2%p1 = log(60*divide_mean2/exp(sigma*sigma/2))
 divide_dist2%p2 = sigma
-
-!sigma = log(DC_ANTIGEN_SHAPE)
-!DC_ANTIGEN_MEDIAN = DC_ANTIGEN_MEAN/exp(sigma*sigma/2)
-!sigma = log(DC_LIFETIME_SHAPE)
-!DC_LIFETIME_MEDIAN = DC_LIFETIME_MEAN/exp(sigma*sigma/2)
-
 
 if (BC_COGNATE_FRACTION == 0) then
     use_cognate = .false.
@@ -467,7 +420,6 @@ else
 endif
 
 if (BC_STIM_HALFLIFE > 0) then
-!    BCRdecayrate = log(2.0)/(BC_STIM_HALFLIFE*60)    ! rate/min
     BCRdecayrate = DecayRate(BC_STIM_HALFLIFE)    ! rate/min
 else
     BCRdecayrate = 0
@@ -524,12 +476,10 @@ write(nfout,*) 'DELTA_X: ',DELTA_X
 write(nfout,*) 'BALANCER_INTERVAL: ',BALANCER_INTERVAL
 write(nfout,*) 'use_add_count: ',use_add_count
 write(nfout,*) 'use_traffic: ',use_traffic
-write(nfout,*) 'use_chemotaxis: ',use_chemotaxis
 write(nfout,*) 'computed_outflow: ',computed_outflow
 write(nfout,*) 'use_cognate: ',use_cognate
 write(nfout,*) 'random_cognate: ',random_cognate
 write(nfout,*) 'use_ode_diffusion: ',use_ode_diffusion
-write(nfout,*) 'NGEN_EXIT: ',NGEN_EXIT
 write(nfout,*) 'NDIFFSTEPS: ',NDIFFSTEPS
 write(nfout,*) 'VEGF_MODEL: ',VEGF_MODEL
 write(nfout,*) 'VEGF_alpha: ',VEGF_alpha
@@ -539,12 +489,6 @@ write(nfout,*) 'vasc_maxrate: ',vasc_maxrate
 write(nfout,*) 'vasc_decayrate: ',vasc_decayrate
 write(nfout,*) 'vasc_beta: ',vasc_beta
 write(nfout,*) 'vasc_n: ',vasc_n
-write(nfout,*) 'fix_avidity: ',fix_avidity
-write(nfout,*) 'avidity_nlevels: ',avidity_nlevels
-write(nfout,*) 'avidity_logscale: ',avidity_logscale
-write(nfout,*) 'avidity_min: ',avidity_min
-write(nfout,*) 'avidity_step: ',avidity_step
-
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -585,8 +529,11 @@ enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! When a T cell dies it is removed from the cell list (%ID -> 0)
-! and removed from occupancy()%indx()
+! When a T cell dies:
+!   %exists -> .false.
+!   if non-cognate %ID -> 0 (i.e. it is marked for removal from the cell list)
+!   Note that cognate cells are left in the list for tracing lineage/fate.
+! In both cases it is removed from occupancy()%indx()
 ! The count of sites to add is decremented, for later adjustment of the blob size.
 !-----------------------------------------------------------------------------------------
 subroutine BcellDeath(kcell)
@@ -594,18 +541,13 @@ integer :: kcell
 integer :: k, idc, site(3), indx(2)
 logical :: cognate
 
-!write(logmsg,*) 'BcellDeath: ',kcell
-!call logger(logmsg)
 cognate = (associated(cellist(kcell)%cptr))
-!cellist(kcell)%ID = 0
 cellist(kcell)%exists = .false.
 totalres%dN_Dead = totalres%dN_Dead + 1
 totalres%N_Dead = totalres%N_Dead + 1
 if (cognate) then
-!	write(logmsg,*) 'BcellDeath: cognate: ',kcell,cellist(kcell)%cptr%cogID
-!	call logger(logmsg)
 	call set_stage(cellist(kcell)%cptr,DEAD)
-	call set_region(cellist(kcell)%cptr,REMOVED)
+	call set_region(cellist(kcell)%cptr,GONE)
 endif
 if (use_gaplist .and. .not.cognate) then
 	cellist(kcell)%ID = 0
@@ -663,11 +605,9 @@ integer :: icnew, ctype, gen, region, status, site(3), indx(2)
 integer :: iseq, tag, kfrom, kto
 real :: tnow, prob_gcc, prob_plasma
 type(cog_type), pointer :: p1, p2
-!real :: IL_state(CYT_NP)
 integer :: kpar = 0
 real(DP) :: R
 
-!write(*,*) 'cell_division: ',kcell
 ok = .true.
 tnow = istep*DELTA_T
 p1 => cellist(kcell)%cptr
@@ -745,7 +685,6 @@ if (status == BCL6_LO) then
 		call set_stage(p2,DIVIDING)
 		p2%stagetime = tnow + DivisionTime()
 	elseif (R < prob_gcc) then
-!		call set_status(p2,BCL6_HI)
 		call set_stage(p2,GCC_COMMIT)
 		p2%stagetime = tnow + T_BCL6_UP
 	else
@@ -786,61 +725,41 @@ integer :: kpar = 0
 ok = .true.
 tnow = istep*DELTA_T
 stype = struct_type(ctype)
-!write(*,*) 'CreateBcell: ',kcell,ctype,stype
 cell%exists = .true.
 cell%entrytime = tnow
 if (stype == NONCOG_TYPE_TAG) then
     if (associated(cell%cptr)) then
-!        deallocate(cell%cptr)
 		write(*,*) 'Error: CreateBcell: cptr already associated for non-cognate cell: ',kcell
 		stop
     endif
 elseif (stype == COG_TYPE_TAG) then
-    if (.not.associated(cell%cptr)) then
-        allocate(cell%cptr)
+    if (associated(cell%cptr)) then
+        deallocate(cell%cptr)
     endif
+    allocate(cell%cptr)
     param1 = log(BC_AVIDITY_MEDIAN)
     param2 = log(BC_AVIDITY_SHAPE)
     call set_generation(cell%cptr,gen)
 	call set_stage(cell%cptr,stage)
 	call set_status(cell%cptr,status)
 	call set_region(cell%cptr,region)
-!    if (fix_avidity) then
-!        i = mod(navid,avidity_nlevels)
-!        navid = navid + 1
-!        cell%cptr%avidity = avidity_level(i+1)
-!    else
-!        cell%cptr%avidity = rv_lognormal(param1,param2,kpar)
-!    endif
-!    cell%cptr%stimulation = 0
     cell%cptr%status = BCL6_LO	! default
-!    if (use_cytokines) then
-!        call IL2_init_state(cell%cptr%IL_state,cell%cptr%IL_statep)
-!    endif
-    ! What should the initial CD69 level be?  If 0, can a cognate cell exit immediately?
-    ! We would prefer not to impose a time or generation constraint on the exit of
-    ! cognate T cells, but otherwise if CD69 is initially 0, a cell will be susceptible
-    ! to chemotaxis and exit until it has received enough TCR signal to drive CD69 high.
-!    cell%cptr%CD69 = 0
-!    cell%cptr%S1P1 = 0
-!    cell%cptr%dietime = tnow + BClifetime(cell%cptr)
     cell%cptr%dietime = BIG_TIME
     cell%cptr%dividetime = BIG_TIME
     cell%cptr%stagetime = 0
 
 ! Maintain cognate_list at start or if we are running on a single node
 ! Otherwise cogID and cognate_list is maintained by make_cognate_list
-!    if (istep == 0 .or. Mnodes == 1) then
-        lastcogID = lastcogID + 1
-        if (lastcogID > MAX_COG) then
-            write(logmsg,'(a,i6)') 'Error: CreateBcell: cognate_list dimension exceeded: ',MAX_COG
-            call logger(logmsg)
-            ok = .false.
-            return
-        endif
-        cogID = lastcogID
-        cell%cptr%cogID = cogID
-        cognate_list(cogID) = kcell
+    lastcogID = lastcogID + 1
+    if (lastcogID > MAX_COG) then
+        write(logmsg,'(a,i6)') 'Error: CreateBcell: cognate_list dimension exceeded: ',MAX_COG
+        call logger(logmsg)
+        ok = .false.
+        return
+    endif
+    cogID = lastcogID
+    cell%cptr%cogID = cogID
+    cognate_list(cogID) = kcell
 else
     write(logmsg,*) 'ERROR: CreateBcell: bad ctype: ',ctype
     call logger(logmsg)
@@ -883,9 +802,6 @@ else
 	endif
     kcell = nlist
 endif
-!if (dbug) then
-!    write(*,'(a,9i7)') 'AddBcell: ',istep,kcell,site,ctype,gen,stage,region
-!endif
 call CreateBcell(kcell,cellist(kcell),site,ctype,gen,stage,status,region,ok)
 if (.not.ok) return
 
@@ -984,7 +900,6 @@ do x = 1,NX
 	    do z = 1,NZ
             occupancy(x,y,z)%indx = 0
             occupancy(x,y,z)%FDC_nbdry = 0
-!            occupancy(x,y,z)%exitnum = 0
             nullify(occupancy(x,y,z)%bdry)
             site = (/x,y,z/)
 			if (.not.InsideEllipsoid(site)) then
@@ -1187,10 +1102,6 @@ do k = 1,tmplastcogID
     ncog = ncog + 1
 
 	! Cell death
-!    if (tnow > p%dietime) then
-!        call BcellDeath(kcell)
-!        cycle
-!    endif
 	die_prob = DeathProbability(p)
 	R = par_uni(kpar)
 	if (R < die_prob) then
@@ -1267,7 +1178,6 @@ type(cog_type), pointer :: p
 divide_flag = .false.
 site = cellist(kcell)%site
 p => cellist(kcell)%cptr
-!call get_stage(p,stage,region)
 stage = get_stage(p)
 if (stage == FINISHED) return
 ctype = cellist(kcell)%ctype
@@ -1334,8 +1244,6 @@ y = v(2)
 z = v(3)
 if (y < 0) return
 r2 = (x/Radius%x)**2 + (y/Radius%y)**2+ (z/Radius%z)**2
-!write(*,'(a,3i4,3f6.1)') 'site,Centre: ',site,Centre
-!write(*,'(a,3i4,4f6.1)') 'r2: ',x,y,z,Radius,r2
 if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
 	AntigenEncounter = .true.
 	write(logmsg,*) 'AntigenEncounter: ',kcell,site
