@@ -67,7 +67,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>4</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -2247,12 +2247,12 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
              <item row="8" column="0">
-              <widget class="QMyLabel" name="label_CHEMO_RADIUS">
+              <widget class="QMyLabel" name="label_NFDC">
                <property name="enabled">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
                <property name="text">
-                <string>label_CHEMO_RADIUS</string>
+                <string>label_NFDC</string>
                </property>
               </widget>
              </item>
@@ -2270,9 +2270,9 @@ p, li { white-space: pre-wrap; }
               </spacer>
              </item>
              <item row="8" column="2">
-              <widget class="QLineEdit" name="line_CHEMO_RADIUS">
+              <widget class="QLineEdit" name="line_NFDC">
                <property name="enabled">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
                <property name="maximumSize">
                 <size>
@@ -2508,13 +2508,6 @@ p, li { white-space: pre-wrap; }
                </property>
                <property name="maximum">
                 <number>999999999</number>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="3">
-              <widget class="QLabel" name="units_CHEMO_RADIUS">
-               <property name="text">
-                <string>µm</string>
                </property>
               </widget>
              </item>
@@ -3167,7 +3160,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>line_INFLAMM_DAYS1</tabstop>
   <tabstop>line_INFLAMM_DAYS2</tabstop>
   <tabstop>line_INFLAMM_LEVEL</tabstop>
-  <tabstop>line_CHEMO_RADIUS</tabstop>
+  <tabstop>line_NFDC</tabstop>
   <tabstop>line_BASE_EXIT_PROB</tabstop>
   <tabstop>line_NDAYS</tabstop>
   <tabstop>spin_SEED1</tabstop>

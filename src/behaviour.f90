@@ -259,7 +259,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 subroutine read_Bcell_params(ok)
 logical :: ok
-real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2, chemo_radius
+real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
 integer :: i, ic, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
 integer :: usetraffic, usechemo, computedoutflow
 character(4) :: logstr
@@ -319,7 +319,7 @@ read(nfcell,*) chemo(CXCL13)%bdry_conc
 read(nfcell,*) chemo(CXCL13)%diff_coef
 read(nfcell,*) chemo(CXCL13)%halflife
 read(nfcell,*) receptor(CXCR5)%strength
-read(nfcell,*) chemo_radius			        ! radius of chemotactic influence (um) NOT USED
+read(nfcell,*) BASE_NFDC			        ! base number of FDCs
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs

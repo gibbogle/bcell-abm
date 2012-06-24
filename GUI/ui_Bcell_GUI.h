@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Tue 1. May 11:28:18 2012
+** Created: Sun 24. Jun 17:46:12 2012
 **      by: Qt User Interface Compiler version 4.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -264,9 +264,9 @@ public:
     QMyLabel *label_INFLAMM_LEVEL;
     QSpacerItem *horizontalSpacer_24;
     QLineEdit *line_INFLAMM_LEVEL;
-    QMyLabel *label_CHEMO_RADIUS;
+    QMyLabel *label_NFDC;
     QSpacerItem *horizontalSpacer_27;
-    QLineEdit *line_CHEMO_RADIUS;
+    QLineEdit *line_NFDC;
     QMyLabel *label_BASE_EXIT_PROB;
     QSpacerItem *horizontalSpacer_28;
     QLineEdit *line_BASE_EXIT_PROB;
@@ -283,7 +283,6 @@ public:
     QMyLabel *label_NT_ANIMATION;
     QSpacerItem *horizontalSpacer_32;
     QSpinBox *spin_NT_ANIMATION;
-    QLabel *units_CHEMO_RADIUS;
     QLabel *units_NDAYS;
     QLabel *units_INFLAMM1;
     QLabel *units_INFLAMM2;
@@ -1464,23 +1463,23 @@ public:
 
         gridLayout_4->addWidget(line_INFLAMM_LEVEL, 7, 2, 1, 1);
 
-        label_CHEMO_RADIUS = new QMyLabel(layoutWidget2);
-        label_CHEMO_RADIUS->setObjectName(QString::fromUtf8("label_CHEMO_RADIUS"));
-        label_CHEMO_RADIUS->setEnabled(false);
+        label_NFDC = new QMyLabel(layoutWidget2);
+        label_NFDC->setObjectName(QString::fromUtf8("label_NFDC"));
+        label_NFDC->setEnabled(true);
 
-        gridLayout_4->addWidget(label_CHEMO_RADIUS, 8, 0, 1, 1);
+        gridLayout_4->addWidget(label_NFDC, 8, 0, 1, 1);
 
         horizontalSpacer_27 = new QSpacerItem(40, 13, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
         gridLayout_4->addItem(horizontalSpacer_27, 8, 1, 1, 1);
 
-        line_CHEMO_RADIUS = new QLineEdit(layoutWidget2);
-        line_CHEMO_RADIUS->setObjectName(QString::fromUtf8("line_CHEMO_RADIUS"));
-        line_CHEMO_RADIUS->setEnabled(false);
-        line_CHEMO_RADIUS->setMaximumSize(QSize(120, 16777215));
-        line_CHEMO_RADIUS->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        line_NFDC = new QLineEdit(layoutWidget2);
+        line_NFDC->setObjectName(QString::fromUtf8("line_NFDC"));
+        line_NFDC->setEnabled(true);
+        line_NFDC->setMaximumSize(QSize(120, 16777215));
+        line_NFDC->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
-        gridLayout_4->addWidget(line_CHEMO_RADIUS, 8, 2, 1, 1);
+        gridLayout_4->addWidget(line_NFDC, 8, 2, 1, 1);
 
         label_BASE_EXIT_PROB = new QMyLabel(layoutWidget2);
         label_BASE_EXIT_PROB->setObjectName(QString::fromUtf8("label_BASE_EXIT_PROB"));
@@ -1579,11 +1578,6 @@ public:
         spin_NT_ANIMATION->setMaximum(999999999);
 
         gridLayout_4->addWidget(spin_NT_ANIMATION, 14, 2, 1, 1);
-
-        units_CHEMO_RADIUS = new QLabel(layoutWidget2);
-        units_CHEMO_RADIUS->setObjectName(QString::fromUtf8("units_CHEMO_RADIUS"));
-
-        gridLayout_4->addWidget(units_CHEMO_RADIUS, 8, 3, 1, 1);
 
         units_NDAYS = new QLabel(layoutWidget2);
         units_NDAYS->setObjectName(QString::fromUtf8("units_NDAYS"));
@@ -1786,8 +1780,8 @@ public:
         QWidget::setTabOrder(line_RESIDENCE_TIME, line_INFLAMM_DAYS1);
         QWidget::setTabOrder(line_INFLAMM_DAYS1, line_INFLAMM_DAYS2);
         QWidget::setTabOrder(line_INFLAMM_DAYS2, line_INFLAMM_LEVEL);
-        QWidget::setTabOrder(line_INFLAMM_LEVEL, line_CHEMO_RADIUS);
-        QWidget::setTabOrder(line_CHEMO_RADIUS, line_BASE_EXIT_PROB);
+        QWidget::setTabOrder(line_INFLAMM_LEVEL, line_NFDC);
+        QWidget::setTabOrder(line_NFDC, line_BASE_EXIT_PROB);
         QWidget::setTabOrder(line_BASE_EXIT_PROB, line_NDAYS);
         QWidget::setTabOrder(line_NDAYS, spin_SEED1);
         QWidget::setTabOrder(spin_SEED1, spin_SEED2);
@@ -1823,7 +1817,7 @@ public:
         retranslateUi(MainWindow);
 
         stackedWidget->setCurrentIndex(0);
-        tabs->setCurrentIndex(2);
+        tabs->setCurrentIndex(4);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -2023,7 +2017,7 @@ public:
         label_INFLAMM_DAYS1->setText(QApplication::translate("MainWindow", "label_INFLAMM_DAYS1", 0, QApplication::UnicodeUTF8));
         label_INFLAMM_DAYS2->setText(QApplication::translate("MainWindow", "label_INFLAMM_DAYS2", 0, QApplication::UnicodeUTF8));
         label_INFLAMM_LEVEL->setText(QApplication::translate("MainWindow", "label_INFLAMM_LEVEL", 0, QApplication::UnicodeUTF8));
-        label_CHEMO_RADIUS->setText(QApplication::translate("MainWindow", "label_CHEMO_RADIUS", 0, QApplication::UnicodeUTF8));
+        label_NFDC->setText(QApplication::translate("MainWindow", "label_NFDC", 0, QApplication::UnicodeUTF8));
 #ifndef QT_NO_TOOLTIP
         label_BASE_EXIT_PROB->setToolTip(QApplication::translate("MainWindow", "Base B cell exit probability", 0, QApplication::UnicodeUTF8));
 #endif // QT_NO_TOOLTIP
@@ -2045,7 +2039,6 @@ public:
         label_NT_ANIMATION->setToolTip(QApplication::translate("MainWindow", "animation update interval", 0, QApplication::UnicodeUTF8));
 #endif // QT_NO_TOOLTIP
         label_NT_ANIMATION->setText(QApplication::translate("MainWindow", "label_NT_ANIMATION", 0, QApplication::UnicodeUTF8));
-        units_CHEMO_RADIUS->setText(QApplication::translate("MainWindow", "\302\265m", 0, QApplication::UnicodeUTF8));
         units_NDAYS->setText(QApplication::translate("MainWindow", "days", 0, QApplication::UnicodeUTF8));
         units_INFLAMM1->setText(QApplication::translate("MainWindow", "days", 0, QApplication::UnicodeUTF8));
         units_INFLAMM2->setText(QApplication::translate("MainWindow", "days", 0, QApplication::UnicodeUTF8));

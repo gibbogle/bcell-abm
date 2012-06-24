@@ -222,10 +222,9 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CXCL13 strength",
  "Relative strength of CXCL13 chemotactic influence"},
 
-{"CHEMO_RADIUS", 60.0, 10.0, 200.0,
-"Radius of chemotactic influence",
-"Range of chemotactic influence of an exit site on B cell motion.  At this distance the influence is reduced to 5% of its maximum value.\n\
-[um]"},
+{"NFDC", 100, 0, 0,
+"Number of FDCs",
+"Initial number of FDCs in the follicle"},
 
 {"BASE_EXIT_PROB", 0.008, 0.0, 0.0,
 "Base B cell exit probability",

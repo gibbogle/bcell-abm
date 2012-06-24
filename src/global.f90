@@ -112,7 +112,7 @@ integer, parameter :: GONE = 2
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
-integer, parameter :: BASE_NFDC = 50
+!integer, parameter :: BASE_NFDC = 50
 logical, parameter :: use_FDCs = .true.
 
 ! Differentiation probabilities
@@ -283,6 +283,7 @@ real :: BC_FRACTION
 real :: BC_RADIUS
 real :: BLOB_RADIUS
 real :: FLUID_FRACTION
+integer :: BASE_NFDC
 
 real(DP) :: GAMMA                           ! controls crowding
 real(DP) :: BETA                            ! speed: 0 < beta < 1
