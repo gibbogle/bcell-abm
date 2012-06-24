@@ -90,21 +90,15 @@ do irel = 1,nreldir
             if (fullslots2 == BOTH) then
                 cycle
             elseif (fullslots2 /= 0) then
-!                p(irel) = dirprob(irel)*GAMMA
                 p(dir1) = dirprob(irel)*GAMMA
             else
-!                p(irel) = dirprob(irel)
                 p(dir1) = dirprob(irel)
             endif
-!            psum = psum + p(irel)
-!            saveslots2(irel) = fullslots2
             saveslots2a(dir1) = fullslots2
 		endif
 	endif
-!	savesite2(:,irel) = site2
 	savesite2a(:,dir1) = site2
 enddo
-!if (kcell == 1) write(*,'(10f7.3)') p
 psum = sum(p)
 if (psum == 0) then
 	go = .false.
@@ -118,15 +112,12 @@ R = 0
 R = par_uni(kpar)
 pR = psum*R
 psumm = 0
-!do irel = 1,nreldir
 do dir1 = 1,njumpdirs
    	psumm = psumm + p(dir1)
    	if (pR <= psumm) then
    		exit
    	endif
 enddo
-!if (irel > nreldir) irel = nreldir
-!dir1 = reldir(lastdir1,irel)
 if (dir1 > njumpdirs) then
     dir1 = 0
     do k = 1,njumpdirs
@@ -145,9 +136,7 @@ if (dir1 > njumpdirs) then
         stop
     endif
 endif
-!site2 = savesite2(:,irel)
 site2 = savesite2a(:,dir1)
-!fullslots2 = saveslots2(irel)
 fullslots2 = saveslots2a(dir1)
 ! new code
 if (diagonal_jumps) then
@@ -194,14 +183,9 @@ real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
 real :: tnow, v(3), vsum(3), f
 logical :: ischemo, cognate
 
-!dbug = .false.
-!if (kcell == 11803) then
-!    dbug = .true.
-!endif
 tnow = istep*DELTA_T
 cell => cellist(kcell)
 cognate = associated(cell%cptr)
-!cognate = allocated(cell%cptr)
 	
 id = cell%id
 site1 = cell%site
@@ -228,20 +212,12 @@ enddo
 
 vsum = 0
 if (ischemo) then
-!	if (cognate) then
-!		write(*,*) 'receptor used: ',receptor(:)%used
-!	endif
     do kr = 1,MAX_RECEPTOR
         if (receptor(kr)%used) then
 			ichemo = receptor(kr)%chemokine
             f = receptor(kr)%sign*cell%receptor_level(kr)*receptor(kr)%strength
 			v = chemo(ichemo)%grad(:,site1(1),site1(2),site1(3))
-!	    	vsum = vsum + (f/norm(v))*v
 	    	vsum = vsum + f*v
-!	    	if (dbug) then
-!	    		if (f > 0) write(*,'(3i4,2x,a,f6.1,6f8.3)') site1,receptor(kr)%name,f,v,vsum
-!	    		if (kr == 5) write(*,*)
-!	    	endif
 	    endif
 	enddo
 	! For exit chemotaxis:
@@ -268,7 +244,6 @@ if (fullslots1 /= BOTH) then
     R = par_uni(kpar)
     if (R <= stay_prob) then    ! case of no jump
 	    go = .false.
-!	    if (dbug) write(*,*) 'R < stay_prob: ',istep,R,stay_prob
         return
     endif
 endif
@@ -278,7 +253,6 @@ stype = struct_type(int(cell%ctype))     ! COG_TYPE_TAG or NONCOG_TYPE_TAG
 
 ! Compute jump probabilities in the absence of chemotaxis
 site1 = cell%site
-!if (dbug) write(nfout,*) kcell,site1
 lastdir1 = cell%lastdir
 p = 0
 savesite2a = 0
@@ -310,7 +284,6 @@ do irel = 1,nreldir
             endif
             saveslots2a(dir1) = fullslots2
         else
-!            if (dbug) write(*,'(3i4,2x,2i6)') site2,indx2
 	        nout = nout + 1
 		endif
 	endif
@@ -318,7 +291,6 @@ do irel = 1,nreldir
 enddo
 if (sum(p) == 0) then
     go = .false.
-!	if (dbug) write(*,*) 'sum(p) = 0: ',istep,nfull,nrest,nout,nreldir
     return
 endif
 
@@ -331,7 +303,6 @@ psum = sum(p)
 
 if (psum == 0) then
 	go = .false.
-!	if (dbug) write(*,*) 'psum = 0: ',istep
 	return
 else
     go = .true.
@@ -386,7 +357,6 @@ cell%site = site2
 cell%lastdir = dir1
 occupancy(site2(1),site2(2),site2(3))%indx(kslot2) = kcell
 occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = 0
-
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -418,7 +388,6 @@ else
 	sweep1 = nsweeps-1
 	dsweep = -1
 endif
-!do sweep = 0,nsweeps-1
 do sweep = sweep1,sweep2,dsweep
 	if (Mnodes > 1) then
 	!$omp parallel do
@@ -479,11 +448,9 @@ do kcell = 1,nlist
         stop
     endif
 	call chemo_jumper(kcell,indx,slot,go,kpar)
-!	call jumper(kcell,indx,slot,go,kpar)
     cell%step = istep
 enddo
 end subroutine
-
 
 !-----------------------------------------------------------------------------------------
 ! In this version the parallel section is in this subroutine, requiring the use of
@@ -543,9 +510,7 @@ else
     nsweeps = 2
 endif
 
-!write(*,*) 'start sweep loop'
 do sweep = 0,nsweeps-1
-!write(*,*) 'sweep: ',sweep
 
 !$omp parallel PRIVATE(kcell,kpar,cell,x_lo,x_hi,site1,xlocal,indx,slot,go,cnt)
 kpar = omp_get_thread_num()
@@ -976,7 +941,6 @@ integer :: axes(3,27) = reshape( (/ &
 
 if (diagonal_jumps) then
 	nax = naxes(jump)
-!	if (dbug) write(nfres,*) 'fix_lastdir: jump,nax: ',nax,jump
 	if (nax == 0) then
 	    write(logmsg,*) 'Should not get here: fix_lastdir: nax=0'
 		call logger(logmsg)
@@ -986,7 +950,6 @@ if (diagonal_jumps) then
 		fix_lastdir = axes(1,jump)
 	else
 		k = random_int(1,nax,kpar)
-!		if (dbug) write(nfres,*) 'random_int: ',k
 		fix_lastdir = axes(k,jump)
 	endif
 else

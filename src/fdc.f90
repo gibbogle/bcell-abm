@@ -51,7 +51,6 @@ call AssignFDCsites(1,nassigned,ok)
 if (.not.ok) then
 	return
 endif
-!write(*,*) 'nassigned: ',nassigned
 FDClist(1)%nsites = nassigned
 NFDC = 1
 nlist = nlist - nassigned
@@ -93,8 +92,6 @@ if (method == 1) then
 						endif
 						FDClist(NFDC)%nsites = nassigned
 						nlist = nlist - nassigned
-	!					write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
-	!					call logger(logmsg)
 						if (NFDC == NFDCrequired) exit outer_loop
 					endif
 				enddo
@@ -212,9 +209,6 @@ do ifdc = 1,NFDC
 enddo
 end subroutine
 
-
-
-
 !-----------------------------------------------------------------------------------------
 ! All associations of sites with DC are recomputed.
 ! That is for every site (x,y,z), create the list of DC that are near this site:
@@ -231,10 +225,8 @@ integer :: xdc, ydc, zdc, xmin, xmax, ymin, ymax, zmin, zmax
 integer :: idc, kdc, k, x, y, z, y2, z2, d2, site(3), nassigned
 logical :: added
 
-!write(*,*) 'reassign_DC'
 
 occupancy(:,:,:)%DC(0) = 0
-!occupancy(:,:,:)%cDC(0) = 0
 allocate(perm(MAX_DC))
 do k = 1, NDC
     perm(k) = k
@@ -329,13 +321,11 @@ integer :: k, i, kcell, indx(2), site0(3), site1(3), site2(3), step(3)
 if (DClist(idc)%nsites /= NDCsites) return
 step = neumann(:,dir)
 site0 = DClist(idc)%site
-!write(*,*) 'moveDC: ',idc,dir,'  ',site0,'  ',step
 do k = 2,NDCsites
     if (all(DCoffset(:,k) == step)) then       ! this is in the direction of step
         ! move site contents by 3 sites in opposite direction to step
         site1 = site0 - step       ! old DC site
         site2 = site0 + 2*step     ! new DC site
-!        write(*,'(a,7i4)') 'step dir: ',k,site1,site2
         indx = occupancy(site2(1),site2(2),site2(3))%indx
         if (any(indx == OUTSIDE_TAG)) then
             write(*,*) 'moveDC: site2 outside!'
@@ -359,7 +349,6 @@ do k = 2,NDCsites
         ! move site contents by 1 site in opposite direction to step
         site1 = site0 + DCoffset(:,k)       ! old DC site, new T cell site
         site2 = site1 + step                ! new DC site, old T cell site
-!        write(*,'(a,7i4)') 'other dir: ',k,site1,site2
         indx = occupancy(site2(1),site2(2),site2(3))%indx
         if (any(indx == OUTSIDE_TAG)) then
             write(*,*) 'moveDC: site2 outside!'
@@ -402,8 +391,6 @@ do x = 1,NX
         enddo
     enddo
 enddo
-!write(*,*) 'DC proximity counts: ',cnt
-
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -444,10 +431,6 @@ do k = 2,NDCsites
     ! Reduce available blob sites only if the site is within the blob.
     ! A DC site should never fall outside, I think.  Check this.
     if (.not.inside_xyz(site1)) then
-!		write(*,*) 'Error: AssignFDCsites: site outside grid: '
-!		write(*,*) 'FDC site: ',site
-!		write(*,*) 'DCoffset: ',k,DCoffset(:,k)
-!		write(*,*) 'site1: ',site1
 		call logger("Error: AssignFDCsites: site outside grid")
 		return
 	endif

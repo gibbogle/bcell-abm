@@ -46,10 +46,10 @@ MODULE Par_Zig_mod
 
    PUBLIC  :: par_zigset, par_zigfree, par_shr3, par_uni, par_rnor, par_rexp, par_test
 
-
 CONTAINS
 
-
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
 SUBROUTINE par_zigset( npar, par_jsrseed, grainsize)
 
    INTEGER, INTENT(IN)  :: npar, grainsize, par_jsrseed(0:*)
@@ -112,6 +112,8 @@ enddo
 RETURN
 END SUBROUTINE par_zigset
 
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
 subroutine par_zigfree
 deallocate(par_jsr)
 deallocate(par_kn)
@@ -122,7 +124,9 @@ deallocate(par_we)
 deallocate(par_fe)
 end subroutine
 
+!--------------------------------------------------------------------------
 !  Generate random 32-bit integers
+!--------------------------------------------------------------------------
 FUNCTION par_shr3(kpar) RESULT( ival )
    INTEGER  ::  ival, kpar
    integer :: jz, jsr
@@ -137,9 +141,9 @@ FUNCTION par_shr3(kpar) RESULT( ival )
    RETURN
 END FUNCTION par_shr3
 
-
-
+!--------------------------------------------------------------------------
 !  Generate uniformly distributed random numbers, sequence kpar
+!--------------------------------------------------------------------------
 FUNCTION par_uni(kpar) RESULT( fn_val )
 	integer :: kpar
    REAL(DP)  ::  fn_val
@@ -163,7 +167,9 @@ FUNCTION par_test(kpar) RESULT( fn_val )
     return
 end function
 
+!--------------------------------------------------------------------------
 !  Generate random normals, sequence kpar
+!--------------------------------------------------------------------------
 FUNCTION par_rnor(kpar) RESULT( fn_val )
    REAL(DP)             ::  fn_val
    integer :: kpar
@@ -209,9 +215,9 @@ FUNCTION par_rnor(kpar) RESULT( fn_val )
    RETURN
 END FUNCTION par_rnor
 
-
-
+!--------------------------------------------------------------------------
 !  Generate random exponentials, sequence kpar
+!--------------------------------------------------------------------------
 FUNCTION par_rexp(kpar) RESULT( fn_val )
    REAL(DP)  ::  fn_val
    integer :: kpar

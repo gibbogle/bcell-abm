@@ -8,12 +8,9 @@ module ode_diffuse
 
 use chemokine
 use omp_rkf45
-!use behaviour
 
 implicit none
 
-!real(REAL_KIND), parameter :: Kdiff(4) = (/0.01,0.01,0.01,0.01/)
-!real(REAL_KIND), parameter :: Kdecay(4) = (/0.002,0.002,0.002,0.002/)
 real(REAL_KIND), parameter :: BASE_CHEMOKINE_SECRETION = 0.012
 
 integer :: ivdbug
@@ -317,16 +314,6 @@ do ichemo = 1,MAX_CHEMO
 			call logger(logmsg)
 		endif
 		flag = 2
-!		do j = 1,10
-!			x = xmid + j
-!			i = ODEdiff%ivar(x,ymid,zmid)
-!			if (i > 0) then
-!				ctemp(j) = state(i)
-!			else
-!				ctemp(j) = 0
-!			endif
-!		enddo
-!		write(*,'(10f7.2)') ctemp
 		call CheckConvergence(state,prev_state,ok)
 		if (ok) exit
 		prev_state = state
@@ -375,7 +362,6 @@ if (abs(dfmax) < tol) then
 else
 	ok = .false.
 endif
-!write(*,'(a,2e12.3,4i6)') 'dfmax: ',dfmax, dsmax, imax, ODEdiff%varsite(imax,:)
 end subroutine
 
 !----------------------------------------------------------------------------------
@@ -397,8 +383,6 @@ do i = 1,ODEdiff%nvars
 	if (state(i) < smin) smin = state(i)
 	if (state(i) > smax) smax = state(i)
 enddo
-!write(*,'(a,i2,2f8.3,a,i4)') 'min, max: ',ichemo,smin,smax,'  nz: ',nz
-!write(*,*)
 end subroutine
 
 
