@@ -226,7 +226,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Number of FDCs",
 "Initial number of FDCs in the follicle"},
 
-{"BASE_EXIT_PROB", 0.008, 0.0, 0.0,
+{"BASE_EXIT_PROB", 0.007, 0.0, 0.0,
 "Base B cell exit probability",
 "A cell located at a boundary site on the lower exit surface has a probability of egress in a time step.\n\
 The specified probability applies to residence time Tres = 12 hr, and will be scaled appropriately for a different Tres value."},

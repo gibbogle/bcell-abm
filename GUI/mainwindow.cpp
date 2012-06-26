@@ -1016,8 +1016,8 @@ void MainWindow::loadResultFile()
 			R->pData[i] = new double[R->nsteps];
 		}
 	}
-	step = -1;
-	indata = false;
+//	step = -1;
+    indata = false;
 	do {
 		line = in.readLine();
 		if (line.length() > 0) {
@@ -1415,7 +1415,8 @@ if (NO_USE_PGRAPH) {
 	LOG_MSG("preconnection: Allocated result set arrays");
 
 	newR->tnow[0] = 0;	// These are not the right initial values
-	step = -1;
+    step = -1;
+//    step = 0;
 
 	// Initialize graphs
 	initializeGraphs(newR);
@@ -1655,12 +1656,15 @@ void MainWindow::showSummary()
 
 	mutex1.lock();
 
-	hour = summaryData[0]*DELTA_T/60;
-	progress = int(100.*hour/hours);
+//	hour = summaryData[0]*DELTA_T/60;
+    hour = summaryData[1]*DELTA_T/60;
+    progress = int(100.*hour/hours);
 	progressBar->setValue(progress);
 	QString hourstr = QString::number(int(hour));
 	hour_display->setText(hourstr);
 
+//    sprintf(msg,"showSummary: step: %d summaryData[0]: %d hour: %f",step,summaryData[0],hour);
+//    LOG_MSG(msg);
 	QString casename = newR->casename;
 	newR->tnow[step] = step;		//summaryData[0];
 

@@ -1517,7 +1517,7 @@ subroutine get_scene(nBC_list,BC_list,nFDC_list,FDC_list,nbond_list,bond_list) B
 use, intrinsic :: iso_c_binding
 integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond_list(*)
 integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
-integer :: r, g, b
+integer :: col(3)
 integer :: x, y, z
 real :: dcstate
 integer :: ifdcstate, ibcstate, stype, ctype, stage, region
@@ -1528,49 +1528,50 @@ integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
 integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
 integer, parameter :: axis_bottom = -4	! identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 integer, parameter :: ninfo = 5			! the size of the info package for a cell (number of integers)
+integer, parameter :: nax = 6			! number of points used to delineate the follicle
 
 k = 0
-! Need some markers to delineate the follicle extent.  These 7 "cells" are used to convey the follicle centre
-! and the approximate ellipsoidal blob limits in the 3 axis directions.
-do k = 1,7
+! Need some markers to delineate the follicle extent.  These nax "cells" are used to convey (the follicle centre
+! and) the approximate ellipsoidal blob limits in the 3 axis directions.
+do k = 1,nax
 	select case (k)
+!	case (1)
+!		x = Centre(1) + 0.5
+!		y = Centre(2) + 0.5
+!		z = Centre(3) + 0.5
+!		site = (/x, y, z/)
+!		ibcstate = axis_centre
 	case (1)
-		x = Centre(1) + 0.5
-		y = Centre(2) + 0.5
-		z = Centre(3) + 0.5
-		site = (/x, y, z/)
-		ibcstate = axis_centre
-	case (2)
 		x = Centre(1) - Radius%x - 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
-	case (3)
+	case (2)
 		x = Centre(1) + Radius%x + 2
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
-	case (4)
+	case (3)
 		x = Centre(1) + 0.5
 		y = Centre(2) - Radius%y - 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_bottom
-	case (5)
+	case (4)
 		x = Centre(1) + 0.5
 		y = Centre(2) + Radius%y + 2
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
-	case (6)
+	case (5)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) - Radius%z - 2
 		site = (/x, y, z/)
 		ibcstate = axis_end
-	case (7)
+	case (6)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
 		z = Centre(3) + Radius%z + 2
@@ -1593,10 +1594,10 @@ do kc = 1,lastcogID
 		k = k+1
 		j = ninfo*(k-1)
 		site = cellist(kcell)%site
-		call BcellColour(kcell,r,g,b)
-		BC_list(j+1) = kc-1 + 7
+		call BcellColour(kcell,col)
+		BC_list(j+1) = kc-1 + nax
 		BC_list(j+2:j+4) = site
-		BC_list(j+5) = rgb(r,g,b)
+		BC_list(j+5) = rgb(col)
 	endif
 enddo
 nBC_list = k
@@ -1622,60 +1623,62 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! Rendered cognate B cell colour depends on stage, state, receptor expression level.
+! col(:) = (r,g,b)
 !-----------------------------------------------------------------------------------------
-subroutine BcellColour(kcell,r,g,b)
-integer :: kcell, r, g, b
+subroutine BcellColour(kcell,col)
+integer :: kcell, col(3)
 integer :: stage, status
 type(cog_type), pointer :: p
+integer, parameter :: WHITE(3) = (/255,255,255/)
+integer, parameter :: RED(3) = (/255,0,0/)
+integer, parameter :: GREEN(3) = (/0,255,0/)
+integer, parameter :: BLUE(3) = (/0,0,255/)
+integer, parameter :: DEEPRED(3) = (/200,0,0/)
+integer, parameter :: DEEPBLUE(3) = (/30,20,255/)
+integer, parameter :: DEEPGREEN(3) = (/0,150,0/)
+integer, parameter :: LIGHTRED(3) = (/255,70,90/)
+integer, parameter :: LIGHTBLUE(3) = (/90,90,255/)
+integer, parameter :: LIGHTGREEN(3) = (/100,255,100/)
+integer, parameter :: DEEPORANGE(3) = (/240,70,0/)
+integer, parameter :: LIGHTORANGE(3) = (/255,130,50/)
+integer, parameter :: YELLOW(3) = (/255,255,0/)
+integer, parameter :: DEEPPURPLE(3) = (/180,180,30/)
+integer, parameter :: LIGHTPURPLE(3) = (/230,230,100/)
+integer, parameter :: DEEPBROWN(3) = (/130,70,0/)
+integer, parameter :: LIGHTBROWN(3) = (/200,100,0/)
 
 p => cellist(kcell)%cptr
 stage = get_stage(p)
 status = get_status(p)
 select case(stage)
 case (NAIVE)
-	r = 40
-	g = 140
-	b = 0
+	col = DEEPBLUE
 case (ANTIGEN_MET, CCR7_UP)
-	r = 60
-	g = 230
-	b = 0
+	col = LIGHTBLUE
 case (TCELL_MET, EBI2_UP)
-	r = 30
-	g = 170
-	b = 170
-case (DIVIDING)
+	col = LIGHTGREEN
+case (DIVIDING) 
 	if (status == BCL6_HI) then
-		r = 250
-		g = 250
-		b = 40
+		col = YELLOW
 	else
-		r = 90
-		g = 230
-		b = 230
+		col = DEEPGREEN
 	endif
 case (GCC_COMMIT, BCL6_UP)
-	r = 250
-	g = 250
-	b = 40
+	col = YELLOW
 case (PLASMA)
-	r = 240
-	g = 100
-	b = 60
+	col = LIGHTBROWN
 case default
-	r = 255
-	g = 255
-	b = 255
+	col = WHITE
 end select
 end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! Pack the colours (r,g,b) into an integer.
 !-----------------------------------------------------------------------------------------
-integer function rgb(r, g, b)
-integer :: r, g, b
+integer function rgb(col)
+integer :: col(3)
 
-rgb = ishft(r,16) + ishft(g,8) + b
+rgb = ishft(col(1),16) + ishft(col(2),8) + col(3)
 end function
 
 !-----------------------------------------------------------------------------------------
@@ -1743,6 +1746,7 @@ use_TCP = .false.   ! because this is called from bcell_main()
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! Advance simulation through one time step (DELTA_T)
 !-----------------------------------------------------------------------------------------
 subroutine simulate_step(res) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: simulate_step  
@@ -1772,7 +1776,11 @@ if (sim_dbug) then
 	call logger(logmsg)
 endif
 
-if (sim_dbug) call check_cognate_list
+if (sim_dbug) then
+	kcell = cognate_list(1)
+!	write(*,*) cellist(kcell)%site
+	call check_cognate_list
+endif
 
 if (test_chemotaxis) then
 	if (istep == 1) then
@@ -1802,7 +1810,11 @@ if (mod(istep,240) == 0) then
     total_in = 0
     total_out = 0
 !	call cpu_time(t1)
-    call UpdateFields
+	if (use_SS_fields) then
+		if (sim_dbug) write(nflog,*) 'call UpdateSSFields'
+		call UpdateSSFields
+		if (sim_dbug) write(nflog,*) 'did UpdateSSFields'
+	endif
 !	call cpu_time(t2)
 !	tfields = t2 - t1
 !    write(*,'(a,f8.1,a,f8.1)') 'Times: mover: ',tmover,'  fields: ',tfields
@@ -1816,6 +1828,11 @@ if (mod(istep,240) == 0) then
 	endif
 endif
 
+if (.not.use_SS_fields) then
+	if (sim_dbug) write(nflog,*) 'call UpdateFields'
+	call UpdateFields(DELTA_T)
+	if (sim_dbug) write(nflog,*) 'did UpdateFields'
+endif
 if (sim_dbug) write(nflog,*) 'call mover'
 call cpu_time(t1)
 call mover(ok)
@@ -1854,14 +1871,6 @@ if (use_traffic) then
 endif
 if (sim_dbug) call check_xyz(3)
 
-if (sim_dbug) then
-	write(nflog,*) 'call balancer'
-	call checkcellcount(ok)
-	if (.not.ok) then
-		res = 1
-		return
-	endif
-endif
 call balancer(ok)
 if (sim_dbug) then
 	write(nflog,*) 'did balancer' 

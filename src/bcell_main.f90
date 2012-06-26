@@ -12,6 +12,7 @@ integer :: status, nlen, cnt, i, inbuflen, outbuflen
 integer :: jstep, hour, ntot, ncog, inflow
 character*(128) :: b, c, progname
 real :: vasc
+real(8) :: t1, t2
 
 runfile = 'bcell_main.out'
 open(nfrun,file=runfile,status='replace')
@@ -68,6 +69,8 @@ write(nfrun,*) 'infile: ',infile
 write(nfrun,*) 'outfile: ',outfile
 call execute(ncpu,infile,inbuflen,outfile,outbuflen)
 !call get_dimensions(NX,NY,NZ,Nsteps)
+call cpu_time(t1)
+
 do jstep = 1,Nsteps
 	call simulate_step(res)
 	if (res /= 0) then
@@ -86,5 +89,7 @@ do jstep = 1,Nsteps
 		write(nfrun,'(4(a,i6),a,f6.2)') 'Hour: ',hour,' ncells: ',ntot,' ncog: ',ncog,' inflow/hr: ',inflow,' vasc: ',vasc	
 	endif
 enddo
+call cpu_time(t2)
+write(*,*) 'time: ',t2-t1
 end
 

@@ -101,6 +101,7 @@ real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the l
 ! Diffusion parameters
 logical, parameter :: use_ode_diffusion = .false.	! otherwise use the original method in fields.f90 
 integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion computation
+logical, parameter :: use_SS_fields = .true.
 
 ! B cell parameters
 logical, parameter :: random_cognate = .false.          ! number of cognate seed cells is random or determined

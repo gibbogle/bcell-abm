@@ -812,7 +812,7 @@ end subroutine
 ! Recompute steady-state concentration fields if there has been a significant change in
 ! the B cell population.
 !----------------------------------------------------------------------------------------
-subroutine UpdateFields
+subroutine UpdateSSFields
 integer, save :: NBlast = 0
 integer :: x, y, z, site(3)
 real :: delNB
@@ -841,6 +841,50 @@ NBlast = NBcells
 end subroutine
 
 !----------------------------------------------------------------------------------------
+! Advance the dynamic solution for chemokine concentration fields through time interval dtstep.
+! For now only treat the case of NOT use_ODE_diffusion, because use_ODE_diffusion is a bit
+! more complicated (should store derivatives).
+!----------------------------------------------------------------------------------------
+subroutine UpdateFields(dtstep)
+real :: dtstep
+type(chemokine_type), pointer :: Cptr
+integer :: ichemo, it, nt = 4
+real :: Kdiffusion, Kdecay, dt
+integer :: z1, z2, n, kpar
+real, allocatable :: C_par(:,:,:)
+
+!write(*,*) 'UpdateFields: zoffset: ',zoffset
+dt = dtstep/nt
+do ichemo = 1,MAX_CHEMO
+	if (.not.chemo(ichemo)%used) cycle
+!	write(*,*) 'UpdateFields: ichemo: ',ichemo
+	Cptr => chemo(ichemo)
+	Kdiffusion = Cptr%diff_coef
+	Kdecay = Cptr%decay_rate
+	do it = 1,nt
+		!$omp parallel do private(z1,z2,n,C_par,dt)
+		do kpar = 0,Mnodes-1
+			if (Mnodes == 1) then
+				z1 = blobrange(3,1)
+				z2 = blobrange(3,2)
+			else
+    	        z1 = max(zoffset(2*kpar) + 1,blobrange(3,1))
+	            z2 = min(zoffset(2*kpar+2),blobrange(3,2))
+			endif
+			n = z2 - z1 + 1
+			dt = dtstep/nt
+			allocate(C_par(NX,NY,n))
+			call par_evolve_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,z1,z2,dt,kpar)
+			Cptr%conc(:,:,z1:z2) = C_par(:,:,1:n)
+			deallocate(C_par)
+		enddo
+	enddo
+!	write(*,*) 'call gradient'
+	call gradient(Cptr%conc,Cptr%grad)
+enddo
+end subroutine
+
+!----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine ShowConcs
 integer :: x, y, z, i
@@ -860,58 +904,6 @@ do i = 1,MAX_CHEMO
 enddo
 end subroutine
 
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-!subroutine EvolveS1P(nt,totsig)
-!integer :: nt
-!real :: totsig
-!integer :: x, y, z, site(3), isig, i, iblast
-!real :: dt, sum, sig
-!
-!dt = nt*DELTA_T
-!call evolve(S1P,S1P_KDIFFUSION,S1P_KDECAY,S1P_conc,dt)
-!call gradient(S1P_conc,S1P_grad)
-!end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-!subroutine EvolveOXY(nt,totsig)
-!integer :: nt
-!real :: totsig
-!integer :: x, y, z, site(3), isig, i, iblast
-!real :: dt, sum, sig
-!
-!dt = nt*DELTA_T
-!call evolve(OXY,OXY_KDIFFUSION,OXY_KDECAY,OXY_conc,dt)
-!call gradient(OXY_conc,OXY_grad)
-!end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-!subroutine EvolveCCL21(nt,totsig)
-!integer :: nt
-!real :: totsig
-!integer :: x, y, z, site(3), isig, i, iblast
-!real :: dt, sum, sig
-!
-!dt = nt*DELTA_T
-!call evolve(CCL21,CCL21_KDIFFUSION,CCL21_KDECAY,CCL21_conc,dt)
-!call gradient(CCL21_conc,CCL21_grad)
-!end subroutine
-
-!----------------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------------
-!subroutine EvolveCXCL13(nt,totsig)
-!integer :: nt
-!real :: totsig
-!integer :: x, y, z, site(3), isig, i, iblast
-!real :: dt, sum, sig
-!
-!dt = nt*DELTA_T
-!call evolve(CXCL13,CXCL13_KDIFFUSION,CXCL13_KDECAY,CXCL13_conc,dt)
-!call gradient(CXCL13_conc,CXCL13_grad)
-!end subroutine
 
 !----------------------------------------------------------------------------------------
 ! Solve for steady-state chemokine concentrations, given levels at source sites, using
@@ -945,8 +937,8 @@ do ichemo = 1,MAX_CHEMO
 	            z1 = blobrange(3,1)
 	            z2 = blobrange(3,2)
 	        else
-    	        z1 = zoffset(2*kpar) + 1
-	            z2 = zoffset(2*kpar+2)
+    	        z1 = max(zoffset(2*kpar) + 1,blobrange(3,1))
+	            z2 = min(zoffset(2*kpar+2),blobrange(3,2))
 	        endif
 			n = z2 - z1 + 1
 			allocate(C_par(NX,NY,n))
@@ -1037,6 +1029,119 @@ do zpar = 1,z2-z1+1
 enddo
 end subroutine
 
+
+
+!----------------------------------------------------------------------------------------
+! Updates concentrations through a timestep dt, solving the diffusion-decay eqtn by a 
+! simple explicit method.  This assumes concentration boundary conditions.
+!----------------------------------------------------------------------------------------
+subroutine par_evolve_A(ichemo,C,Kdiffusion,Kdecay,Ctemp,z1,z2,dt,kpar)
+integer :: ichemo, z1, z2, kpar
+real :: C(:,:,:), Ctemp(:,:,:)
+real :: Kdiffusion, Kdecay, dt
+real :: C0, sum, dV, dMdt
+integer :: x, y, z, zpar, xx, yy, zz, nb, k, indx(2), i
+logical :: source_site
+
+!write(*,*) 'par_evolve_A: ',ichemo,kpar,z1,z2,dt
+dV = DELTA_X**3
+do zpar = 1,z2-z1+1
+	z = zpar + z1-1
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
+		    indx = occupancy(x,y,z)%indx
+            if (indx(1) < 0) cycle      ! outside or DC
+            source_site = .false.
+            if (associated(occupancy(x,y,z)%bdry)) then
+                ! Check for chemo bdry site - no change to the concentration at such a site
+                do i = 1,MAX_CHEMO
+	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
+		                C(x,y,z) = chemo(i)%bdry_conc
+			            Ctemp(x,y,zpar) = C(x,y,z)
+				        source_site = .true.
+					endif
+				enddo
+			elseif (ichemo == CXCL13 .and. occupancy(x,y,z)%FDC_nbdry > 0) then
+                C(x,y,z) = chemo(ichemo)%bdry_conc
+	            Ctemp(x,y,zpar) = C(x,y,z)
+		        source_site = .true.
+            endif
+            if (.not.source_site) then
+				C0 = C(x,y,z)
+			    sum = 0
+			    nb = 0
+			    do k = 1,6
+				    xx = x + neumann(1,k)
+				    yy = y + neumann(2,k)
+				    zz = z + neumann(3,k)
+				    if (outside_xyz(xx,yy,zz)) cycle
+				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+				    nb = nb + 1
+				    sum = sum + C(xx,yy,zz)
+			    enddo
+			    dMdt = Kdiffusion*DELTA_X*(sum - nb*C0) - Kdecay*C0*dV ! + influx(x,y,z)
+			    Ctemp(x,y,zpar) = (C0*dV + dMdt*dt)/dV
+			endif
+		enddo
+	enddo
+enddo
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! Updates concentrations through a timestep dt, solving the diffusion-decay eqtn by a 
+! simple explicit method.  This assumes concentration boundary conditions.
+! Could be parallelized?
+!----------------------------------------------------------------------------------------
+subroutine evolve(ichemo,Kdiffusion,Kdecay,C,dt)
+integer :: ichemo
+real :: C(:,:,:)
+real :: Kdiffusion, Kdecay, dt
+real :: dx2diff, total, maxchange, C0, dC, sum, dV, dMdt
+real, parameter :: alpha = 0.99
+integer :: x, y, z, xx, yy, zz, nb, nc, k, it, i
+real, allocatable :: Ctemp(:,:,:)
+logical :: bdry_conc
+
+dV = DELTA_X**3
+allocate(Ctemp(NX,NY,NZ))
+do z = blobrange(3,1),blobrange(3,2)
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			C0 = C(x,y,z)
+            bdry_conc = .false.
+            if (associated(occupancy(x,y,z)%bdry)) then
+                ! Check for S1P bdry site - no change to the concentration at such a site
+                do i = 1,MAX_CHEMO
+	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
+		                C(x,y,z) = chemo(i)%bdry_conc
+			            Ctemp(x,y,z) = C(x,y,z)
+				        bdry_conc = .true.
+					endif
+				enddo
+            endif
+            if (.not.bdry_conc) then
+			    sum = 0
+			    nb = 0
+			    do k = 1,6
+				    xx = x + neumann(1,k)
+				    yy = y + neumann(2,k)
+				    zz = z + neumann(3,k)
+				    if (outside_xyz(xx,yy,zz)) cycle
+				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+				    nb = nb + 1
+				    sum = sum + C(xx,yy,zz)
+			    enddo
+			    dMdt = Kdiffusion*DELTA_X*(sum - nb*C0) - Kdecay*C0*dV ! + influx(x,y,z)
+			    Ctemp(x,y,z) = (C0*dV + dMdt*dt)/dV
+			endif
+		enddo
+	enddo
+enddo
+C = Ctemp
+deallocate(Ctemp) 
+end subroutine
+
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine gradient(C,grad)
@@ -1111,60 +1216,4 @@ do z = blobrange(3,1),blobrange(3,2)
 	enddo
 enddo
 end subroutine
-
-!----------------------------------------------------------------------------------------
-! Updates concentrations through a timestep dt, solving the diffusion-decay eqtn by a 
-! simple explicit method.  This assumes concentration boundary conditions.
-! Could be parallelized?
-!----------------------------------------------------------------------------------------
-subroutine evolve(ichemo,Kdiffusion,Kdecay,C,dt)
-integer :: ichemo
-real :: C(:,:,:)
-real :: Kdiffusion, Kdecay, dt
-real :: dx2diff, total, maxchange, C0, dC, sum, dV, dMdt
-real, parameter :: alpha = 0.99
-integer :: x, y, z, xx, yy, zz, nb, nc, k, it, i
-real, allocatable :: Ctemp(:,:,:)
-logical :: bdry_conc
-
-dV = DELTA_X**3
-allocate(Ctemp(NX,NY,NZ))
-do z = blobrange(3,1),blobrange(3,2)
-    do y = blobrange(2,1),blobrange(2,2)
-        do x = blobrange(1,1),blobrange(1,2)
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
-			C0 = C(x,y,z)
-            bdry_conc = .false.
-            if (associated(occupancy(x,y,z)%bdry)) then
-                ! Check for S1P bdry site - no change to the concentration at such a site
-                do i = 1,MAX_CHEMO
-	                if (ichemo == i .and. occupancy(x,y,z)%bdry%chemo_influx(i)) then
-		                C(x,y,z) = chemo(i)%bdry_conc
-			            Ctemp(x,y,z) = C(x,y,z)
-				        bdry_conc = .true.
-					endif
-				enddo
-            endif
-            if (.not.bdry_conc) then
-			    sum = 0
-			    nb = 0
-			    do k = 1,6
-				    xx = x + neumann(1,k)
-				    yy = y + neumann(2,k)
-				    zz = z + neumann(3,k)
-				    if (outside_xyz(xx,yy,zz)) cycle
-				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
-				    nb = nb + 1
-				    sum = sum + C(xx,yy,zz)
-			    enddo
-			    dMdt = Kdiffusion*DELTA_X*(sum - nb*C0) - Kdecay*C0*dV ! + influx(x,y,z)
-			    Ctemp(x,y,z) = (C0*dV + dMdt*dt)/dV
-			endif
-		enddo
-	enddo
-enddo
-C = Ctemp
-deallocate(Ctemp) 
-end subroutine
-
 end module

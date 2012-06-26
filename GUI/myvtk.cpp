@@ -510,7 +510,7 @@ void MyVTK::process_Dcells(bool redo)
 	vtkActor *actor;
 	double minlevel = 0.3;
 
-	double DCColor[] = {1.0,0.0,0.0};
+    double FDCColor[] = {1.0,0.5,0.5};
     int na = D_Actor_list.length();
     int np = DCpos_list.length();
     int n = na;
@@ -537,7 +537,7 @@ void MyVTK::process_Dcells(bool redo)
 			actor = vtkActor::New();
 //            actor->SetMapper(DcellMapper);
 			actor->SetMapper(FDcellMapper);
-			actor->GetProperty()->SetColor(DCColor);
+            actor->GetProperty()->SetColor(FDCColor);
 
             ren->AddActor(actor);
             D_Actor_list.append(actor);
@@ -550,9 +550,9 @@ void MyVTK::process_Dcells(bool redo)
 			if (actor != 0) {
 				if (DCfade) {
 					antigen = cp.state;
-					color[0] = (minlevel + (1-minlevel)*antigen)*DCColor[0];
-					color[1] = (minlevel + (1-minlevel)*antigen)*DCColor[1];
-					color[2] = (minlevel + (1-minlevel)*antigen)*DCColor[2];
+                    color[0] = (minlevel + (1-minlevel)*antigen)*FDCColor[0];
+                    color[1] = (minlevel + (1-minlevel)*antigen)*FDCColor[1];
+                    color[2] = (minlevel + (1-minlevel)*antigen)*FDCColor[2];
 					actor->GetProperty()->SetColor(color);
 				}
 				actor->SetPosition(cp.x, cp.y, cp.z);

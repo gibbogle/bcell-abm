@@ -153,7 +153,11 @@ void ExecThread::run()
 	get_dimensions(&NX,&NY,&NZ);
 //	sprintf(msg,"exthread: nsteps: %d",nsteps);
 //	LOG_MSG(msg);
-	for (int i=1; i<= nsteps; i++) {
+    mutex1.lock();
+    get_summary(summaryData);
+    mutex1.unlock();
+    emit summary();		// Emit signal to initialise summary plots
+    for (int i=1; i<= nsteps; i++) {
 		bool updated = false;
 		if (paused && !updated) {
 			snapshot();
