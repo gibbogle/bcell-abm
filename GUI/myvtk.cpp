@@ -70,13 +70,14 @@ vtkStandardNewMacro(MouseInteractorStyle4);
 
 //-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
-MyVTK::MyVTK(QWidget *page)
+MyVTK::MyVTK(QWidget *page, QWidget *key_page)
 {
 	zoomlevel = 0.7;
 	double backgroundColor[] = {0.0,0.0,0.0};
 
 	Pi = 4*atan(1.0);
 	leftb = false;
+    key_canvas(key_page);
 	qvtkWidget = new QVTKWidget(page,QFlag(0));
 	LOG_MSG("Created a new QVTKWidget");
 	QVBoxLayout *layout = new QVBoxLayout;
@@ -123,6 +124,27 @@ MyVTK::~MyVTK()
 {
 }
 
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::key_canvas(QWidget *key_page)
+{
+    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 200, 300));
+    QBrush brush;
+    QGraphicsTextItem *text;
+    brush.setColor(QColor(255,0,0));
+    brush.setStyle(Qt::SolidPattern);
+    scene->addRect(10,10,20,20,Qt::NoPen, brush);
+    text = scene->addText("Red square");
+    text->setPos(35, 10);
+    brush.setColor(QColor(0,255,0));
+    scene->addEllipse(10,40,20,20,Qt::NoPen, brush);
+    text = scene->addText("Green circle");
+    text->setPos(35, 40);
+    QGraphicsView* view = new QGraphicsView(key_page);
+    view->setScene(scene);
+    view->setGeometry(QRect(0, 0, 220, 320));
+    view->show();
+}
 //-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
 void MyVTK::createMappers()

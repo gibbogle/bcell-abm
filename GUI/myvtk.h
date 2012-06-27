@@ -50,10 +50,11 @@ typedef bond_pos BOND_POS;
 class MyVTK
 {
 public:
-	MyVTK(QWidget *);
+    MyVTK(QWidget *, QWidget *);
 	~MyVTK();
 
-	void createMappers();
+    void key_canvas(QWidget *);
+    void createMappers();
 	void read_cell_positions(QString, QString, bool);
 	void get_cell_positions(bool fast);
 	void init();

@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	param_to_sliderIndex = NULL;
 	defaultInputFile = "basecase.inp";
-	inputFile = defaultInputFile;
+    inputFile = defaultInputFile;
 
 	parm = new Params();
 	nParams = parm->nParams;
@@ -121,7 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
 	writeout();
     timer = new QTimer(this);
 //	vtk = new MyVTK(page_3D);
-	vtk = new MyVTK(mdiArea_VTK);
+    vtk = new MyVTK(mdiArea_VTK, widget_key);
 	vtk->init();
 	tabs->setCurrentIndex(0);
 	goToInputs();

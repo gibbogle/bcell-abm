@@ -36,7 +36,7 @@ padding: 8px
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="page_input">
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -2893,6 +2893,16 @@ p, li { white-space: pre-wrap; }
         </property>
         <property name="text">
          <string/>
+        </property>
+       </widget>
+       <widget class="QWidget" name="widget_key" native="true">
+        <property name="geometry">
+         <rect>
+          <x>970</x>
+          <y>30</y>
+          <width>200</width>
+          <height>300</height>
+         </rect>
         </property>
        </widget>
       </widget>

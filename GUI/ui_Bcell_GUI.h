@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Sun 24. Jun 17:46:12 2012
+** Created: Wed 27. Jun 22:13:38 2012
 **      by: Qt User Interface Compiler version 4.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -310,6 +310,7 @@ public:
     QProgressBar *progressBar;
     QLabel *label_hour;
     QLabel *hour_display;
+    QWidget *widget_key;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuEdit;
@@ -1736,6 +1737,9 @@ public:
         hour_display->setObjectName(QString::fromUtf8("hour_display"));
         hour_display->setGeometry(QRect(50, 0, 46, 20));
         hour_display->setFont(font5);
+        widget_key = new QWidget(page_3D);
+        widget_key->setObjectName(QString::fromUtf8("widget_key"));
+        widget_key->setGeometry(QRect(970, 30, 200, 300));
         stackedWidget->addWidget(page_3D);
 
         gridLayout_5->addWidget(stackedWidget, 0, 0, 1, 1);
@@ -1816,7 +1820,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(2);
         tabs->setCurrentIndex(4);
 
 
