@@ -128,21 +128,45 @@ MyVTK::~MyVTK()
 //-----------------------------------------------------------------------------------------
 void MyVTK::key_canvas(QWidget *key_page)
 {
-    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 200, 300));
+	QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 250));
     QBrush brush;
     QGraphicsTextItem *text;
-    brush.setColor(QColor(255,0,0));
+	brush.setColor(QColor(255,128,75));
     brush.setStyle(Qt::SolidPattern);
-    scene->addRect(10,10,20,20,Qt::NoPen, brush);
-    text = scene->addText("Red square");
+	scene->addEllipse(10,10,20,20,Qt::NoPen, brush);
+	text = scene->addText("FDC");
     text->setPos(35, 10);
-    brush.setColor(QColor(0,255,0));
+	brush.setColor(QColor(30,20,255));
     scene->addEllipse(10,40,20,20,Qt::NoPen, brush);
-    text = scene->addText("Green circle");
+	text = scene->addText("Naive B cell");
     text->setPos(35, 40);
-    QGraphicsView* view = new QGraphicsView(key_page);
+	brush.setColor(QColor(0,200,255));
+	scene->addEllipse(10,70,20,20,Qt::NoPen, brush);
+	text = scene->addText("CCR7 UP");
+	text->setPos(35, 70);
+	brush.setColor(QColor(100,255,100));
+	scene->addEllipse(10,100,20,20,Qt::NoPen, brush);
+	text = scene->addText("EBI2 UP");
+	text->setPos(35, 100);
+	brush.setColor(QColor(255,255,0));
+	scene->addEllipse(10,130,20,20,Qt::NoPen, brush);
+	text = scene->addText("BCL6 HI");
+	text->setPos(35, 130);
+	brush.setColor(QColor(0,150,0));
+	scene->addEllipse(10,160,20,20,Qt::NoPen, brush);
+	text = scene->addText("BCL6 LO");
+	text->setPos(35, 160);
+	brush.setColor(QColor(128,128,128));
+	scene->addEllipse(10,190,20,20,Qt::NoPen, brush);
+	text = scene->addText("Max divisions");
+	text->setPos(35, 190);
+	brush.setColor(QColor(200,100,0));
+	scene->addEllipse(10,220,20,20,Qt::NoPen, brush);
+	text = scene->addText("Plasma cell");
+	text->setPos(35, 220);
+	QGraphicsView* view = new QGraphicsView(key_page);
     view->setScene(scene);
-    view->setGeometry(QRect(0, 0, 220, 320));
+	view->setGeometry(QRect(0, 0, 150, 270));
     view->show();
 }
 //-----------------------------------------------------------------------------------------
@@ -532,7 +556,7 @@ void MyVTK::process_Dcells(bool redo)
 	vtkActor *actor;
 	double minlevel = 0.3;
 
-    double FDCColor[] = {1.0,0.5,0.5};
+	double FDCColor[] = {1.0,0.5,0.3};
     int na = D_Actor_list.length();
     int np = DCpos_list.length();
     int n = na;

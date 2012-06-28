@@ -1637,7 +1637,7 @@ integer, parameter :: DEEPRED(3) = (/200,0,0/)
 integer, parameter :: DEEPBLUE(3) = (/30,20,255/)
 integer, parameter :: DEEPGREEN(3) = (/0,150,0/)
 integer, parameter :: LIGHTRED(3) = (/255,70,90/)
-integer, parameter :: LIGHTBLUE(3) = (/90,90,255/)
+integer, parameter :: LIGHTBLUE(3) = (/0,200,255/)
 integer, parameter :: LIGHTGREEN(3) = (/100,255,100/)
 integer, parameter :: DEEPORANGE(3) = (/240,70,0/)
 integer, parameter :: LIGHTORANGE(3) = (/255,130,50/)
@@ -1646,6 +1646,7 @@ integer, parameter :: DEEPPURPLE(3) = (/180,180,30/)
 integer, parameter :: LIGHTPURPLE(3) = (/230,230,100/)
 integer, parameter :: DEEPBROWN(3) = (/130,70,0/)
 integer, parameter :: LIGHTBROWN(3) = (/200,100,0/)
+integer, parameter :: GREY(3) = (/128,128,128/)
 
 p => cellist(kcell)%cptr
 stage = get_stage(p)
@@ -1667,6 +1668,8 @@ case (GCC_COMMIT, BCL6_UP)
 	col = YELLOW
 case (PLASMA)
 	col = LIGHTBROWN
+case (FINISHED)
+	col = GREY
 case default
 	col = WHITE
 end select
