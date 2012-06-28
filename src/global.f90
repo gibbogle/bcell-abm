@@ -33,9 +33,9 @@ integer, parameter :: DIVIDING    = 6
 integer, parameter :: GCC_COMMIT  = 7
 integer, parameter :: PLASMA      = 8
 integer, parameter :: BCL6_UP     = 9
-integer, parameter :: DEAD        = 10
-integer, parameter :: LEFT        = 11
-integer, parameter :: FINISHED    = 12
+integer, parameter :: FINISHED    = 10
+integer, parameter :: DEAD        = 11
+integer, parameter :: LEFT        = 12
 integer, parameter :: STAGELIMIT  = 12
 
 integer, parameter :: BCL6_LO = 1

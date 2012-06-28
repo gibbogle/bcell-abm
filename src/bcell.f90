@@ -1638,7 +1638,7 @@ integer, parameter :: DEEPBLUE(3) = (/30,20,255/)
 integer, parameter :: DEEPGREEN(3) = (/0,150,0/)
 integer, parameter :: LIGHTRED(3) = (/255,70,90/)
 integer, parameter :: LIGHTBLUE(3) = (/0,200,255/)
-integer, parameter :: LIGHTGREEN(3) = (/100,255,100/)
+integer, parameter :: LIGHTGREEN(3) = (/50,255,150/)
 integer, parameter :: DEEPORANGE(3) = (/240,70,0/)
 integer, parameter :: LIGHTORANGE(3) = (/255,130,50/)
 integer, parameter :: YELLOW(3) = (/255,255,0/)
@@ -1646,32 +1646,50 @@ integer, parameter :: DEEPPURPLE(3) = (/180,180,30/)
 integer, parameter :: LIGHTPURPLE(3) = (/230,230,100/)
 integer, parameter :: DEEPBROWN(3) = (/130,70,0/)
 integer, parameter :: LIGHTBROWN(3) = (/200,100,0/)
-integer, parameter :: GREY(3) = (/128,128,128/)
+integer, parameter :: GRAY(3) = (/128,128,128/)
+
+integer, parameter :: Qt_white = 3
+integer, parameter :: Qt_black = 2
+integer, parameter :: Qt_red = 7
+integer, parameter :: Qt_darkRed = 13
+integer, parameter :: Qt_green = 8
+integer, parameter :: Qt_darkGreen = 14
+integer, parameter :: Qt_blue = 9
+integer, parameter :: Qt_darkBlue = 15
+integer, parameter :: Qt_cyan = 10
+integer, parameter :: Qt_darkCyan = 16
+integer, parameter :: Qt_magenta = 11
+integer, parameter :: Qt_darkMagenta = 17
+integer, parameter :: Qt_yellow = 12
+integer, parameter :: Qt_darkYellow = 18
+integer, parameter :: Qt_gray = 5
+integer, parameter :: Qt_darkGray = 4
+integer, parameter :: Qt_lightGray = 6
 
 p => cellist(kcell)%cptr
 stage = get_stage(p)
 status = get_status(p)
 select case(stage)
 case (NAIVE)
-	col = DEEPBLUE
+	col = DEEPBLUE			! 1
 case (ANTIGEN_MET, CCR7_UP)
-	col = LIGHTBLUE
+	col = LIGHTBLUE			! 2
 case (TCELL_MET, EBI2_UP)
-	col = LIGHTGREEN
+	col = LIGHTGREEN		! 3
 case (DIVIDING) 
 	if (status == BCL6_HI) then
-		col = YELLOW
+		col = YELLOW		! 4
 	else
-		col = DEEPGREEN
+		col = DEEPGREEN		! 5
 	endif
 case (GCC_COMMIT, BCL6_UP)
-	col = YELLOW
+	col = YELLOW			! 4
 case (PLASMA)
-	col = LIGHTBROWN
+	col = RED		! 6
 case (FINISHED)
-	col = GREY
+	col = GRAY				! 7
 case default
-	col = WHITE
+	col = WHITE				! 8
 end select
 end subroutine
 
