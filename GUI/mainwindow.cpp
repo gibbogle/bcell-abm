@@ -1254,7 +1254,13 @@ void MainWindow::saveSnapshot()
 void MainWindow::showGradient()
 {
     LOG_MSG("showGradient");
-    vtk->showGradient();
+//    vtk->showGradient();
+    SimpleView *mySimpleView = new SimpleView();
+    QSize size = mySimpleView->size();
+    sprintf(msg,"mySimpleView size: %d %d",size.height(),size.width());
+    LOG_MSG(msg);
+    mySimpleView->show();
+    mySimpleView->GetRenderWindow()->SetSize(768,768);
 }
 
 //--------------------------------------------------------------------------------------------------------

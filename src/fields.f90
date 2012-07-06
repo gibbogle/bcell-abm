@@ -1214,4 +1214,71 @@ do z = blobrange(3,1),blobrange(3,2)
 	enddo
 enddo
 end subroutine
+
+!----------------------------------------------------------------------------------------
+! This subroutine is called from the GUI, and it passes back the chemokine gradient info
+! needed to size the gradient_array and interpret the data.
+!----------------------------------------------------------------------------------------
+subroutine get_gradient_info(chem_used, ntsites) BIND(C)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_gradient_info
+use, intrinsic :: iso_c_binding
+integer(c_int) :: chem_used(*), ntsites
+integer :: i
+
+do i = 1,4
+    if (chemo(i)%used) then
+        chem_used(i) = 1
+    else
+        chem_used(i) = 0
+    endif
+enddo
+ntsites = nsites
+
+end subroutine
+
+!----------------------------------------------------------------------------------------
+! The gradients are stored in a 1-D array of size = ntsites*(3 + nchem_used*3).
+! Here we can check the ntsites value.
+!----------------------------------------------------------------------------------------
+subroutine get_gradients(chem_used, ntsites, gradient_array) BIND(C)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_gradients
+use, intrinsic :: iso_c_binding
+integer(c_int) :: chem_used(*), ntsites, ns
+real(c_float) :: gradient_array(*)
+integer :: x, y, z, i, j, k, ic
+
+ns = 0
+k = 0
+do z = blobrange(3,1),blobrange(3,2)
+    do y = blobrange(2,1),blobrange(2,2)
+        do x = blobrange(1,1),blobrange(1,2)
+			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			ns = ns+1
+			k = k+1
+			gradient_array(k) = x
+			k = k+1
+			gradient_array(k) = y
+			k = k+1
+			gradient_array(k) = z
+			do ic = 1,4
+		        do j = 1,3
+		            k = k+1
+    			    if (chemo(ic)%used) then
+                        gradient_array(k) = chemo(ic)%grad(j,x,y,z)
+                    else
+                        gradient_array(k) = 0
+                    endif
+                enddo
+            enddo
+        enddo
+    enddo
+enddo
+if (ns /= ntsites) then
+    write(logmsg,*) 'Error: get_gradients: inconsistent site count: ',ns,ntsites
+    call logger(logmsg)
+    stop
+endif
+!write(nflog,'(3f6.1,12f8.4)') gradient_array(1:ntsites*15)
+end subroutine
+
 end module
