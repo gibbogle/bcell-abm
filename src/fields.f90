@@ -962,8 +962,8 @@ end subroutine
 !----------------------------------------------------------------------------------------
 ! A different approach from that used in bone-abm.
 ! The bdry gridcells that are adjacent to a chemokine-rich region (i.e. there are 
-! chemokine-secreting cells near the boundary) are given a fixed concentration.
-! All boundaries are no-flux.
+! chemokine-secreting gridcells near the boundary) are given a fixed concentration.
+! ***All boundaries are no-flux***
 ! This is a simplified approach.  We need only keep track of the boundary.
 ! The concentrations in a specified chemokine influx bdry site are input parameters.
 ! Note:  It is only the ratio Kdecay/Kdiffusion that matters.
@@ -1028,8 +1028,6 @@ do zpar = 1,z2-z1+1
 	enddo
 enddo
 end subroutine
-
-
 
 !----------------------------------------------------------------------------------------
 ! Updates concentrations through a timestep dt, solving the diffusion-decay eqtn by a 

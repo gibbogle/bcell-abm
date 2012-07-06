@@ -1,8 +1,8 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Wed 27. Jun 22:13:38 2012
-**      by: Qt User Interface Compiler version 4.6.3
+** Created: Thu 5. Jul 11:11:03 2012
+**      by: Qt User Interface Compiler version 4.7.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -60,6 +60,7 @@ public:
     QAction *action_play_VTK;
     QAction *action_set_speed;
     QAction *action_save_snapshot;
+    QAction *action_show_gradient;
     QWidget *centralwidget;
     QGridLayout *gridLayout_5;
     QStackedWidget *stackedWidget;
@@ -318,6 +319,7 @@ public:
     QMenu *menuGraphs;
     QMenu *menuPlayer;
     QMenu *menuSnapshot;
+    QMenu *menuChemokine;
     QStatusBar *statusbar;
     QToolBar *toolBar1;
     QButtonGroup *buttonGroup_CXCL13_BDRY;
@@ -331,6 +333,10 @@ public:
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
         MainWindow->resize(1319, 977);
+        QFont font;
+        font.setBold(false);
+        font.setWeight(50);
+        MainWindow->setFont(font);
         QIcon icon;
         icon.addFile(QString::fromUtf8(":/ABM.png"), QSize(), QIcon::Normal, QIcon::Off);
         MainWindow->setWindowIcon(icon);
@@ -399,6 +405,8 @@ public:
         action_set_speed->setObjectName(QString::fromUtf8("action_set_speed"));
         action_save_snapshot = new QAction(MainWindow);
         action_save_snapshot->setObjectName(QString::fromUtf8("action_save_snapshot"));
+        action_show_gradient = new QAction(MainWindow);
+        action_show_gradient->setObjectName(QString::fromUtf8("action_show_gradient"));
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         gridLayout_5 = new QGridLayout(centralwidget);
@@ -643,11 +651,11 @@ public:
         alabel_dist = new QLabel(tab_B);
         alabel_dist->setObjectName(QString::fromUtf8("alabel_dist"));
         alabel_dist->setGeometry(QRect(550, 10, 291, 20));
-        QFont font;
-        font.setPointSize(14);
-        font.setBold(true);
-        font.setWeight(75);
-        alabel_dist->setFont(font);
+        QFont font1;
+        font1.setPointSize(14);
+        font1.setBold(true);
+        font1.setWeight(75);
+        alabel_dist->setFont(font1);
         line_DIVIDE2_SHAPE = new QLineEdit(tab_B);
         line_DIVIDE2_SHAPE->setObjectName(QString::fromUtf8("line_DIVIDE2_SHAPE"));
         line_DIVIDE2_SHAPE->setGeometry(QRect(910, 540, 51, 20));
@@ -681,10 +689,10 @@ public:
         qwtPlot_DIVIDE2 = new QwtPlot(tab_B);
         qwtPlot_DIVIDE2->setObjectName(QString::fromUtf8("qwtPlot_DIVIDE2"));
         qwtPlot_DIVIDE2->setGeometry(QRect(420, 450, 300, 170));
-        QFont font1;
-        font1.setFamily(QString::fromUtf8("Arial"));
-        font1.setPointSize(4);
-        qwtPlot_DIVIDE2->setFont(font1);
+        QFont font2;
+        font2.setFamily(QString::fromUtf8("Arial"));
+        font2.setPointSize(4);
+        qwtPlot_DIVIDE2->setFont(font2);
         tabs->addTab(tab_B, QString());
         tab_DC = new QWidget();
         tab_DC->setObjectName(QString::fromUtf8("tab_DC"));
@@ -829,16 +837,20 @@ public:
         alabel_dist_2 = new QLabel(tab_DC);
         alabel_dist_2->setObjectName(QString::fromUtf8("alabel_dist_2"));
         alabel_dist_2->setGeometry(QRect(580, 20, 291, 20));
-        alabel_dist_2->setFont(font);
+        alabel_dist_2->setFont(font1);
         tabs->addTab(tab_DC, QString());
         tab_chemo = new QWidget();
         tab_chemo->setObjectName(QString::fromUtf8("tab_chemo"));
         cbox_USE_S1PR1 = new QCheckBox(tab_chemo);
         cbox_USE_S1PR1->setObjectName(QString::fromUtf8("cbox_USE_S1PR1"));
-        cbox_USE_S1PR1->setGeometry(QRect(80, 100, 81, 18));
+        cbox_USE_S1PR1->setGeometry(QRect(80, 100, 101, 18));
+        QFont font3;
+        font3.setBold(true);
+        font3.setWeight(75);
+        cbox_USE_S1PR1->setFont(font3);
         gridLayoutWidget_2 = new QWidget(tab_chemo);
         gridLayoutWidget_2->setObjectName(QString::fromUtf8("gridLayoutWidget_2"));
-        gridLayoutWidget_2->setGeometry(QRect(80, 370, 211, 126));
+        gridLayoutWidget_2->setGeometry(QRect(80, 370, 217, 126));
         gridLayout_S1P_2 = new QGridLayout(gridLayoutWidget_2);
         gridLayout_S1P_2->setObjectName(QString::fromUtf8("gridLayout_S1P_2"));
         gridLayout_S1P_2->setContentsMargins(0, 0, 0, 0);
@@ -914,16 +926,20 @@ public:
 
         cbox_USE_CCR7 = new QCheckBox(tab_chemo);
         cbox_USE_CCR7->setObjectName(QString::fromUtf8("cbox_USE_CCR7"));
-        cbox_USE_CCR7->setGeometry(QRect(80, 340, 81, 18));
+        cbox_USE_CCR7->setGeometry(QRect(80, 340, 91, 18));
+        cbox_USE_CCR7->setFont(font3);
         cbox_USE_EBI2 = new QCheckBox(tab_chemo);
         cbox_USE_EBI2->setObjectName(QString::fromUtf8("cbox_USE_EBI2"));
-        cbox_USE_EBI2->setGeometry(QRect(440, 100, 71, 21));
+        cbox_USE_EBI2->setGeometry(QRect(440, 100, 91, 21));
+        cbox_USE_EBI2->setFont(font3);
         cbox_USE_CXCR5 = new QCheckBox(tab_chemo);
         cbox_USE_CXCR5->setObjectName(QString::fromUtf8("cbox_USE_CXCR5"));
-        cbox_USE_CXCR5->setGeometry(QRect(440, 340, 81, 18));
+        cbox_USE_CXCR5->setGeometry(QRect(440, 340, 101, 18));
+        cbox_USE_CXCR5->setFont(font3);
         cbox_USE_S1PR2 = new QCheckBox(tab_chemo);
         cbox_USE_S1PR2->setObjectName(QString::fromUtf8("cbox_USE_S1PR2"));
-        cbox_USE_S1PR2->setGeometry(QRect(190, 100, 81, 18));
+        cbox_USE_S1PR2->setGeometry(QRect(190, 100, 101, 18));
+        cbox_USE_S1PR2->setFont(font3);
         rbut_CCL21_BDRY_0 = new QRadioButton(tab_chemo);
         buttonGroup_CCL21_BDRY = new QButtonGroup(MainWindow);
         buttonGroup_CCL21_BDRY->setObjectName(QString::fromUtf8("buttonGroup_CCL21_BDRY"));
@@ -932,7 +948,7 @@ public:
         rbut_CCL21_BDRY_0->setGeometry(QRect(300, 370, 111, 21));
         gridLayoutWidget_5 = new QWidget(tab_chemo);
         gridLayoutWidget_5->setObjectName(QString::fromUtf8("gridLayoutWidget_5"));
-        gridLayoutWidget_5->setGeometry(QRect(440, 370, 220, 126));
+        gridLayoutWidget_5->setGeometry(QRect(440, 370, 224, 126));
         gridLayout_S1P_5 = new QGridLayout(gridLayoutWidget_5);
         gridLayout_S1P_5->setObjectName(QString::fromUtf8("gridLayout_S1P_5"));
         gridLayout_S1P_5->setContentsMargins(0, 0, 0, 0);
@@ -1096,14 +1112,14 @@ public:
         rbut_OXY_BDRY_0->setGeometry(QRect(670, 130, 111, 21));
         gridLayoutWidget_3 = new QWidget(tab_chemo);
         gridLayoutWidget_3->setObjectName(QString::fromUtf8("gridLayoutWidget_3"));
-        gridLayoutWidget_3->setGeometry(QRect(80, 130, 211, 152));
+        gridLayoutWidget_3->setGeometry(QRect(80, 130, 229, 152));
         gridLayout_S1P_3 = new QGridLayout(gridLayoutWidget_3);
         gridLayout_S1P_3->setObjectName(QString::fromUtf8("gridLayout_S1P_3"));
         gridLayout_S1P_3->setContentsMargins(0, 0, 0, 0);
         label_S1P_BDRY_CONC = new QMyLabel(gridLayoutWidget_3);
         label_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("label_S1P_BDRY_CONC"));
 
-        gridLayout_S1P_3->addWidget(label_S1P_BDRY_CONC, 1, 0, 1, 2);
+        gridLayout_S1P_3->addWidget(label_S1P_BDRY_CONC, 1, 0, 1, 1);
 
         line_S1P_BDRY_CONC = new QLineEdit(gridLayoutWidget_3);
         line_S1P_BDRY_CONC->setObjectName(QString::fromUtf8("line_S1P_BDRY_CONC"));
@@ -1168,7 +1184,7 @@ public:
         label_S1P_BDRY_RATE = new QLabel(gridLayoutWidget_3);
         label_S1P_BDRY_RATE->setObjectName(QString::fromUtf8("label_S1P_BDRY_RATE"));
 
-        gridLayout_S1P_3->addWidget(label_S1P_BDRY_RATE, 0, 0, 1, 2);
+        gridLayout_S1P_3->addWidget(label_S1P_BDRY_RATE, 0, 0, 1, 1);
 
         line_S1P_BDRY_RATE = new QLineEdit(gridLayoutWidget_3);
         line_S1P_BDRY_RATE->setObjectName(QString::fromUtf8("line_S1P_BDRY_RATE"));
@@ -1185,32 +1201,30 @@ public:
         buttonGroup_S1P_BDRY->setObjectName(QString::fromUtf8("buttonGroup_S1P_BDRY"));
         buttonGroup_S1P_BDRY->addButton(rbut_S1P_BDRY_0);
         rbut_S1P_BDRY_0->setObjectName(QString::fromUtf8("rbut_S1P_BDRY_0"));
-        rbut_S1P_BDRY_0->setGeometry(QRect(300, 130, 91, 21));
+        rbut_S1P_BDRY_0->setGeometry(QRect(310, 130, 91, 21));
         label_chemokine = new QLabel(tab_chemo);
         label_chemokine->setObjectName(QString::fromUtf8("label_chemokine"));
         label_chemokine->setGeometry(QRect(280, 30, 221, 16));
-        QFont font2;
-        font2.setPointSize(16);
-        label_chemokine->setFont(font2);
+        label_chemokine->setFont(font1);
         rbut_S1P_BDRY_1 = new QRadioButton(tab_chemo);
         buttonGroup_S1P_BDRY->addButton(rbut_S1P_BDRY_1);
         rbut_S1P_BDRY_1->setObjectName(QString::fromUtf8("rbut_S1P_BDRY_1"));
-        rbut_S1P_BDRY_1->setGeometry(QRect(300, 150, 111, 21));
+        rbut_S1P_BDRY_1->setGeometry(QRect(310, 150, 121, 21));
         rbut_S1P_BDRY_1->setChecked(true);
         rbut_CCL21_BDRY_1 = new QRadioButton(tab_chemo);
         buttonGroup_CCL21_BDRY->addButton(rbut_CCL21_BDRY_1);
         rbut_CCL21_BDRY_1->setObjectName(QString::fromUtf8("rbut_CCL21_BDRY_1"));
-        rbut_CCL21_BDRY_1->setGeometry(QRect(300, 390, 111, 21));
+        rbut_CCL21_BDRY_1->setGeometry(QRect(300, 390, 121, 21));
         rbut_CCL21_BDRY_1->setChecked(true);
         rbut_OXY_BDRY_1 = new QRadioButton(tab_chemo);
         buttonGroup_OXY_BDRY->addButton(rbut_OXY_BDRY_1);
         rbut_OXY_BDRY_1->setObjectName(QString::fromUtf8("rbut_OXY_BDRY_1"));
-        rbut_OXY_BDRY_1->setGeometry(QRect(670, 150, 111, 21));
+        rbut_OXY_BDRY_1->setGeometry(QRect(670, 150, 121, 21));
         rbut_OXY_BDRY_1->setChecked(true);
         rbut_CXCL13_BDRY_1 = new QRadioButton(tab_chemo);
         buttonGroup_CXCL13_BDRY->addButton(rbut_CXCL13_BDRY_1);
         rbut_CXCL13_BDRY_1->setObjectName(QString::fromUtf8("rbut_CXCL13_BDRY_1"));
-        rbut_CXCL13_BDRY_1->setGeometry(QRect(670, 390, 111, 21));
+        rbut_CXCL13_BDRY_1->setGeometry(QRect(670, 390, 121, 21));
         rbut_CXCL13_BDRY_1->setChecked(true);
         tabs->addTab(tab_chemo, QString());
         tab_TCR = new QWidget();
@@ -1316,11 +1330,8 @@ public:
 
         label_40 = new QLabel(tab_TCR);
         label_40->setObjectName(QString::fromUtf8("label_40"));
-        label_40->setGeometry(QRect(10, 10, 211, 16));
-        QFont font3;
-        font3.setBold(true);
-        font3.setWeight(75);
-        label_40->setFont(font3);
+        label_40->setGeometry(QRect(10, 10, 251, 16));
+        label_40->setFont(font1);
         tabs->addTab(tab_TCR, QString());
         tab_run = new QWidget();
         tab_run->setObjectName(QString::fromUtf8("tab_run"));
@@ -1624,11 +1635,11 @@ public:
 
         cbox_IV_SHOW_NONCOGNATE = new QCheckBox(tab_run);
         cbox_IV_SHOW_NONCOGNATE->setObjectName(QString::fromUtf8("cbox_IV_SHOW_NONCOGNATE"));
-        cbox_IV_SHOW_NONCOGNATE->setGeometry(QRect(450, 600, 161, 18));
+        cbox_IV_SHOW_NONCOGNATE->setGeometry(QRect(450, 600, 171, 18));
         cbox_USE_TRAFFIC = new QCheckBox(tab_run);
         cbox_USE_TRAFFIC->setObjectName(QString::fromUtf8("cbox_USE_TRAFFIC"));
         cbox_USE_TRAFFIC->setEnabled(false);
-        cbox_USE_TRAFFIC->setGeometry(QRect(450, 290, 101, 18));
+        cbox_USE_TRAFFIC->setGeometry(QRect(450, 290, 121, 18));
         rbut_SPECIES_1 = new QRadioButton(tab_run);
         buttonGroup_SPECIES = new QButtonGroup(MainWindow);
         buttonGroup_SPECIES->setObjectName(QString::fromUtf8("buttonGroup_SPECIES"));
@@ -1647,7 +1658,7 @@ public:
         cbox_COMPUTED_OUTFLOW = new QCheckBox(tab_run);
         cbox_COMPUTED_OUTFLOW->setObjectName(QString::fromUtf8("cbox_COMPUTED_OUTFLOW"));
         cbox_COMPUTED_OUTFLOW->setEnabled(false);
-        cbox_COMPUTED_OUTFLOW->setGeometry(QRect(450, 400, 141, 18));
+        cbox_COMPUTED_OUTFLOW->setGeometry(QRect(450, 400, 151, 18));
         label_INPUT_FILE = new QMyLabel(tab_run);
         label_INPUT_FILE->setObjectName(QString::fromUtf8("label_INPUT_FILE"));
         label_INPUT_FILE->setGeometry(QRect(10, 680, 121, 16));
@@ -1747,7 +1758,7 @@ public:
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1319, 18));
+        menubar->setGeometry(QRect(0, 0, 1319, 21));
         menuFile = new QMenu(menubar);
         menuFile->setObjectName(QString::fromUtf8("menuFile"));
         menuEdit = new QMenu(menubar);
@@ -1760,6 +1771,8 @@ public:
         menuPlayer->setObjectName(QString::fromUtf8("menuPlayer"));
         menuSnapshot = new QMenu(menubar);
         menuSnapshot->setObjectName(QString::fromUtf8("menuSnapshot"));
+        menuChemokine = new QMenu(menubar);
+        menuChemokine->setObjectName(QString::fromUtf8("menuChemokine"));
         MainWindow->setMenuBar(menubar);
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -1796,6 +1809,7 @@ public:
         menubar->addAction(menuGraphs->menuAction());
         menubar->addAction(menuPlayer->menuAction());
         menubar->addAction(menuSnapshot->menuAction());
+        menubar->addAction(menuChemokine->menuAction());
         menuFile->addAction(action_open_input);
         menuFile->addAction(action_load_results);
         menuFile->addSeparator();
@@ -1810,6 +1824,7 @@ public:
         menuPlayer->addAction(action_play_VTK);
         menuPlayer->addAction(action_set_speed);
         menuSnapshot->addAction(action_save_snapshot);
+        menuChemokine->addAction(action_show_gradient);
         toolBar1->addAction(action_run);
         toolBar1->addAction(action_pause);
         toolBar1->addAction(action_stop);
@@ -1870,6 +1885,7 @@ public:
         action_play_VTK->setText(QApplication::translate("MainWindow", "Play cell animation", 0, QApplication::UnicodeUTF8));
         action_set_speed->setText(QApplication::translate("MainWindow", "Set speed", 0, QApplication::UnicodeUTF8));
         action_save_snapshot->setText(QApplication::translate("MainWindow", "Save snapshot", 0, QApplication::UnicodeUTF8));
+        action_show_gradient->setText(QApplication::translate("MainWindow", "Show gradient", 0, QApplication::UnicodeUTF8));
 #ifndef QT_NO_TOOLTIP
         label_BC_AVIDITY_MEDIAN->setToolTip(QApplication::translate("MainWindow", "TCR avidity has a lognormal distribution, described by the mean and shape parameters.", 0, QApplication::UnicodeUTF8));
 #endif // QT_NO_TOOLTIP
@@ -2052,7 +2068,7 @@ public:
 #endif // QT_NO_TOOLTIP
         label_NCPU->setText(QApplication::translate("MainWindow", "label_NCPU", 0, QApplication::UnicodeUTF8));
         cbox_savepos->setText(QApplication::translate("MainWindow", "Save cell paths", 0, QApplication::UnicodeUTF8));
-        cbox_IV_SHOW_NONCOGNATE->setText(QApplication::translate("MainWindow", "Display non-cognate B cells ", 0, QApplication::UnicodeUTF8));
+        cbox_IV_SHOW_NONCOGNATE->setText(QApplication::translate("MainWindow", "Display non-cognate B cells? ", 0, QApplication::UnicodeUTF8));
         cbox_USE_TRAFFIC->setText(QApplication::translate("MainWindow", "B cell trafficking? ", 0, QApplication::UnicodeUTF8));
         rbut_SPECIES_1->setText(QApplication::translate("MainWindow", "Human", 0, QApplication::UnicodeUTF8));
         rbut_SPECIES_0->setText(QApplication::translate("MainWindow", "Mouse", 0, QApplication::UnicodeUTF8));
@@ -2070,6 +2086,7 @@ public:
         menuGraphs->setTitle(QApplication::translate("MainWindow", "Graphs", 0, QApplication::UnicodeUTF8));
         menuPlayer->setTitle(QApplication::translate("MainWindow", "Player", 0, QApplication::UnicodeUTF8));
         menuSnapshot->setTitle(QApplication::translate("MainWindow", "Snapshot", 0, QApplication::UnicodeUTF8));
+        menuChemokine->setTitle(QApplication::translate("MainWindow", "Chemokine", 0, QApplication::UnicodeUTF8));
         toolBar1->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 

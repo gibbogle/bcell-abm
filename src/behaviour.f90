@@ -255,7 +255,7 @@ return
 ok = .false.
 end subroutine
 
-!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------1123
 !----------------------------------------------------------------------------------------
 subroutine read_Bcell_params(ok)
 logical :: ok
@@ -357,6 +357,11 @@ do i = 1,MAX_RECEPTOR
 		receptor(i)%sign = 1
 	endif
 enddo
+if (BASE_NFDC == 0) then
+    use_FDCs = .false.
+else
+    use_FDCs = .true.
+endif
 if (.not.use_FDCs) then
     receptor(CXCR5)%used = .false.
     chemo(CXCL13)%used = .false.

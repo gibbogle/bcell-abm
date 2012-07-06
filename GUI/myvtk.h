@@ -15,7 +15,7 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkProperty.h"
 #include "vtkCamera.h"
-#include <vtkMPEG2Writer.h>
+//#include <vtkMPEG2Writer.h>
 #include <vtkPNGWriter.h>
 #include <vtkJPEGWriter.h>
 #include <vtkTIFFWriter.h>
@@ -27,6 +27,8 @@
 #include <vtkAppendPolyData.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
+
+#include "SimpleViewUI.h"
 
 //#include <vtkConfigure.h>
 
@@ -69,6 +71,7 @@ public:
 	void pause();
 	void playon();
 	void saveSnapshot(QString, QString);
+    void showGradient();
 	void stop();
 
 	QList<CELL_POS > BCpos_list;
@@ -86,7 +89,7 @@ public:
 	vtkPolyDataMapper *DcellMapper;
 	vtkPolyDataMapper *bondMapper;
 	vtkPolyDataMapper *FDcellMapper;
-	vtkMPEG2Writer *mpg;
+//	vtkMPEG2Writer *mpg;
 //	vtkSmartPointer<vtkPNGWriter> writer;
 //	vtkSmartPointer<vtkBMPWriter> writer;
 	vtkSmartPointer<vtkJPEGWriter> writer;

@@ -150,6 +150,7 @@ FUNCTION par_uni(kpar) RESULT( fn_val )
 
 	if (kpar >= par_n) then
 		write(*,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
+		write(21,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
 		stop
 	endif
    fn_val = half + 0.2328306e-9_DP * par_shr3(kpar)

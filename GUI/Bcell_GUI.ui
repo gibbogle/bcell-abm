@@ -10,6 +10,12 @@
     <height>977</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <weight>50</weight>
+    <bold>false</bold>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>B Cell Follicle ABM</string>
   </property>
@@ -1130,9 +1136,15 @@ padding: 8px
              <rect>
               <x>80</x>
               <y>100</y>
-              <width>81</width>
+              <width>101</width>
               <height>18</height>
              </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string>Use S1PR1?</string>
@@ -1143,7 +1155,7 @@ padding: 8px
              <rect>
               <x>80</x>
               <y>370</y>
-              <width>211</width>
+              <width>217</width>
               <height>126</height>
              </rect>
             </property>
@@ -1245,9 +1257,15 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>80</x>
               <y>340</y>
-              <width>81</width>
+              <width>91</width>
               <height>18</height>
              </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string>Use CCR7?</string>
@@ -1258,9 +1276,15 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>440</x>
               <y>100</y>
-              <width>71</width>
+              <width>91</width>
               <height>21</height>
              </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string>Use EBI2?</string>
@@ -1271,9 +1295,15 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>440</x>
               <y>340</y>
-              <width>81</width>
+              <width>101</width>
               <height>18</height>
              </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string>Use CXCR5?</string>
@@ -1284,9 +1314,15 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>190</x>
               <y>100</y>
-              <width>81</width>
+              <width>101</width>
               <height>18</height>
              </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
              <string>Use S1PR2?</string>
@@ -1313,7 +1349,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>440</x>
               <y>370</y>
-              <width>220</width>
+              <width>224</width>
               <height>126</height>
              </rect>
             </property>
@@ -1549,12 +1585,12 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>80</x>
               <y>130</y>
-              <width>211</width>
+              <width>229</width>
               <height>152</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_S1P_3">
-             <item row="1" column="0" colspan="2">
+             <item row="1" column="0">
               <widget class="QMyLabel" name="label_S1P_BDRY_CONC">
                <property name="text">
                 <string>label_S1P_BDRY_CONC</string>
@@ -1633,7 +1669,7 @@ p, li { white-space: pre-wrap; }
              <item row="5" column="2">
               <widget class="QLineEdit" name="line_S1P_STRENGTH_NEG"/>
              </item>
-             <item row="0" column="0" colspan="2">
+             <item row="0" column="0">
               <widget class="QLabel" name="label_S1P_BDRY_RATE">
                <property name="text">
                 <string>label_S1P_BDRY_RATE</string>
@@ -1659,7 +1695,7 @@ p, li { white-space: pre-wrap; }
            <widget class="QRadioButton" name="rbut_S1P_BDRY_0">
             <property name="geometry">
              <rect>
-              <x>300</x>
+              <x>310</x>
               <y>130</y>
               <width>91</width>
               <height>21</height>
@@ -1683,7 +1719,9 @@ p, li { white-space: pre-wrap; }
             </property>
             <property name="font">
              <font>
-              <pointsize>16</pointsize>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -1693,9 +1731,9 @@ p, li { white-space: pre-wrap; }
            <widget class="QRadioButton" name="rbut_S1P_BDRY_1">
             <property name="geometry">
              <rect>
-              <x>300</x>
+              <x>310</x>
               <y>150</y>
-              <width>111</width>
+              <width>121</width>
               <height>21</height>
              </rect>
             </property>
@@ -1714,7 +1752,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>300</x>
               <y>390</y>
-              <width>111</width>
+              <width>121</width>
               <height>21</height>
              </rect>
             </property>
@@ -1733,7 +1771,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>670</x>
               <y>150</y>
-              <width>111</width>
+              <width>121</width>
               <height>21</height>
              </rect>
             </property>
@@ -1752,7 +1790,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>670</x>
               <y>390</y>
-              <width>111</width>
+              <width>121</width>
               <height>21</height>
              </rect>
             </property>
@@ -1935,12 +1973,13 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>10</x>
               <y>10</y>
-              <width>211</width>
+              <width>251</width>
               <height>16</height>
              </rect>
             </property>
             <property name="font">
              <font>
+              <pointsize>14</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -2592,12 +2631,12 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>450</x>
               <y>600</y>
-              <width>161</width>
+              <width>171</width>
               <height>18</height>
              </rect>
             </property>
             <property name="text">
-             <string>Display non-cognate B cells </string>
+             <string>Display non-cognate B cells? </string>
             </property>
            </widget>
            <widget class="QCheckBox" name="cbox_USE_TRAFFIC">
@@ -2608,7 +2647,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>450</x>
               <y>290</y>
-              <width>101</width>
+              <width>121</width>
               <height>18</height>
              </rect>
             </property>
@@ -2675,7 +2714,7 @@ p, li { white-space: pre-wrap; }
              <rect>
               <x>450</x>
               <y>400</y>
-              <width>141</width>
+              <width>151</width>
               <height>18</height>
              </rect>
             </property>
@@ -2916,7 +2955,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1319</width>
-     <height>18</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2963,12 +3002,19 @@ p, li { white-space: pre-wrap; }
     </property>
     <addaction name="action_save_snapshot"/>
    </widget>
+   <widget class="QMenu" name="menuChemokine">
+    <property name="title">
+     <string>Chemokine</string>
+    </property>
+    <addaction name="action_show_gradient"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuABM"/>
    <addaction name="menuGraphs"/>
    <addaction name="menuPlayer"/>
    <addaction name="menuSnapshot"/>
+   <addaction name="menuChemokine"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar1">
@@ -3133,6 +3179,11 @@ p, li { white-space: pre-wrap; }
   <action name="action_save_snapshot">
    <property name="text">
     <string>Save snapshot</string>
+   </property>
+  </action>
+  <action name="action_show_gradient">
+   <property name="text">
+    <string>Show gradient</string>
    </property>
   </action>
  </widget>

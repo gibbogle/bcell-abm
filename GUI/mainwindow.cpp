@@ -92,15 +92,6 @@ MainWindow::MainWindow(QWidget *parent)
 	for (int i=0; i<Plot::ncmax; i++) {
 		graphResultSet[i] = 0;
 	}
-//    stopfile = "stop_dll";
-//    pausefile = "pause_dll";
-//    cellfile = "cell_pos.dat";
-//#ifdef __GFORTRAN_DLL__
-//	dll_path = "libpara32.dll";
-//#else
-//	dll_path = "libpara32_ms.dll";
-//#endif
-//	dll_path = " ";
 	vtkfile = "basecase.pos";
 	savepos_start = 0;
 	ntimes = 0;
@@ -136,7 +127,8 @@ void MainWindow::createActions()
     action_inputs->setEnabled(false);
     action_outputs->setEnabled(false);
 	action_save_snapshot->setEnabled(false);
-	text_more->setEnabled(false);
+    action_show_gradient->setEnabled(false);
+    text_more->setEnabled(false);
     connect(action_open_input, SIGNAL(triggered()), this, SLOT(readInputFile()));
     connect(action_load_results, SIGNAL(triggered()), this, SLOT(loadResultFile()));
     connect(action_saveAs, SIGNAL(triggered()), this, SLOT(saveAs()));
@@ -163,6 +155,7 @@ void MainWindow::createActions()
     connect(action_remove_graph, SIGNAL(triggered()), this, SLOT(removeGraph()));
     connect(action_remove_all, SIGNAL(triggered()), this, SLOT(removeAllGraphs()));
     connect(action_save_snapshot, SIGNAL(triggered()), this, SLOT(saveSnapshot()));
+    connect(action_show_gradient, SIGNAL(triggered()), this, SLOT(showGradient()));
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1258,6 +1251,14 @@ void MainWindow::saveSnapshot()
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
+void MainWindow::showGradient()
+{
+    LOG_MSG("showGradient");
+    vtk->showGradient();
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
 void MainWindow::runServer()
 {
 	if (paused) {
@@ -1270,6 +1271,7 @@ void MainWindow::runServer()
         action_pause->setEnabled(true);
         action_stop->setEnabled(true);
 		action_save_snapshot->setEnabled(false);
+        action_show_gradient->setEnabled(false);
         paused = false;
         return;
 	}
@@ -1309,7 +1311,8 @@ void MainWindow::runServer()
     action_inputs->setEnabled(true);
     action_VTK->setEnabled(true);
 	action_save_snapshot->setEnabled(false);
-	tab_B->setEnabled(false);
+    action_show_gradient->setEnabled(false);
+    tab_B->setEnabled(false);
     tab_DC->setEnabled(false);
     tab_TCR->setEnabled(false);
     tab_run->setEnabled(false);
@@ -1806,7 +1809,8 @@ void MainWindow::postConnection()
     action_pause->setEnabled(false);
     action_stop->setEnabled(false);
 	action_save_snapshot->setEnabled(true);
-	tab_B->setEnabled(true);
+    action_show_gradient->setEnabled(true);
+    tab_B->setEnabled(true);
 //    tab_DC->setEnabled(true);
 //    tab_TCR->setEnabled(true);
     tab_run->setEnabled(true);
@@ -1864,6 +1868,7 @@ void MainWindow::pauseServer()
 	action_pause->setEnabled(false);
 	action_stop->setEnabled(true);
 	action_save_snapshot->setEnabled(true);
+    action_show_gradient->setEnabled(true);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1894,6 +1899,7 @@ void MainWindow::stopServer()
     action_pause->setEnabled(false);
     action_stop->setEnabled(false);
 	action_save_snapshot->setEnabled(true);
+    action_show_gradient->setEnabled(true);
 }
 
 //--------------------------------------------------------------------------------------------------------

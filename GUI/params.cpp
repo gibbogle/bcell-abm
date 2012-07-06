@@ -14,7 +14,7 @@ Params::Params()
 "BCR avidity has a lognormal distribution, described by the median and shape parameters.\n\
 The shape value must be greater than 1, and values close to 1 give distributions that are close to normal."},
 
-{"BC_COGNATE_FRACTION", 0.0001, 0.0, 0.002,
+{"BC_COGNATE_FRACTION", 0.0001, 0, 0,
 "B cell cognate fraction",
 "The fraction of B cells that are cognate, i.e. recognize and respond to the antigen."},
 
@@ -83,22 +83,22 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Compute B cell outflow limit?",
 "The upper bound on B cell outflow is computed together with inflow.  The alternative is to permit (probabilistic) egress of any cell at a portal."},
 
-{"RESIDENCE_TIME", 24.0, 12.0, 36.0,
+{"RESIDENCE_TIME", 24.0, 10.0, 30.0,
 "B cell residence time",
 "B cell residence time.\n\
 [hours]"},
 
-{"INFLAMM_DAYS1", 3.5, 0.0, 10.0,
+{"INFLAMM_DAYS1", 3.5, 0, 0,
 "Inflammation plateau duration",
 "Period over which the level of inflammation signal from the periphery is constant.\n\
 [days]"},
 
-{"INFLAMM_DAYS2", 4.5, 0.0, 10.0,
+{"INFLAMM_DAYS2", 4.5, 0, 0,
 "Inflammation cessation time",
 "Time at which the level of inflammation signal from the periphery goes to zero.\n\
 [days]"},
 
-{"INFLAMM_LEVEL", 0.0, 0.0, 10.0,
+{"INFLAMM_LEVEL", 0.0, 0.0, 1.0,
 "Inflammation level",
 "The plateau inflammation signal level."},
 

@@ -837,8 +837,19 @@ void MyVTK::saveSnapshot(QString fileName, QString imgType)
 		w2img->Modified();
 		bmpwriter->SetFileName((fileName.toStdString()).c_str()); 
 		bmpwriter->Write();
-//		bmpwriter->Delete();
 	}
+}
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::showGradient(void)
+{
+    SimpleView *mySimpleView = new SimpleView();
+    QSize size = mySimpleView->size();
+    sprintf(msg,"mySimpleView size: %d %d",size.height(),size.width());
+    LOG_MSG(msg);
+    mySimpleView->show();
+    mySimpleView->GetRenderWindow()->SetSize(768,768);
 }
 
 //-----------------------------------------------------------------------------------------

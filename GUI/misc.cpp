@@ -13,7 +13,7 @@
 #include "log.h"
 #include "transfer.h"
 
-#include "libpara32.h"
+#include "libBcell32.h"
 
 LOG_USE();
 char msg[2048];
@@ -146,7 +146,6 @@ void ExecThread::run()
 	len_outfile = outfile_path.length();
 	std::string std_outfile = outfile_path.toStdString();
 	outfile = std_outfile.c_str();
-
 
 	paused = false;
 	execute(&ncpu,const_cast<char *>(infile),&len_infile,const_cast<char *>(outfile),&len_outfile);

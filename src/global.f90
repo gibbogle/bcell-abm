@@ -66,7 +66,8 @@ integer, parameter :: EBI2     = 3		! OXY
 integer, parameter :: CXCR5    = 4		! CXCL13
 integer, parameter :: S1PR2    = 5		! S1P (negative)
 
-real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Taka
+!real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Taka
+real, parameter :: receptor_level(5,4) = reshape((/ 0.,0.,0.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Try this
 
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
@@ -114,7 +115,6 @@ real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
 !integer, parameter :: BASE_NFDC = 50
-logical, parameter :: use_FDCs = .true.
 
 ! Differentiation probabilities
 real, parameter :: PLASMA_PROB = 0.4
@@ -292,6 +292,7 @@ real(DP) :: RHO                             ! persistence: 0 < rho < 1
 
 logical :: use_traffic = .true.
 logical :: computed_outflow
+logical :: use_FDCs = .true.
 
 real :: RESIDENCE_TIME                  ! T cell residence time in hours -> inflow rate
 ! Vascularity parameters

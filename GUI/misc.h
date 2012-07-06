@@ -4,7 +4,7 @@
 #include <QThread>
 #include <QTcpServer>
 
-#include "libpara32.h"
+#include "libBcell32.h"
 
 class SocketHandler : public QThread
  {

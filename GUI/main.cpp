@@ -6,6 +6,7 @@
 
 #include "mainwindow.h"
 #include "log.h"
+#include "SimpleViewUI.h"
 
 LOG_DECLARE;
 
@@ -14,9 +15,8 @@ int main(int argc, char *argv[])
 	//initialize file logger
 	LOG_INIT("zzz.log");
 
-//	Q_INIT_RESOURCE(Bcell_GUI);
-
     QApplication app(argc, argv);
+
     MainWindow mainWin;
     mainWin.show();
 
