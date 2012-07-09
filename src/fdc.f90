@@ -23,7 +23,7 @@ logical :: ok
 integer :: NFDCrequired, site(3), GC_centre(3), nassigned, ifdc, ilim, dx, dy, dz, d2, x, y, z, k, kpar=0
 logical :: success, done, checked(-10:10,-10:10,-10:10)
 real :: R, separation_limit
-real, parameter :: FDC_SEPARATION = 2.1
+real, parameter :: FDC_SEPARATION = 1.8
 integer, parameter :: method = 2	! 1 or 2
 
 if (.not.use_FDCs) then
@@ -39,7 +39,7 @@ DCoffset(:,4) = (/0,-1,0/)
 DCoffset(:,5) = (/0,1,0/)
 DCoffset(:,6) = (/0,0,-1/)
 DCoffset(:,7) = (/0,0,1/)
-NFDCrequired = BASE_NFDC
+NFDCrequired = 5*BASE_NFDC
 ! Place the first FDC at a point midway between the blob centre and the T zone bdry
 GC_centre = Centre + (/0.,-Radius%y/2, 0./)
 write(logmsg,*) 'GC_centre: ',GC_centre

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Thu 5. Jul 11:11:03 2012
+** Created: Mon 9. Jul 14:06:54 2012
 **      by: Qt User Interface Compiler version 4.7.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -152,7 +152,6 @@ public:
     QMyLabel *label_CCL21_HALFLIFE;
     QLineEdit *line_CCL21_HALFLIFE;
     QLabel *units_CCL21conc;
-    QLabel *units_CCL21diff;
     QLabel *units_CCL21life;
     QLabel *label_CCL21_STRENGTH;
     QLineEdit *line_CCL21_STRENGTH;
@@ -173,7 +172,6 @@ public:
     QMyLabel *label_CXCL13_HALFLIFE;
     QLineEdit *line_CXCL13_HALFLIFE;
     QLabel *units_CXCL13conc;
-    QLabel *units_CXCL13diff;
     QLabel *units_CXCL13life;
     QLabel *label_CXCL13_STRENGTH;
     QLineEdit *line_CXCL13_STRENGTH;
@@ -190,7 +188,6 @@ public:
     QMyLabel *label_OXY_HALFLIFE;
     QLineEdit *line_OXY_HALFLIFE;
     QLabel *units_OXYconc;
-    QLabel *units_OXYdiff;
     QLabel *units_OXYlife;
     QLabel *label_OXY_STRENGTH;
     QLineEdit *line_OXY_STRENGTH;
@@ -207,7 +204,6 @@ public:
     QMyLabel *label_S1P_HALFLIFE;
     QLineEdit *line_S1P_HALFLIFE;
     QLabel *units_S1Pconc;
-    QLabel *units_S1Pdiff;
     QLabel *units_S1Plife;
     QLabel *label_S1P_STRENGTH_POS;
     QLineEdit *line_S1P_STRENGTH_POS;
@@ -889,11 +885,6 @@ public:
 
         gridLayout_S1P_2->addWidget(units_CCL21conc, 1, 3, 1, 1);
 
-        units_CCL21diff = new QLabel(gridLayoutWidget_2);
-        units_CCL21diff->setObjectName(QString::fromUtf8("units_CCL21diff"));
-
-        gridLayout_S1P_2->addWidget(units_CCL21diff, 2, 3, 1, 1);
-
         units_CCL21life = new QLabel(gridLayoutWidget_2);
         units_CCL21life->setObjectName(QString::fromUtf8("units_CCL21life"));
 
@@ -987,11 +978,6 @@ public:
 
         gridLayout_S1P_5->addWidget(units_CXCL13conc, 1, 3, 1, 1);
 
-        units_CXCL13diff = new QLabel(gridLayoutWidget_5);
-        units_CXCL13diff->setObjectName(QString::fromUtf8("units_CXCL13diff"));
-
-        gridLayout_S1P_5->addWidget(units_CXCL13diff, 2, 3, 1, 1);
-
         units_CXCL13life = new QLabel(gridLayoutWidget_5);
         units_CXCL13life->setObjectName(QString::fromUtf8("units_CXCL13life"));
 
@@ -1069,11 +1055,6 @@ public:
 
         gridLayout_S1P_4->addWidget(units_OXYconc, 1, 3, 1, 1);
 
-        units_OXYdiff = new QLabel(gridLayoutWidget_4);
-        units_OXYdiff->setObjectName(QString::fromUtf8("units_OXYdiff"));
-
-        gridLayout_S1P_4->addWidget(units_OXYdiff, 2, 3, 1, 1);
-
         units_OXYlife = new QLabel(gridLayoutWidget_4);
         units_OXYlife->setObjectName(QString::fromUtf8("units_OXYlife"));
 
@@ -1150,11 +1131,6 @@ public:
         units_S1Pconc->setObjectName(QString::fromUtf8("units_S1Pconc"));
 
         gridLayout_S1P_3->addWidget(units_S1Pconc, 1, 3, 1, 1);
-
-        units_S1Pdiff = new QLabel(gridLayoutWidget_3);
-        units_S1Pdiff->setObjectName(QString::fromUtf8("units_S1Pdiff"));
-
-        gridLayout_S1P_3->addWidget(units_S1Pdiff, 2, 3, 1, 1);
 
         units_S1Plife = new QLabel(gridLayoutWidget_3);
         units_S1Plife->setObjectName(QString::fromUtf8("units_S1Plife"));
@@ -1835,8 +1811,8 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget->setCurrentIndex(2);
-        tabs->setCurrentIndex(4);
+        stackedWidget->setCurrentIndex(0);
+        tabs->setCurrentIndex(2);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -1930,11 +1906,6 @@ public:
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_CCL21diff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CCL21life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CCL21_STRENGTH->setText(QApplication::translate("MainWindow", "label_CCL21_STRENGTH", 0, QApplication::UnicodeUTF8));
         label_CCL21_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_CCL21_BDRY_RATE", 0, QApplication::UnicodeUTF8));
@@ -1956,11 +1927,6 @@ public:
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_CXCL13diff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_CXCL13life->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_CXCL13_STRENGTH->setText(QApplication::translate("MainWindow", "label_CXCL13_STRENGTH", 0, QApplication::UnicodeUTF8));
         label_CXCL13_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_CXCL13_BDRY_RATE", 0, QApplication::UnicodeUTF8));
@@ -1978,11 +1944,6 @@ public:
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_OXYdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_OXYlife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_OXY_STRENGTH->setText(QApplication::translate("MainWindow", "label_OXY_STRENGTH", 0, QApplication::UnicodeUTF8));
         label_OXY_BDRY_RATE->setText(QApplication::translate("MainWindow", "label_OXY_BDRY_RATE", 0, QApplication::UnicodeUTF8));
@@ -2000,11 +1961,6 @@ public:
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">mg.L</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
-        units_S1Pdiff->setText(QApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">m</span><span style=\" font-size:8pt; vertical-align:super;\">2</span><span style=\" font-size:8pt;\">s</span><span style=\" font-size:8pt; vertical-align:super;\">-1</span></p></body></html>", 0, QApplication::UnicodeUTF8));
         units_S1Plife->setText(QApplication::translate("MainWindow", "h", 0, QApplication::UnicodeUTF8));
         label_S1P_STRENGTH_POS->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_POS", 0, QApplication::UnicodeUTF8));
         label_S1P_STRENGTH_NEG->setText(QApplication::translate("MainWindow", "label_S1P_STRENGTH_NEG", 0, QApplication::UnicodeUTF8));
