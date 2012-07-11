@@ -38,6 +38,10 @@ integer, parameter :: DEAD        = 11
 integer, parameter :: LEFT        = 12
 integer, parameter :: STAGELIMIT  = 12
 
+integer, parameter :: TESTCELL1 = 20
+integer, parameter :: TESTCELL2 = 21
+
+
 integer, parameter :: BCL6_LO = 1
 integer, parameter :: BCL6_HI = GCC_COMMIT
 
@@ -66,8 +70,14 @@ integer, parameter :: EBI2     = 3		! OXY
 integer, parameter :: CXCR5    = 4		! CXCL13
 integer, parameter :: S1PR2    = 5		! S1P (negative)
 
-!real, parameter :: receptor_level(5,4) = reshape((/ 1.,1.,1.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Taka
-real, parameter :: receptor_level(5,4) = reshape((/ 0.,0.,0.,0.,0., .2,2.,2.,0.,0., .2,.5,2.,1.,0., 0.,0.,.2,2.,2. /), (/5,4/))	! Try this
+real, parameter :: receptor_level(5,5) = reshape((/ &
+! S1PR1  CCR7  EBI2 CXCR5 S1PR2
+   1.0,  1.0,  1.0,  1.0,  0.0, &   ! NAIVE_TAG
+   0.2,  2.0,  2.0,  1.0,  0.0, &   ! ANTIGEN_TAG
+   0.2,  0.5,  2.0,  1.0,  0.0, &   ! ACTIVATED_TAG
+   0.0,  0.5,  0.2,  1.5,  2.0, &   ! GCC_TAG
+   0.2,  0.5,  1.0,  0.0,  0.0  &   ! PLASMA_TAG
+    /), (/5,5/))
 
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
@@ -82,6 +92,7 @@ integer, parameter :: NAIVE_TAG = 1
 integer, parameter :: ANTIGEN_TAG = 2
 integer, parameter :: ACTIVATED_TAG = 3
 integer, parameter :: GCC_TAG = 4
+integer, parameter :: PLASMA_TAG = 5
 
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 integer, parameter :: jumpvec2D(3,8) = reshape((/ 1,0,0, 1,1,0, 0,1,0, -1,1,0, -1,0,0, -1,-1,0, 0,-1,0, 1,-1,0 /), (/3,8/))
@@ -135,8 +146,13 @@ integer, parameter :: n_multiple_runs = 1
 ! Parameters and switches for testing
 logical, parameter :: test_vascular = .false.
 logical, parameter :: test_squeezer = .false.
-logical, parameter :: turn_off_chemotaxis = .false.		! to test the chemotaxis model when cells are not attracted to exits
 logical, parameter :: test_chemotaxis = .false.			! to test multiple chemotactic effects on one or a few cells
+logical, parameter :: test_case1 = .true.   
+! basic scenario with two cell types:
+! TESTCELL1 cells are sensitive to S1P and CCL21 chemotaxis (i.e. to the blob boundary)
+! TESTCELL2 cells are insensitive
+! Most cells are TESTCELL1, a fraction BC_COGNATE_FRACTION are TESTCELL2
+! No trafficking, no antigen encounter, no activation, only cell motility is simulated
 
 ! Debugging parameters
 integer :: idbug = 0
@@ -556,21 +572,25 @@ endif
 end function
 
 !-----------------------------------------------------------------------------------------
-! To determine if a site falls within the ellipsoid with major axis radius = Radius%x
-! Currently the ellipsoid is shaped like a flattened football, i.e. the ellipsoid equation is:
+! To determine if a site falls within the ellipsoid with:
+!   centre given by ecentre
+!   radii given by eradius
+! The blob ellipsoid is shaped like a flattened soccer ball, i.e. the ellipsoid equation is:
 ! (x^2+ z^2)/a^2 + y^2/b^2 <= 1
 ! Axis orientation: 
 ! The y-axis is on the line passing through the centres of the paracortex and the follicle.
 ! The x-axis is parallel to one long axis of the follicle.
 ! The z-axis is perpendicular to the x- and y-axes. 
-!
+! For the follicle blob, ecentre = Centre, eradius = Radius
 !-----------------------------------------------------------------------------------------
-logical function InsideEllipsoid(site)
+logical function InsideEllipsoid(site,ecentre,eradius)
 integer :: site(3)
+real :: ecentre(3)
+type(vector3_type) :: eradius
 real :: r(3)
 
-r = site - Centre
-if (r(1)*r(1)/(Radius%x*Radius%x) + r(2)*r(2)/(Radius%y*Radius%y) + r(3)*r(3)/(Radius%z*Radius%z) <= 1) then
+r = site - ecentre
+if (r(1)*r(1)/(eradius%x*eradius%x) + r(2)*r(2)/(eradius%y*eradius%y) + r(3)*r(3)/(eradius%z*eradius%z) <= 1) then
     InsideEllipsoid = .true.
 else
     InsideEllipsoid = .false.

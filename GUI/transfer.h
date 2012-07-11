@@ -6,7 +6,7 @@
 extern int showingVTK;
 
 #define MAX_BC 100000
-#define MAX_DC 100
+#define MAX_DC 500
 #define MAX_BOND 1
 #define NINFO 5
 

@@ -842,18 +842,6 @@ void MyVTK::saveSnapshot(QString fileName, QString imgType)
 
 //-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
-void MyVTK::showGradient(void)
-{
-    SimpleView *mySimpleView = new SimpleView();
-    QSize size = mySimpleView->size();
-    sprintf(msg,"mySimpleView size: %d %d",size.height(),size.width());
-    LOG_MSG(msg);
-    mySimpleView->show();
-    mySimpleView->GetRenderWindow()->SetSize(768,768);
-}
-
-//-----------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------
 void MyVTK::pause()
 {
 	paused = true;

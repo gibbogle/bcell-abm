@@ -222,9 +222,9 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CXCL13 strength",
  "Relative strength of CXCL13 chemotactic influence"},
 
-{"NFDC", 20, 0, 0,
+{"NFDC", 200, 0, 0,
 "Number of FDCs",
-"Initial number of FDCs in the follicle.  Each FDC occupies 35 lattice sites."},
+"Initial number of FDCs in the follicle.  Each FDC occupies 37 lattice sites."},
 
 {"BASE_EXIT_PROB", 0.007, 0.0, 0.0,
 "Base B cell exit probability",

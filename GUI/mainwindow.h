@@ -20,7 +20,8 @@ using namespace std;
 #include "myvtk.h"
 #include "result_set.h"
 #include "log.h"
-#include "SimpleViewUI.h"
+#include "SimpleView3DUI.h"
+#include "SimpleView2DUI.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -95,8 +96,9 @@ private slots:
 	void playVTK();
 	void setVTKSpeed();
 	void saveSnapshot();
-    void showGradient();
-	void setSavePosStart();
+    void showGradient3D();
+    void showGradient2D();
+    void setSavePosStart();
 
 public slots:
 	void preConnection();
@@ -268,7 +270,7 @@ private:
 	static const bool USE_RANGES = false;
 
 	MyVTK *vtk;
-    SimpleView *mySimpleView;
+    SimpleView3D *mySimpleView3D;
 	ExecThread *exthread;
 };
 

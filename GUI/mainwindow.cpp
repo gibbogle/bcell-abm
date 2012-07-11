@@ -76,6 +76,8 @@ MainWindow::MainWindow(QWidget *parent)
 	setupUi(this);
     showMaximized();
 	// Some initializations
+    sprintf(msg,"MAX_DC: %d",MAX_DC);
+    LOG_MSG(msg);
     nDistPts = 200;
 	nTicks = 1000;
 	tickVTK = 100;	// timer tick for VTK in milliseconds
@@ -127,7 +129,8 @@ void MainWindow::createActions()
     action_inputs->setEnabled(false);
     action_outputs->setEnabled(false);
 	action_save_snapshot->setEnabled(false);
-    action_show_gradient->setEnabled(false);
+    action_show_gradient3D->setEnabled(false);
+    action_show_gradient2D->setEnabled(false);
     text_more->setEnabled(false);
     connect(action_open_input, SIGNAL(triggered()), this, SLOT(readInputFile()));
     connect(action_load_results, SIGNAL(triggered()), this, SLOT(loadResultFile()));
@@ -155,7 +158,8 @@ void MainWindow::createActions()
     connect(action_remove_graph, SIGNAL(triggered()), this, SLOT(removeGraph()));
     connect(action_remove_all, SIGNAL(triggered()), this, SLOT(removeAllGraphs()));
     connect(action_save_snapshot, SIGNAL(triggered()), this, SLOT(saveSnapshot()));
-    connect(action_show_gradient, SIGNAL(triggered()), this, SLOT(showGradient()));
+    connect(action_show_gradient3D, SIGNAL(triggered()), this, SLOT(showGradient3D()));
+    connect(action_show_gradient2D, SIGNAL(triggered()), this, SLOT(showGradient2D()));
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1251,16 +1255,28 @@ void MainWindow::saveSnapshot()
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
-void MainWindow::showGradient()
+void MainWindow::showGradient2D()
 {
-    LOG_MSG("showGradient");
-//    vtk->showGradient();
-    SimpleView *mySimpleView = new SimpleView();
-    QSize size = mySimpleView->size();
-    sprintf(msg,"mySimpleView size: %d %d",size.height(),size.width());
+    LOG_MSG("showGradient2D");
+    SimpleView2D *mySimpleView2D = new SimpleView2D();
+    QSize size = mySimpleView2D->size();
+    sprintf(msg,"mySimpleView2D size: %d %d",size.height(),size.width());
     LOG_MSG(msg);
-    mySimpleView->show();
-    mySimpleView->GetRenderWindow()->SetSize(768,768);
+    mySimpleView2D->show();
+    mySimpleView2D->AimCamera();
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::showGradient3D()
+{
+    LOG_MSG("showGradient3D");
+    SimpleView3D *mySimpleView3D = new SimpleView3D();
+    QSize size = mySimpleView3D->size();
+    sprintf(msg,"mySimpleView3D size: %d %d",size.height(),size.width());
+    LOG_MSG(msg);
+    mySimpleView3D->show();
+    mySimpleView3D->GetRenderWindow()->SetSize(768,768);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1277,7 +1293,8 @@ void MainWindow::runServer()
         action_pause->setEnabled(true);
         action_stop->setEnabled(true);
 		action_save_snapshot->setEnabled(false);
-        action_show_gradient->setEnabled(false);
+        action_show_gradient3D->setEnabled(false);
+        action_show_gradient2D->setEnabled(false);
         paused = false;
         return;
 	}
@@ -1317,7 +1334,8 @@ void MainWindow::runServer()
     action_inputs->setEnabled(true);
     action_VTK->setEnabled(true);
 	action_save_snapshot->setEnabled(false);
-    action_show_gradient->setEnabled(false);
+    action_show_gradient3D->setEnabled(false);
+    action_show_gradient2D->setEnabled(false);
     tab_B->setEnabled(false);
     tab_DC->setEnabled(false);
     tab_TCR->setEnabled(false);
@@ -1815,7 +1833,8 @@ void MainWindow::postConnection()
     action_pause->setEnabled(false);
     action_stop->setEnabled(false);
 	action_save_snapshot->setEnabled(true);
-    action_show_gradient->setEnabled(true);
+    action_show_gradient3D->setEnabled(true);
+    action_show_gradient2D->setEnabled(true);
     tab_B->setEnabled(true);
 //    tab_DC->setEnabled(true);
 //    tab_TCR->setEnabled(true);
@@ -1874,7 +1893,8 @@ void MainWindow::pauseServer()
 	action_pause->setEnabled(false);
 	action_stop->setEnabled(true);
 	action_save_snapshot->setEnabled(true);
-    action_show_gradient->setEnabled(true);
+    action_show_gradient3D->setEnabled(true);
+    action_show_gradient2D->setEnabled(true);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1905,7 +1925,8 @@ void MainWindow::stopServer()
     action_pause->setEnabled(false);
     action_stop->setEnabled(false);
 	action_save_snapshot->setEnabled(true);
-    action_show_gradient->setEnabled(true);
+    action_show_gradient3D->setEnabled(true);
+    action_show_gradient2D->setEnabled(true);
 }
 
 //--------------------------------------------------------------------------------------------------------

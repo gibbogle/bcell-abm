@@ -329,6 +329,13 @@ read(nfcell,*) NT_GUI_OUT					! interval between GUI outputs (timesteps)
 read(nfcell,*) fixedfile					! file with "fixed" parameter values
 close(nfcell)
 
+if (test_case1) then
+    usetraffic = 0
+    BASE_NFDC = 0
+    base_exit_prob = 0
+    iuse(EBI2) = 0
+    iuse(CXCR5) = 0
+endif    
 ! Chemokines
 chemo(S1P)%name    = 'S1P'
 chemo(CCL21)%name  = 'CCL21'
@@ -694,7 +701,7 @@ if (status == BCL6_LO) then
 		p2%stagetime = tnow + T_BCL6_UP
 	else
 		call set_stage(p2,PLASMA)
-		call ReceptorLevel(icnew,ACTIVATED_TAG,ANTIGEN_TAG,1.0,0.0,1.0,cellist(icnew)%receptor_level)		
+		call ReceptorLevel(icnew,ACTIVATED_TAG,PLASMA_TAG,1.0,0.0,1.0,cellist(icnew)%receptor_level)		
 		p2%stagetime = tnow
 	endif
 else
@@ -907,7 +914,7 @@ do x = 1,NX
             occupancy(x,y,z)%FDC_nbdry = 0
             nullify(occupancy(x,y,z)%bdry)
             site = (/x,y,z/)
-			if (.not.InsideEllipsoid(site)) then
+			if (.not.InsideEllipsoid(site,Centre,Radius)) then
 				occupancy(x,y,z)%indx = OUTSIDE_TAG
 			else
 			    nlist = nlist+1

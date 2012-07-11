@@ -6,7 +6,6 @@
 
 #include "mainwindow.h"
 #include "log.h"
-#include "SimpleViewUI.h"
 
 LOG_DECLARE;
 

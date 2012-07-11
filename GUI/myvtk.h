@@ -28,8 +28,6 @@
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
 
-#include "SimpleViewUI.h"
-
 //#include <vtkConfigure.h>
 
 using namespace std;
@@ -71,7 +69,6 @@ public:
 	void pause();
 	void playon();
 	void saveSnapshot(QString, QString);
-    void showGradient();
 	void stop();
 
 	QList<CELL_POS > BCpos_list;

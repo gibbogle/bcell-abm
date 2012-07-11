@@ -2962,7 +2962,8 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Chemokine</string>
     </property>
-    <addaction name="action_show_gradient"/>
+    <addaction name="action_show_gradient3D"/>
+    <addaction name="action_show_gradient2D"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -3137,9 +3138,14 @@ p, li { white-space: pre-wrap; }
     <string>Save snapshot</string>
    </property>
   </action>
-  <action name="action_show_gradient">
+  <action name="action_show_gradient3D">
    <property name="text">
-    <string>Show gradient</string>
+    <string>Show 3D gradient field</string>
+   </property>
+  </action>
+  <action name="action_show_gradient2D">
+   <property name="text">
+    <string>Show 2D gradient field</string>
    </property>
   </action>
  </widget>

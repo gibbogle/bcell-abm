@@ -20,11 +20,13 @@ contains
 !--------------------------------------------------------------------------------
 subroutine placeFDCs(ok)
 logical :: ok
-integer :: NFDCrequired, site(3), GC_centre(3), nassigned, ifdc, ilim, dx, dy, dz, d2, x, y, z, k, kpar=0
-logical :: success, done, checked(-10:10,-10:10,-10:10)
-real :: R, separation_limit
-real, parameter :: FDC_SEPARATION = 1.8
-integer, parameter :: method = 2	! 1 or 2
+integer :: NFDCrequired, site(3), nassigned, ifdc, ilim, dx, dy, dz, d2, x, y, z, k, kpar=0
+integer, parameter :: MAX_LIM = 30
+logical :: success, done, checked(-MAX_LIM:MAX_LIM,-MAX_LIM:MAX_LIM,-MAX_LIM:MAX_LIM)
+real :: R, separation_limit, GC_centre(3)
+real :: FDC_SEPARATION
+type(vector3_type) :: eradius
+integer, parameter :: method = 3	! 1, 2 or 3
 
 if (.not.use_FDCs) then
 	NFDC = 0
@@ -39,9 +41,18 @@ DCoffset(:,4) = (/0,-1,0/)
 DCoffset(:,5) = (/0,1,0/)
 DCoffset(:,6) = (/0,0,-1/)
 DCoffset(:,7) = (/0,0,1/)
-NFDCrequired = 5*BASE_NFDC
-! Place the first FDC at a point midway between the blob centre and the T zone bdry
-GC_centre = Centre + (/0.,-Radius%y/2, 0./)
+NFDCrequired = BASE_NFDC
+if (method <= 2) then
+    ! Place the first FDC at a point midway between the blob centre and the T zone bdry
+    GC_centre = Centre + (/0.,-Radius%y/2, 0./)
+    FDC_SEPARATION = 1.8
+elseif (method == 3) then
+    GC_centre = Centre + (/0.,Radius%y/3, 0./)
+    eradius%y = (2./3.)*Radius%y
+    eradius%x = 1.5*ELLIPSE_RATIO*eradius%y
+    eradius%z = eradius%x
+    FDC_SEPARATION = 2.8
+endif
 write(logmsg,*) 'GC_centre: ',GC_centre
 call logger(logmsg)
 FDClist(1)%ID = 1
@@ -58,10 +69,15 @@ write(logmsg,*) 'FDC site: ',1,FDClist(1)%site,nassigned
 call logger(logmsg)
 ! Now place the rest of the FDCs.
 ! The criteria of FDC location are:
-!   near the proposed GC centre
-!   not nearer than FDC_SEPARATION (number of sites) from any other FDC
-!
-! This algorithm generates a rather cubic FDC region
+!  for methods 1 and 2:
+!    near the proposed GC centre
+!    not nearer than FDC_SEPARATION (number of sites) from any other FDC
+!   (method 1 generates a rather cubic FDC region)
+!  for method 3:
+!    within an ellipsoid with specified:
+!    centre
+!    major radius (xy plane)
+!    minor radius (z axis)
 !
 if (method == 1) then
 	checked = .false.
@@ -98,13 +114,19 @@ if (method == 1) then
 			enddo
 		enddo
 	enddo outer_loop
-else
+elseif (method == 2) then
 	done = .false.
 	checked = .false.
 	checked(0,0,0) = .true.
 	ilim = 2
 	do
 		ilim = ilim + 1
+		if (ilim > MAX_LIM) then
+		    write(logmsg,*) 'Error: PlaceFDCs: ilim exceeds MAX_LIM: reduce FDC_SEPARATION'
+		    call logger(logmsg)
+		    ok = .false.
+		    return
+		endif
 		do k = 1,1000
 			dx = random_int(-ilim,ilim,kpar)
 			dy = random_int(-ilim,ilim,kpar)
@@ -113,7 +135,54 @@ else
 			d2 = dx*dx + dy*dy + dz*dz
 			if (d2 > ilim*ilim) cycle
 			site = GC_centre + (/dx,dy,dz/)
-			if (.not.InsideEllipsoid(site)) cycle
+			if (.not.InsideEllipsoid(site,Centre,Radius)) cycle
+			R = par_uni(kpar)
+			separation_limit = FDC_SEPARATION*(0.8 + 0.3*R)
+			if (FDCSiteAllowed(site,separation_limit)) then
+				NFDC = NFDC + 1
+				FDClist(NFDC)%ID = NFDC
+				FDClist(NFDC)%site = site
+				FDClist(NFDC)%alive = .true.
+				call AssignFDCsites(NFDC,nassigned,ok)
+				if (.not.ok) then
+					return
+				endif
+				FDClist(NFDC)%nsites = nassigned
+				nlist = nlist - nassigned
+				checked(dx,dy,dz) = .true.
+				write(logmsg,'(a,10i4)') 'FDC site: ilim: ',NFDC,ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
+				call logger(logmsg)
+				if (NFDC == NFDCrequired) then
+					done = .true.
+					exit
+				endif
+			endif				
+		enddo
+		if (done) exit
+	enddo
+elseif (method == 3) then
+	done = .false.
+	checked = .false.
+	checked(0,0,0) = .true.
+	ilim = 2
+	do
+		ilim = ilim + 1
+		if (ilim > MAX_LIM) then
+		    write(logmsg,*) 'Error: PlaceFDCs: ilim exceeds MAX_LIM: reduce FDC_SEPARATION'
+		    call logger(logmsg)
+		    ok = .false.
+		    return
+		endif
+		do k = 1,1000
+			dx = random_int(-ilim,ilim,kpar)
+			dy = random_int(-ilim,ilim,kpar)
+			dz = random_int(-ilim,ilim,kpar)
+			if (checked(dx,dy,dz)) cycle
+			d2 = dx*dx + dy*dy + dz*dz
+			if (d2 > ilim*ilim) cycle
+			site = GC_centre + (/dx,dy,dz/)
+			if (.not.InsideEllipsoid(site,Centre,Radius)) cycle
+			if (.not.InsideEllipsoid(site,GC_centre,eradius)) cycle
 			R = par_uni(kpar)
 			separation_limit = FDC_SEPARATION*(0.8 + 0.3*R)
 			if (FDCSiteAllowed(site,separation_limit)) then

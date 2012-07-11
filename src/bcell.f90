@@ -109,7 +109,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine array_initialisation(ok)
 logical :: ok
-integer :: x,y,z,k
+integer :: x,y,z,k, ichemo
 integer :: MAXX, z1, z2
 integer :: cog_size
 real :: d, rr(3), aRadius
@@ -120,6 +120,15 @@ call logger("call rng_initialisation")
 call rng_initialisation
 call logger("did rng_initialisation")
 !call check_rng
+
+! These are deallocated here instead of in subroutine wrapup so that when a simulation run ends 
+! it will still be possible to view the chemokine concentration gradient fields.
+if (allocated(occupancy)) deallocate(occupancy)
+do ichemo = 1,MAX_CHEMO
+	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
+	if (allocated(chemo(ichemo)%conc)) deallocate(chemo(ichemo)%conc)
+	if (allocated(chemo(ichemo)%grad)) deallocate(chemo(ichemo)%grad)
+enddo
 
 cog_size = (sizeof(cog) + 2)/4
 nsteps_per_min = 1.0/DELTA_T
@@ -1774,7 +1783,7 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 real(DP) :: t1, t2, tmover=0, tfields=0
-integer :: k, kcell, stage
+integer :: k, kcell, stage, kpar = 0
 logical :: ok, sim_dbug
 logical, save :: first = .true.
 
@@ -1819,6 +1828,23 @@ if (test_chemotaxis) then
 !		stage = get_stage(cellist(kcell)%cptr)
 !		write(nfout,'(i4,i6,2x,3i4)') k,kcell,stage
 !	enddo
+	call mover(ok)
+	return
+endif
+
+if (test_case1) then    ! cognate cells are made insensitive to all chemokines (note: other NAIVE cells sense all except CXCL13)
+    if (istep == 1) then
+		do k = 1,lastcogID
+			kcell = cognate_list(k)
+			if (kcell > 0) then
+!				cellist(kcell)%ctype = TESTCELL2
+				cellist(kcell)%receptor_level = 0
+				if (k <= 5) then
+    				call set_stage(cellist(kcell)%cptr,PLASMA)
+    		    endif
+            endif
+        enddo
+    endif
 	call mover(ok)
 	return
 endif
@@ -2081,7 +2107,7 @@ call logger('doing wrapup ...')
 ierr = 0
 if (allocated(zoffset)) deallocate(zoffset)
 if (allocated(zdomain)) deallocate(zdomain)
-if (allocated(occupancy)) deallocate(occupancy)
+!if (allocated(occupancy)) deallocate(occupancy)
 if (allocated(Tres_dist)) deallocate(Tres_dist)
 if (allocated(cellist)) deallocate(cellist,stat=ierr)
 if (allocated(DClist)) deallocate(DClist,stat=ierr)
@@ -2097,11 +2123,11 @@ if (allocated(life_dist)) deallocate(life_dist)
 if (allocated(divide_dist)) deallocate(divide_dist)
 if (allocated(chemo_r)) deallocate(chemo_r)
 if (allocated(chemo_p)) deallocate(chemo_p)
-do ichemo = 1,MAX_CHEMO
-	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
-	if (allocated(chemo(ichemo)%conc)) deallocate(chemo(ichemo)%conc)
-	if (allocated(chemo(ichemo)%grad)) deallocate(chemo(ichemo)%grad)
-enddo
+!do ichemo = 1,MAX_CHEMO
+!	if (allocated(chemo(ichemo)%coef)) deallocate(chemo(ichemo)%coef)
+!	if (allocated(chemo(ichemo)%conc)) deallocate(chemo(ichemo)%conc)
+!	if (allocated(chemo(ichemo)%grad)) deallocate(chemo(ichemo)%grad)
+!enddo
 if (allocated(ODEdiff%ivar)) deallocate(ODEdiff%ivar)
 if (allocated(ODEdiff%varsite)) deallocate(ODEdiff%varsite)
 if (allocated(ODEdiff%icoef)) deallocate(ODEdiff%icoef)

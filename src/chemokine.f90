@@ -12,7 +12,7 @@ type receptor_type
 	integer :: chemokine
 	integer :: sign
 	real(REAL_KIND) :: strength
-	real(REAL_KIND) :: level(4)
+	real(REAL_KIND) :: level(5)
 end type
 
 type chemokine_type
@@ -39,6 +39,6 @@ end type
 
 type(chemokine_type), target :: chemo(MAX_CHEMO)
 type(receptor_type), target :: receptor(MAX_RECEPTOR)
-type (ODEdiff_type) :: ODEdiff
+type(ODEdiff_type) :: ODEdiff
 
 end module
