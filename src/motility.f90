@@ -203,8 +203,13 @@ enddo
 stay_prob = dirprob(0)
 
 ischemo = .false.
-do k = 1,MAX_RECEPTOR
-    if (receptor(k)%used .and. (cell%receptor_level(k) > 0)) then
+do kr = 1,MAX_RECEPTOR
+    if (cell%receptor_saturation_time(kr) /= 0) then
+        if (tnow > cell%receptor_saturation_time(kr) + T_RECEPTOR_REFRACTORY) then
+            cell%receptor_saturation_time(kr) = 0
+        endif
+    endif
+    if (receptor(kr)%used .and. (cell%receptor_level(kr) > 0) .and. (cell%receptor_saturation_time(kr) == 0)) then
         ischemo = .true.
         exit
     endif
@@ -213,10 +218,14 @@ enddo
 vsum = 0
 if (ischemo) then
     do kr = 1,MAX_RECEPTOR
-        if (receptor(kr)%used) then
+        if (receptor(kr)%used .and. (cell%receptor_saturation_time(kr) == 0)) then
 			ichemo = receptor(kr)%chemokine
             f = receptor(kr)%sign*cell%receptor_level(kr)*receptor(kr)%strength
 			v = chemo(ichemo)%grad(:,site1(1),site1(2),site1(3))
+			if (receptor_saturation(site1,f,v)) then
+			    cell%receptor_saturation_time(kr) = tnow
+			    f = f/2
+			endif
 	    	vsum = vsum + f*v
 	    endif
 	enddo
@@ -358,6 +367,25 @@ cell%lastdir = dir1
 occupancy(site2(1),site2(2),site2(3))%indx(kslot2) = kcell
 occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = 0
 end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Determine whether a receptor at site1(:) is saturated.
+! Currently the decision is made from:
+! f = total strength, which is cell%receptor_level(kr)*receptor(kr)%strength
+! v = chemokine gradient
+!-----------------------------------------------------------------------------------------
+logical function receptor_saturation(site,f,v)
+integer :: site(3)
+real :: f, v(3)
+real :: magnitude
+
+magnitude = norm(f*v)
+if (magnitude > 1) then
+    receptor_saturation = .true.
+else
+    receptor_saturation = .false.
+endif
+end function
 
 !-----------------------------------------------------------------------------------------
 ! In this version the parallel section has been made into a subroutine.

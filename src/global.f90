@@ -50,6 +50,7 @@ real, parameter :: T_EBI2_UP = 2*60
 real, parameter :: T_BCL6_UP   = 2*60
 real, parameter :: T_FIRST_DIVISION = 12*60
 real, parameter :: T_DIVISION       = 10*60
+real, parameter :: T_RECEPTOR_REFRACTORY = 5
 
 integer, parameter :: TCP_PORT_0 = 5000		! main communication port (logging) 
 integer, parameter :: TCP_PORT_1 = 5001		! data transfer port (plotting)
@@ -147,12 +148,14 @@ integer, parameter :: n_multiple_runs = 1
 logical, parameter :: test_vascular = .false.
 logical, parameter :: test_squeezer = .false.
 logical, parameter :: test_chemotaxis = .false.			! to test multiple chemotactic effects on one or a few cells
-logical, parameter :: test_case1 = .true.   
-! basic scenario with two cell types:
-! TESTCELL1 cells are sensitive to S1P and CCL21 chemotaxis (i.e. to the blob boundary)
-! TESTCELL2 cells are insensitive
-! Most cells are TESTCELL1, a fraction BC_COGNATE_FRACTION are TESTCELL2
-! No trafficking, no antigen encounter, no activation, only cell motility is simulated
+
+! Test cases
+! test_case(1) 
+!   a basic scenario with two cell types:
+!   TESTCELL1 cells are sensitive to S1P and CCL21 chemotaxis (i.e. to the blob boundary)
+!   TESTCELL2 cells are insensitive
+!   Most cells are TESTCELL1, a fraction BC_COGNATE_FRACTION are TESTCELL2
+!   No trafficking, no antigen encounter, no activation, only cell motility is simulated
 
 ! Debugging parameters
 integer :: idbug = 0
@@ -219,6 +222,7 @@ type cell_type
 	integer(2) :: lastdir
     real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
     real :: receptor_level(MAX_RECEPTOR)  ! level of receptor (susceptibility to the chemokine signal)
+    real :: receptor_saturation_time(MAX_RECEPTOR)  ! when receptor was saturated (lost susceptibility to the chemokine signal)
     type(cog_type),pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
 end type
 
@@ -319,8 +323,10 @@ integer :: VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 =
 real :: chemo_K_exit                    ! level of chemotactic influence towards exits
 
 real :: days                            ! number of days to simulate
+logical :: test_case(20)                ! a test case can be selected (0 = normal run)
 integer :: seed(2)                      ! seed vector for the RNGs
 integer :: NT_GUI_OUT					! interval between GUI outputs (timesteps)
+logical :: show_noncognate              ! flag to display a representative fraction of non-cognate B cells
 integer :: SPECIES						! animal species source of T cells
 character*(128) :: fixedfile
 

@@ -284,6 +284,7 @@ void MyVTK::createMappers()
 //-----------------------------------------------------------------------------------------
 void MyVTK::get_cell_positions(bool fast)
 {
+//    LOG_QMSG("get_cell_positions");
 	double BC_diam = 0.9;
 	double DC_diam = 1.8;
 	BCpos_list.clear();
@@ -299,8 +300,14 @@ void MyVTK::get_cell_positions(bool fast)
 		cp.state = BC_list[j+4];
 		cp.diameter = BC_diam;
 		BCpos_list.append(cp);
-//		sprintf(msg,"T cell: %d: tag: %d pos: %d %d %d state: %lf",i,cp.tag,cp.x,cp.y,cp.z,cp.state);
-//		LOG_MSG(msg);
+        double r, g, b;
+        if (cp.state > 0) {
+            unpack(cp.state, &r, &g, &b);
+        } else {
+            r = g = b = 0;
+        }
+//        sprintf(msg,"B cell: %d: tag: %d pos: %d %d %d state: %d %lf %lf %lf",i,cp.tag,cp.x,cp.y,cp.z,cp.state,r,g,b);
+//        LOG_MSG(msg);
 	}
 	for (int i=0; i<nDC_list; i++) {
 		int j = 5*i;
@@ -480,6 +487,7 @@ void MyVTK::process_Bcells()
 	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 	double BCColor[] = {0.0, 0.0, 1.0};
 
+//    LOG_QMSG("process_Bcells");
 	int na = B_Actor_list.length();
 	int np = BCpos_list.length();
     int n = na;
@@ -514,10 +522,10 @@ void MyVTK::process_Bcells()
 			} else if (cp.state == axis_centre) {
 				r = 1; g = 1; b = 1;
 			} else if (cp.state == axis_end) {
-				r = 1; g = 0; b = 1;
-			} else if (cp.state == axis_bottom) {
-				r = 1; g = 1; b = 1;
-			}
+                r = 0.5; g = 0; b = 0.5;
+            } else if (cp.state == axis_bottom) {
+                r = 1; g = 0.2; b = 1;
+            }
 		} else {
 			unpack(cp.state, &r, &g, &b);
 		}

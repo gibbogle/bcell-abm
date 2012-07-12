@@ -261,7 +261,7 @@ subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
 integer :: i, ic, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
-integer :: usetraffic, usechemo, computedoutflow
+integer :: usetraffic, usechemo, computedoutflow, itestcase
 character(4) :: logstr
 
 ok = .true.
@@ -322,20 +322,31 @@ read(nfcell,*) receptor(CXCR5)%strength
 read(nfcell,*) BASE_NFDC			        ! base number of FDCs
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
+read(nfcell,*) itestcase                    ! test case to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs
 read(nfcell,*) seed(2)						! seed vector(2) for the RNGs
 read(nfcell,*) ncpu_dummy					! just a placeholder for ncpu, not used currently
 read(nfcell,*) NT_GUI_OUT					! interval between GUI outputs (timesteps)
+read(nfcell,*) shownoncog                   ! display a representative fraction of non-cognate B cells
 read(nfcell,*) fixedfile					! file with "fixed" parameter values
 close(nfcell)
 
-if (test_case1) then
-    usetraffic = 0
-    BASE_NFDC = 0
-    base_exit_prob = 0
-    iuse(EBI2) = 0
-    iuse(CXCR5) = 0
-endif    
+! Setup test_case
+test_case = .false.
+if (itestcase /= 0) then
+    test_case(itestcase) = .true.
+    if (itestcase == 1 .or. itestcase == 2) then
+        usetraffic = 0
+        BASE_NFDC = 0
+        base_exit_prob = 0
+        iuse(EBI2) = 0
+        iuse(CXCR5) = 0
+    endif 
+    if (itestcase == 2) then
+        shownoncog = 1
+    endif
+endif
+
 ! Chemokines
 chemo(S1P)%name    = 'S1P'
 chemo(CCL21)%name  = 'CCL21'
@@ -394,6 +405,11 @@ if (computedoutflow == 1) then
 	computed_outflow = .true.
 else
 	computed_outflow = .false.
+endif
+if (shownoncog == 1) then
+	show_noncognate = .true.
+else
+	show_noncognate = .false.
 endif
 
 call read_fixed_BCparams(ok)
@@ -778,6 +794,7 @@ else
     stop
 endif
 cell%receptor_level = receptor%level(NAIVE_TAG)
+cell%receptor_saturation_time = 0
 lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
 cell%ID = lastID
 if (stype == COG_TYPE_TAG) then		! by default the cog_type ID is the same as naive cell ID

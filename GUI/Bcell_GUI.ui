@@ -73,7 +73,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>4</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -125,7 +125,7 @@ padding: 8px
              <set>Qt::LinksAccessibleByMouse</set>
             </property>
            </widget>
-           <widget class="QSlider" name="slider_TC_AVIDITY_MEDIAN">
+           <widget class="QSlider" name="slider_BC_AVIDITY_MEDIAN">
             <property name="geometry">
              <rect>
               <x>823</x>
@@ -176,7 +176,7 @@ padding: 8px
              <bool>false</bool>
             </property>
            </widget>
-           <widget class="QSlider" name="slider_TC_AVIDITY_SHAPE">
+           <widget class="QSlider" name="slider_BC_AVIDITY_SHAPE">
             <property name="geometry">
              <rect>
               <x>823</x>
@@ -245,7 +245,7 @@ padding: 8px
               </spacer>
              </item>
              <item row="0" column="2">
-              <widget class="QSlider" name="slider_TC_COGNATE_FRACTION">
+              <widget class="QSlider" name="slider_BC_COGNATE_FRACTION">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -297,7 +297,7 @@ padding: 8px
               </spacer>
              </item>
              <item row="1" column="2">
-              <widget class="QSlider" name="slider_TC_STIM_RATE_CONSTANT">
+              <widget class="QSlider" name="slider_BC_STIM_RATE_CONSTANT">
                <property name="enabled">
                 <bool>true</bool>
                </property>
@@ -468,7 +468,7 @@ padding: 8px
               </widget>
              </item>
              <item row="2" column="2">
-              <widget class="QSlider" name="slider_TC_STIM_HALFLIFE">
+              <widget class="QSlider" name="slider_BC_STIM_HALFLIFE">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -2574,15 +2574,47 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
              <item row="15" column="2">
-              <widget class="QCheckBox" name="cbox_savepos">
+              <widget class="QLineEdit" name="line_TEST_CASE">
+               <property name="maximumSize">
+                <size>
+                 <width>120</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="text">
-                <string>Save cell paths</string>
+                <string>0</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
+             <item row="15" column="0">
+              <widget class="QLabel" name="label_TEST_CASE">
+               <property name="text">
+                <string>label_TEST_CASE</string>
+               </property>
+              </widget>
+             </item>
+             <item row="15" column="1">
+              <spacer name="horizontalSpacer_33">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>13</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
             </layout>
            </widget>
-           <widget class="QCheckBox" name="cbox_IV_SHOW_NONCOGNATE">
+           <widget class="QCheckBox" name="cbox_SHOW_NONCOGNATE">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>450</x>
@@ -2597,7 +2629,7 @@ p, li { white-space: pre-wrap; }
            </widget>
            <widget class="QCheckBox" name="cbox_USE_TRAFFIC">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="geometry">
              <rect>
@@ -2682,7 +2714,7 @@ p, li { white-space: pre-wrap; }
             <property name="geometry">
              <rect>
               <x>10</x>
-              <y>680</y>
+              <y>700</y>
               <width>121</width>
               <height>16</height>
              </rect>
@@ -2695,10 +2727,26 @@ p, li { white-space: pre-wrap; }
             <property name="geometry">
              <rect>
               <x>130</x>
-              <y>680</y>
+              <y>700</y>
               <width>151</width>
               <height>20</height>
              </rect>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="cbox_savepos">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="geometry">
+             <rect>
+              <x>450</x>
+              <y>630</y>
+              <width>120</width>
+              <height>16</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Save cell paths</string>
             </property>
            </widget>
           </widget>

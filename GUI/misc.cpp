@@ -200,9 +200,10 @@ void ExecThread::run()
 //-----------------------------------------------------------------------------------------
 void ExecThread::snapshot()
 {
+//    LOG_QMSG("snapshot");
 	mutex2.lock();
 	get_scene(&nBC_list,BC_list,&nDC_list,DC_list,&nbond_list,bond_list);
-	if (nBC_list > MAX_BC) {
+    if (nBC_list > MAX_BC) {
 		LOG_MSG("Error: MAX_TC exceeded");
 		exit(1);
 	}

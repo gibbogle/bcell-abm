@@ -1528,17 +1528,18 @@ integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond
 integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
 integer :: col(3)
 integer :: x, y, z
-real :: dcstate
+real :: dcstate, noncogfraction
 integer :: ifdcstate, ibcstate, stype, ctype, stage, region
 real :: bcell_diam = 0.9
 real :: FDC_diam = 1.8
-integer :: gen, bnd(2)
+integer :: gen, bnd(2), noncnt, last_id1, last_id2
 integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
 integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
 integer, parameter :: axis_bottom = -4	! identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 integer, parameter :: ninfo = 5			! the size of the info package for a cell (number of integers)
 integer, parameter :: nax = 6			! number of points used to delineate the follicle
 
+nFDC_list = 0
 k = 0
 ! Need some markers to delineate the follicle extent.  These nax "cells" are used to convey (the follicle centre
 ! and) the approximate ellipsoidal blob limits in the 3 axis directions.
@@ -1592,27 +1593,51 @@ do k = 1,nax
 	BC_list(j+1) = k-1
 	BC_list(j+2:j+4) = site
 	BC_list(j+5) = ibcstate
+	last_id1 = k-1
 enddo
-k = k-1
+k = k - 1   ! because at end of loop k is 1 + loop limit
 
 ! B cell section
+
+! Cognate cells
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
 	if (cellist(kcell)%exists) then
-		region = get_region(cellist(kcell)%cptr)
 		k = k+1
 		j = ninfo*(k-1)
 		site = cellist(kcell)%site
 		call BcellColour(kcell,col)
-		BC_list(j+1) = kc-1 + nax
+		BC_list(j+1) = kc + last_id1
 		BC_list(j+2:j+4) = site
 		BC_list(j+5) = rgb(col)
+		last_id2 = kc + last_id1
+!		write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,rgb(col)
+!		call logger(logmsg)
 	endif
 enddo
+if (show_noncognate) then
+    ! Non-cognate cells, a specified fraction noncogfraction are displayed
+    noncogfraction = 0.05
+    noncnt = 0
+    do kcell = 1,noncogfraction*nlist
+        if (associated(cellist(kcell)%cptr)) cycle
+	    if (cellist(kcell)%exists) then
+	        noncnt = noncnt + 1
+		    k = k+1
+		    j = ninfo*(k-1)
+		    site = cellist(kcell)%site
+		    call BcellColour(kcell,col)
+		    BC_list(j+1) = kcell + last_id2
+		    BC_list(j+2:j+4) = site
+		    BC_list(j+5) = rgb(col)
+!		    write(logmsg,'(a,7i8)') 'noncog: ',noncnt,k,kcell,col,rgb(col)
+!		    call logger(logmsg)
+	    endif
+    enddo
+endif
 nBC_list = k
 
 ! FDC section
-nFDC_list = 0
 if (NFDC > 0) then
 	k = 0
     do kcell = 1,NFDC
@@ -1676,30 +1701,34 @@ integer, parameter :: Qt_darkGray = 4
 integer, parameter :: Qt_lightGray = 6
 
 p => cellist(kcell)%cptr
-stage = get_stage(p)
-status = get_status(p)
-select case(stage)
-case (NAIVE)
-	col = DEEPBLUE			! 1
-case (ANTIGEN_MET, CCR7_UP)
-	col = LIGHTBLUE			! 2
-case (TCELL_MET, EBI2_UP)
-	col = LIGHTGREEN		! 3
-case (DIVIDING) 
-	if (status == BCL6_HI) then
-		col = YELLOW		! 4
-	else
-		col = DEEPGREEN		! 5
-	endif
-case (GCC_COMMIT, BCL6_UP)
-	col = YELLOW			! 4
-case (PLASMA)
-	col = RED		! 6
-case (FINISHED)
-	col = GRAY				! 7
-case default
-	col = WHITE				! 8
-end select
+if (associated(p)) then
+    stage = get_stage(p)
+    status = get_status(p)
+    select case(stage)
+    case (NAIVE)
+	    col = DEEPBLUE			! 1
+    case (ANTIGEN_MET, CCR7_UP)
+	    col = LIGHTBLUE			! 2
+    case (TCELL_MET, EBI2_UP)
+	    col = LIGHTGREEN		! 3
+    case (DIVIDING) 
+	    if (status == BCL6_HI) then
+		    col = YELLOW		! 4
+	    else
+		    col = DEEPGREEN		! 5
+	    endif
+    case (GCC_COMMIT, BCL6_UP)
+	    col = YELLOW			! 4
+    case (PLASMA)
+	    col = RED		! 6
+    case (FINISHED)
+	    col = GRAY				! 7
+    case default
+	    col = WHITE				! 8
+    end select
+else
+	col = WHITE				    ! non-cognate
+endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1832,16 +1861,16 @@ if (test_chemotaxis) then
 	return
 endif
 
-if (test_case1) then    ! cognate cells are made insensitive to all chemokines (note: other NAIVE cells sense all except CXCL13)
+if (test_case(1)) then    ! cognate cells are made insensitive to all chemokines (note: other NAIVE cells sense all except CXCL13)
     if (istep == 1) then
 		do k = 1,lastcogID
 			kcell = cognate_list(k)
 			if (kcell > 0) then
 !				cellist(kcell)%ctype = TESTCELL2
 				cellist(kcell)%receptor_level = 0
-				if (k <= 5) then
-    				call set_stage(cellist(kcell)%cptr,PLASMA)
-    		    endif
+!				if (k <= 5) then
+!    				call set_stage(cellist(kcell)%cptr,PLASMA)
+!    		    endif
             endif
         enddo
     endif

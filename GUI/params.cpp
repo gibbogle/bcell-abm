@@ -236,6 +236,10 @@ The specified probability applies to residence time Tres = 12 hr, and will be sc
 "Length of the simulation.\n\
 [days]"},
 
+{"TEST_CASE", 0, 0, 0,
+"Test case #",
+"Number of the test case to run.  The default value of 0 is for a normal run"},
+
 {"SEED1", 1234, 0, 0,
 "First RNG seed",
 "The random number generator is seeded by a pair of integers.  Changing the seed generates a different Monte Carlo realization."},
@@ -251,6 +255,10 @@ The specified probability applies to residence time Tres = 12 hr, and will be sc
 {"NT_ANIMATION", 20, 0, 0,
  "Animation interval (timesteps)",
  "Interval between animation screen updates (timesteps).  One timestep = 15 sec."},
+
+{"SHOW_NONCOGNATE", 0, 0, 1,
+"Display non-cognate cells?",
+"Display a representative fraction of the non-cognate B cells"},
 
 {"INPUT_FILE", 0, 0, 0,
 "bc_fixed.inpdata",
