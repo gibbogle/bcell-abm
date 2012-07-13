@@ -105,7 +105,7 @@ MyVTK::MyVTK(QWidget *page, QWidget *key_page)
 	createMappers();
 
 	// Create image filter for save Snapshot()
-	w2img = vtkWindowToImageFilter::New();
+//	w2img = vtkWindowToImageFilter::New();
 //	pngwriter = vtkSmartPointer<vtkPNGWriter>::New();
 //	jpgwriter = vtkSmartPointer<vtkJPEGWriter>::New();
 
@@ -487,7 +487,7 @@ void MyVTK::process_Bcells()
 	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 	double BCColor[] = {0.0, 0.0, 1.0};
 
-//    LOG_QMSG("process_Bcells");
+    LOG_QMSG("process_Bcells");
 	int na = B_Actor_list.length();
 	int np = BCpos_list.length();
     int n = na;
@@ -732,11 +732,11 @@ bool MyVTK::startPlayer(QString posfile, QTimer *theTimer, bool save)
 	paused = false;
 
 	if (save_image) {
-		w2i = vtkWindowToImageFilter::New();
-		w2i->SetInput(renWin);	//the render window
+        w2i = vtkWindowToImageFilter::New();
+        w2i->SetInput(renWin);	//the render window
 //		writer = vtkSmartPointer<vtkPNGWriter>::New();
-		writer = vtkSmartPointer<vtkJPEGWriter>::New();
-		writer->SetInputConnection(w2i->GetOutputPort()); 
+        jpgwriter = vtkSmartPointer<vtkJPEGWriter>::New();
+        jpgwriter->SetInputConnection(w2i->GetOutputPort());
 		framenum = 0;
 		LOG_MSG("set up writer");
 	}
@@ -806,8 +806,8 @@ bool MyVTK::nextFrame()
 	sprintf(numstr,"%04d",framenum);
 	if (save_image) {
 		w2i->Modified();	//importante 
-		writer->SetFileName((casename + numstr + ".jpg").toStdString().c_str()); 
-		writer->Write(); 
+        jpgwriter->SetFileName((casename + numstr + ".jpg").toStdString().c_str());
+        jpgwriter->Write();
 	}
 	framenum++;
 	return true;
@@ -817,6 +817,8 @@ bool MyVTK::nextFrame()
 //-----------------------------------------------------------------------------------------
 void MyVTK::saveSnapshot(QString fileName, QString imgType)
 {
+    vtkSmartPointer<vtkWindowToImageFilter> w2img = vtkWindowToImageFilter::New();
+
 	w2img->SetInput(renWin);
 	if (imgType.compare("png") == 0) {
 		vtkSmartPointer<vtkPNGWriter> pngwriter = vtkPNGWriter::New();
@@ -867,7 +869,7 @@ void MyVTK::playon()
 void MyVTK::stop()
 {
 	if (save_image) {
-		writer->Delete();
+        jpgwriter->Delete();
 		w2i->Delete();
 	}
 	delete playerStream;

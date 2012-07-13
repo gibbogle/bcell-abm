@@ -89,13 +89,13 @@ public:
 //	vtkMPEG2Writer *mpg;
 //	vtkSmartPointer<vtkPNGWriter> writer;
 //	vtkSmartPointer<vtkBMPWriter> writer;
-	vtkSmartPointer<vtkJPEGWriter> writer;
+    vtkSmartPointer<vtkJPEGWriter> jpgwriter;
 //	vtkSmartPointer<vtkTIFFWriter> writer;
-	vtkSmartPointer<vtkImageCast> castFilter;
-	vtkWindowToImageFilter *w2i;
-	vtkWindowToImageFilter *w2img;
+//	vtkSmartPointer<vtkImageCast> castFilter;
+//	vtkWindowToImageFilter *w2img;
 //	vtkSmartPointer<vtkPNGWriter> pngwriter;
 //	vtkSmartPointer<vtkJPEGWriter> jpgwriter;
+    vtkSmartPointer<vtkWindowToImageFilter> w2i;
 
 	char msg[2048];
 	double zoomlevel;

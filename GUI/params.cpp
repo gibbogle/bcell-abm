@@ -83,7 +83,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Compute B cell outflow limit?",
 "The upper bound on B cell outflow is computed together with inflow.  The alternative is to permit (probabilistic) egress of any cell at a portal."},
 
-{"RESIDENCE_TIME", 24.0, 10.0, 30.0,
+{"RESIDENCE_TIME", 15.0, 10.0, 30.0,
 "B cell residence time",
 "B cell residence time.\n\
 [hours]"},
@@ -122,7 +122,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P boundary conc",
  "Concentration of S1P at the follicle surface"},
 
-{"S1P_DIFF_COEFF", 0.1, 0, 0,
+{"S1P_DIFF_COEFF", 1.0, 0, 0,
  "S1P diffusion coeff",
  "S1P diffusion coefficient"},
 
@@ -130,7 +130,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P halflife",
  "S1P halflife (hours)"},
 
-{"S1P_STRENGTH_POS", 0.1, 0, 0,
+{"S1P_STRENGTH_POS", 0.3, 0, 0,
  "S1P pos strength",
  "Relative strength of S1P chemotactic attraction (S1PR1)"},
 
@@ -154,7 +154,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CCL21 boundary conc",
  "Concentration of CCL21 at the follicle surface"},
 
-{"CCL21_DIFF_COEFF", 0.1, 0, 0,
+{"CCL21_DIFF_COEFF", 1.0, 0, 0,
  "CCL21 diffusion coeff",
  "CCL21 diffusion coefficient"},
 
@@ -162,7 +162,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CCL21 halflife",
  "CCL21 halflife (hours)"},
 
-{"CCL21_STRENGTH", 0.05, 0, 0,
+{"CCL21_STRENGTH", 0.2, 0, 0,
  "CCL21 strength",
  "Relative strength of CCL21 chemotactic influence"},
 
@@ -182,7 +182,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY boundary conc",
  "Concentration of Oxysterol at the follicle surface"},
 
-{"OXY_DIFF_COEFF", 0.1, 0, 0,
+{"OXY_DIFF_COEFF", 1.0, 0, 0,
  "OXY diffusion coeff",
  "Oxysterol diffusion coefficient"},
 
@@ -190,7 +190,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY halflife",
  "Oxysterol halflife (hours)"},
 
-{"OXY_STRENGTH", 0.05, 0, 0,
+{"OXY_STRENGTH", 0.1, 0, 0,
  "OXY strength",
  "Relative strength of Oxysterol chemotactic influence"},
 
@@ -210,7 +210,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CXCL13 boundary conc",
  "Concentration of CXCL13 at the FDC surface"},
 
-{"CXCL13_DIFF_COEFF", 0.1, 0, 0,
+{"CXCL13_DIFF_COEFF", 1.0, 0, 0,
  "CXCL13 diffusion coeff",
  "CXCL13 diffusion coefficient"},
 
@@ -218,11 +218,11 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "CXCL13 halflife",
  "CXCL13 halflife (hours)"},
 
-{"CXCL13_STRENGTH", 0.1, 0, 0,
+{"CXCL13_STRENGTH", 0.2, 0, 0,
  "CXCL13 strength",
  "Relative strength of CXCL13 chemotactic influence"},
 
-{"NFDC", 200, 0, 0,
+{"NFDC", 100, 0, 0,
 "Number of FDCs",
 "Initial number of FDCs in the follicle.  Each FDC occupies 37 lattice sites."},
 

@@ -1617,7 +1617,7 @@ do kc = 1,lastcogID
 enddo
 if (show_noncognate) then
     ! Non-cognate cells, a specified fraction noncogfraction are displayed
-    noncogfraction = 0.05
+    noncogfraction = 0.001
     noncnt = 0
     do kcell = 1,noncogfraction*nlist
         if (associated(cellist(kcell)%cptr)) cycle
