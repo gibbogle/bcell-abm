@@ -153,6 +153,9 @@
      <property name="text">
       <string>CCL21</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
     <widget class="QCheckBox" name="checkBox_Oxy">
      <property name="geometry">

@@ -69,6 +69,8 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private slots:
+    void on_action_show_gradient2D_triggered();
+    void on_action_show_gradient3D_triggered();
     void on_cbox_SHOW_NONCOGNATE_toggled(bool checked);
     void newFile();
     void open();

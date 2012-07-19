@@ -1267,7 +1267,7 @@ void MainWindow::showGradient2D()
     QSize size = mySimpleView2D->size();
     sprintf(msg,"mySimpleView2D size: %d %d",size.height(),size.width());
     LOG_MSG(msg);
-   mySimpleView2D->show();
+    mySimpleView2D->show();
     mySimpleView2D->AimCamera();
 }
 
@@ -3074,4 +3074,14 @@ void MainWindow::on_cbox_SHOW_NONCOGNATE_toggled(bool checked)
     } else {
         le->setEnabled(false);
     }
+}
+
+void MainWindow::on_action_show_gradient3D_triggered()
+{
+    showGradient3D();
+}
+
+void MainWindow::on_action_show_gradient2D_triggered()
+{
+    showGradient2D();
 }
