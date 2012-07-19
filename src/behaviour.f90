@@ -25,7 +25,7 @@ contains
 ! when used.  Program time is in minutes.
 !--------------------------------------------------------------------------------------
 subroutine setup_dists
-real :: T_half_lo, T_half_hi
+real :: T_HALF_LO, T_HALF_HI
 integer :: i
 
 allocate(life_dist(BC_MAX_GEN))        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -52,10 +52,10 @@ do i = 3,BC_MAX_GEN
 enddo
 
 ! B cell death rates, from half-lifes
-T_half_lo = 10*24*60.   ! 10 days in minutes
-T_half_hi = 2*24*60.    ! 1 day in minutes
-Kdeath_lo(:) = log(2.)/T_half_lo    ! rate constant
-Kdeath_hi(:) = log(2.)/T_half_hi    ! rate constant
+T_HALF_LO = 10*24*60.   ! 10 days in minutes
+T_HALF_HI = 2*24*60.    ! 1 day in minutes
+Kdeath_lo(:) = log(2.)/T_HALF_LO    ! rate constant
+Kdeath_hi(:) = log(2.)/T_HALF_HI    ! rate constant
 end subroutine
 
 !--------------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ end subroutine
 subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
-integer :: i, ic, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
+integer :: i, ic, k, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
 integer :: usetraffic, usechemo, computedoutflow, itestcase
 character(4) :: logstr
 
@@ -298,6 +298,12 @@ read(nfcell,*) chemo(S1P)%diff_coef
 read(nfcell,*) chemo(S1P)%halflife
 read(nfcell,*) receptor(S1PR1)%strength
 read(nfcell,*) receptor(S1PR2)%strength
+do k = 1,5
+	read(nfcell,*) receptor_level(S1PR1,k)
+enddo
+do k = 1,5
+	read(nfcell,*) receptor_level(S1PR2,k)
+enddo
 read(nfcell,*) iuse(CCR7)
 read(nfcell,*) iuse_rate(CCL21)
 read(nfcell,*) chemo(CCL21)%bdry_rate
@@ -305,6 +311,9 @@ read(nfcell,*) chemo(CCL21)%bdry_conc
 read(nfcell,*) chemo(CCL21)%diff_coef
 read(nfcell,*) chemo(CCL21)%halflife
 read(nfcell,*) receptor(CCR7)%strength
+do k = 1,5
+	read(nfcell,*) receptor_level(CCR7,k)
+enddo
 read(nfcell,*) iuse(EBI2)
 read(nfcell,*) iuse_rate(OXY)
 read(nfcell,*) chemo(OXY)%bdry_rate
@@ -312,6 +321,9 @@ read(nfcell,*) chemo(OXY)%bdry_conc
 read(nfcell,*) chemo(OXY)%diff_coef
 read(nfcell,*) chemo(OXY)%halflife
 read(nfcell,*) receptor(EBI2)%strength
+do k = 1,5
+	read(nfcell,*) receptor_level(EBI2,k)
+enddo
 read(nfcell,*) iuse(CXCR5)
 read(nfcell,*) iuse_rate(CXCL13)
 read(nfcell,*) chemo(CXCL13)%bdry_rate
@@ -319,6 +331,9 @@ read(nfcell,*) chemo(CXCL13)%bdry_conc
 read(nfcell,*) chemo(CXCL13)%diff_coef
 read(nfcell,*) chemo(CXCL13)%halflife
 read(nfcell,*) receptor(CXCR5)%strength
+do k = 1,5
+	read(nfcell,*) receptor_level(CXCR5,k)
+enddo
 read(nfcell,*) BASE_NFDC			        ! base number of FDCs
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
@@ -328,6 +343,7 @@ read(nfcell,*) seed(2)						! seed vector(2) for the RNGs
 read(nfcell,*) ncpu_dummy					! just a placeholder for ncpu, not used currently
 read(nfcell,*) NT_GUI_OUT					! interval between GUI outputs (timesteps)
 read(nfcell,*) shownoncog                   ! display a representative fraction of non-cognate B cells
+read(nfcell,*) noncog_display_fraction		! fraction of non-conate B cells to display
 read(nfcell,*) fixedfile					! file with "fixed" parameter values
 close(nfcell)
 
@@ -1194,7 +1210,8 @@ end subroutine
 !      NAIVE -> ANTIGEN_MET depends on antigen encounter at the upper follicle boundary
 !      CCR7_UP -> TCELL_MET depends on helper T cell encounter at the lower follicle boundary
 !    Variable length determined by a probability distribution
-!      EBI2_UP -> DIVIDING, BCL6_UP -> DIVIDING, DIVIDING -> DIVIDING determined by division time distribution.
+!      EBI2_UP -> DIVIDING, BCL6_UP -> DIVIDING, DIVIDING -> DIVIDING determined by division 
+!      time distribution.
 !--------------------------------------------------------------------------------------
 subroutine UpdateStage(kcell,tnow,divide_flag)
 integer :: kcell

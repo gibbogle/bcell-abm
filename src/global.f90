@@ -71,14 +71,14 @@ integer, parameter :: EBI2     = 3		! OXY
 integer, parameter :: CXCR5    = 4		! CXCL13
 integer, parameter :: S1PR2    = 5		! S1P (negative)
 
-real, parameter :: receptor_level(5,5) = reshape((/ &
-! S1PR1  CCR7  EBI2 CXCR5 S1PR2
-   1.0,  1.0,  1.0,  1.0,  0.0, &   ! NAIVE_TAG
-   0.2,  2.0,  2.0,  1.0,  0.0, &   ! ANTIGEN_TAG
-   0.2,  0.5,  2.0,  1.0,  0.0, &   ! ACTIVATED_TAG
-   0.0,  0.5,  0.2,  1.5,  2.0, &   ! GCC_TAG
-   0.2,  0.5,  1.0,  0.0,  0.0  &   ! PLASMA_TAG
-    /), (/5,5/))
+!real, parameter :: receptor_level(5,5) = reshape((/ &
+!! S1PR1  CCR7  EBI2 CXCR5 S1PR2
+!   1.0,  1.0,  1.0,  1.0,  0.0, &   ! NAIVE_TAG
+!   0.2,  2.0,  2.0,  1.0,  0.0, &   ! ANTIGEN_TAG
+!   0.2,  0.5,  2.0,  1.0,  0.0, &   ! ACTIVATED_TAG
+!   0.0,  0.5,  0.2,  1.5,  2.0, &   ! GCC_TAG
+!   0.2,  0.5,  1.0,  0.0,  0.0  &   ! PLASMA_TAG
+!    /), (/5,5/))
 
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
@@ -107,9 +107,9 @@ logical, parameter :: use_add_count = .true.    ! keep count of sites to add/rem
 logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
 integer, parameter :: MAX_FDC = 1000
+integer, parameter :: MAX_MRC = 1000
 integer, parameter :: DCDIM = 4         ! MUST be an even number
 real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the lattice, NOT the SOI
-real, parameter :: FDCRadius = 2	! (grids) This is just the approx size in the lattice, NOT the SOI
 
 ! Diffusion parameters
 logical, parameter :: use_ode_diffusion = .false.	! otherwise use the original method in fields.f90 
@@ -126,7 +126,6 @@ integer, parameter :: GONE = 2
 real, parameter :: ELLIPSE_RATIO = 2.0
 real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
-!integer, parameter :: BASE_NFDC = 50
 
 ! Differentiation probabilities
 real, parameter :: PLASMA_PROB = 0.4
@@ -180,6 +179,7 @@ integer :: Nsites
 integer :: NDC
 integer :: NDCalive
 integer :: NFDC
+integer :: NMRC
 type(vector3_type) :: Radius
 real :: InflowTotal
 real :: OutflowTotal
@@ -241,10 +241,10 @@ type DC_type
     logical :: alive            ! is DC alive?
 end type
 
-type FDC_type
+type FDC_type					! (Also used for MRCs)
     sequence
     integer :: ID               ! unique ID number
-    integer :: site(3)          ! FDC location
+    integer :: site(3)          ! FDC/MRC location
     integer :: nsites
 !    real :: density             ! current antigen density
 !    real :: dietime             ! time DC will die
@@ -265,6 +265,7 @@ type occupancy_type
     integer(2) :: DC(0:DCDIM-1)     ! DC(0) = number of near DCs, DC(k) = ID of kth near DC
     integer :: indx(2)
     integer :: FDC_nbdry				! number of FDCs that the site is adjacent to
+    integer :: MRC_nbdry				! number of MRCs that the site is adjacent to
     type (boundary_type), pointer :: bdry
 end type
 
@@ -305,6 +306,7 @@ real :: BC_RADIUS
 real :: BLOB_RADIUS
 real :: FLUID_FRACTION
 integer :: BASE_NFDC
+integer :: BASE_NMRC
 
 real(DP) :: GAMMA                           ! controls crowding
 real(DP) :: BETA                            ! speed: 0 < beta < 1
@@ -313,6 +315,7 @@ real(DP) :: RHO                             ! persistence: 0 < rho < 1
 logical :: use_traffic = .true.
 logical :: computed_outflow
 logical :: use_FDCs = .true.
+logical :: use_MRCs = .true.
 
 real :: RESIDENCE_TIME                  ! T cell residence time in hours -> inflow rate
 ! Vascularity parameters
@@ -322,11 +325,14 @@ real :: Inflammation_level = 1.0		! This is the level of inflammation (scaled la
 integer :: VEGF_MODEL                   ! 1 = VEGF signal from inflammation, 2 = VEGF signal from DCactivity
 real :: chemo_K_exit                    ! level of chemotactic influence towards exits
 
+real :: receptor_level(5,5)
+
 real :: days                            ! number of days to simulate
 logical :: test_case(20)                ! a test case can be selected (0 = normal run)
 integer :: seed(2)                      ! seed vector for the RNGs
 integer :: NT_GUI_OUT					! interval between GUI outputs (timesteps)
 logical :: show_noncognate              ! flag to display a representative fraction of non-cognate B cells
+real :: noncog_display_fraction			! fraction of non-cognate B cells to display
 integer :: SPECIES						! animal species source of T cells
 character*(128) :: fixedfile
 
@@ -348,7 +354,6 @@ real :: BC_life_shape					! shape parameter for lifetime of T cells
 integer :: NBC_LN = 3.0e07				! number of B cells in a LN
 integer :: NBC_BODY = 1.6e09			! number of circulating B cells in the whole body
 integer :: BC_TO_DC = 1000				! ratio of B cells to DCs
-integer :: BC_TO_FDC = 600				! ratio of B cells to FDCs
 
 ! T cell parameters
 logical :: TCR_splitting = .false.      ! enable sharing of integrated TCR signal between progeny cells
@@ -373,7 +378,7 @@ logical, parameter :: RANDOM_DCFLUX = .false.
 integer, parameter :: NDCsites = 7		! Number of lattice sites occupied by the DC core (soma). In fact DC vol = 1400 = 5.6*250
 real, parameter :: DC_DCprox = 2.0      ! closest placement of DCs, units DC_RADIUS (WAS 1.0 for ICB DCU paper)
 real, parameter :: bdry_DCprox = 2.0	! closest placement of DC to bdry, units DC_RADIUS
-real, parameter :: bdry_FDCprox = 4.0	! closest placement of DC to bdry, units DC_RADIUS
+!real, parameter :: bdry_FDCprox = 4.0	! closest placement of FDC to bdry, units DC_RADIUS
 
 ! Egress parameters
 real :: exit_fraction = 1.0/1000.       ! number of exits as a fraction of T cell population
@@ -417,6 +422,7 @@ integer, allocatable :: cognate_list(:)
 integer, allocatable :: gaplist(:)
 type(DC_type), allocatable :: DClist(:)
 type(FDC_type), allocatable :: FDClist(:)
+type(FDC_type), allocatable :: MRClist(:)
 integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry
 integer :: lastNBcells, k_nonrandom
 integer :: max_nlist, max_ngaps
@@ -864,6 +870,7 @@ end function
 ! Is site near a FDC?
 ! The criterion for a FDC site might be different from an exit site.
 ! prox = DC_DCprox*FDC_RADIUS for DC - DC
+! NOT USED
 !-----------------------------------------------------------------------------------------
 logical function tooNearFDC(site,kdc,prox)
 integer :: site(3), kdc

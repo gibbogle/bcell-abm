@@ -138,6 +138,18 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "S1P neg strength",
  "Relative strength of S1P chemotactic repulsion (S1PR2)"},
 
+{"S1PR1_1", 1.0, 0, 0},
+{"S1PR1_2", 0.2, 0, 0},
+{"S1PR1_3", 0.2, 0, 0},
+{"S1PR1_4", 0.0, 0, 0},
+{"S1PR1_5", 0.2, 0, 0},
+
+{"S1PR2_1", 0.0, 0, 0},
+{"S1PR2_2", 0.0, 0, 0},
+{"S1PR2_3", 0.0, 0, 0},
+{"S1PR2_4", 2.0, 0, 0},
+{"S1PR2_5", 0.0, 0, 0},
+
 {"USE_CCR7", 1, 0, 1,
 "Use CCR7?",
 "CCL21 chemotaxis is simulated"},
@@ -165,6 +177,12 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"CCL21_STRENGTH", 0.2, 0, 0,
  "CCL21 strength",
  "Relative strength of CCL21 chemotactic influence"},
+
+{"CCR7_1", 1.0, 0, 0},
+{"CCR7_2", 2.0, 0, 0},
+{"CCR7_3", 0.5, 0, 0},
+{"CCR7_4", 0.5, 0, 0},
+{"CCR7_5", 0.5, 0, 0},
 
 {"USE_EBI2", 1, 0, 1,
 "Use EBI2?",
@@ -194,6 +212,12 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
  "OXY strength",
  "Relative strength of Oxysterol chemotactic influence"},
 
+{"EBI2_1", 1.0, 0, 0},
+{"EBI2_2", 2.0, 0, 0},
+{"EBI2_3", 2.0, 0, 0},
+{"EBI2_4", 0.2, 0, 0},
+{"EBI2_5", 1.0, 0, 0},
+
 {"USE_CXCR5", 1, 0, 1,
 "Use CXCR5?",
 "CXCL13 chemotaxis is simulated"},
@@ -221,6 +245,12 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"CXCL13_STRENGTH", 0.2, 0, 0,
  "CXCL13 strength",
  "Relative strength of CXCL13 chemotactic influence"},
+
+{"CXCR5_1", 1.0, 0, 0},
+{"CXCR5_2", 1.0, 0, 0},
+{"CXCR5_3", 1.0, 0, 0},
+{"CXCR5_4", 1.5, 0, 0},
+{"CXCR5_5", 0.0, 0, 0},
 
 {"NFDC", 100, 0, 0,
 "Number of FDCs",
@@ -259,6 +289,10 @@ The specified probability applies to residence time Tres = 12 hr, and will be sc
 {"SHOW_NONCOGNATE", 0, 0, 1,
 "Display non-cognate cells?",
 "Display a representative fraction of the non-cognate B cells"},
+
+{"DISPLAY_FRACTION", 0, 0, 1,
+"Fraction to display",
+"Fraction of non-cognate B cells to display."},
 
 {"INPUT_FILE", 0, 0, 0,
 "bc_fixed.inpdata",

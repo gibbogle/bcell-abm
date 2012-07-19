@@ -69,6 +69,7 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private slots:
+    void on_cbox_SHOW_NONCOGNATE_toggled(bool checked);
     void newFile();
     void open();
     void about();
@@ -270,7 +271,7 @@ private:
 	static const bool USE_RANGES = false;
 
 	MyVTK *vtk;
-    SimpleView3D *mySimpleView3D;
+//    SimpleView3D *mySimpleView3D;
 	ExecThread *exthread;
 };
 

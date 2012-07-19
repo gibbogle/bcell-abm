@@ -487,7 +487,6 @@ void MyVTK::process_Bcells()
 	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 	double BCColor[] = {0.0, 0.0, 1.0};
 
-    LOG_QMSG("process_Bcells");
 	int na = B_Actor_list.length();
 	int np = BCpos_list.length();
     int n = na;
@@ -547,17 +546,17 @@ void MyVTK::process_Bcells()
 		if (actor != 0) 
 			actor->SetPosition(cp.x, cp.y, cp.z);
 		else {
-			sprintf(msg,"T_actor = 0: %d",tag);
+            sprintf(msg,"B_actor = 0: %d",tag);
 			LOG_MSG(msg);
 			exit(1);
 		}
 	}
-
 	for (int k=0; k<na; k++) {	// k in range(0,na):
 		if (B_Actor_list[k] != 0 && !active[k]) {     // need to remove actor from list
 			actor = B_Actor_list[k];
             ren->RemoveActor(actor);
-			B_Actor_list[k] = 0;
+//			B_Actor_list[k] = 0;
+            B_Actor_list.removeAt(k);
 		}
 	}
 }

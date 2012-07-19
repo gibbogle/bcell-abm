@@ -807,6 +807,7 @@ if (cognate) then
 	call set_region(p,GONE)
 endif
 cellist(kcell)%exists = .false.
+write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID
 if (use_gaplist .and. .not.cognate) then
 	cellist(kcell)%ID = 0
 	ngaps = ngaps + 1
@@ -1528,7 +1529,7 @@ integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond
 integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
 integer :: col(3)
 integer :: x, y, z
-real :: dcstate, noncogfraction
+real :: dcstate
 integer :: ifdcstate, ibcstate, stype, ctype, stage, region
 real :: bcell_diam = 0.9
 real :: FDC_diam = 1.8
@@ -1595,7 +1596,7 @@ do k = 1,nax
 	BC_list(j+5) = ibcstate
 	last_id1 = k-1
 enddo
-k = k - 1   ! because at end of loop k is 1 + loop limit
+k = k - 1   ! because at end of loop k is 1 + loop limit 
 
 ! B cell section
 
@@ -1611,32 +1612,38 @@ do kc = 1,lastcogID
 		BC_list(j+2:j+4) = site
 		BC_list(j+5) = rgb(col)
 		last_id2 = kc + last_id1
+		write(nflog,*) 'cog: ',k,kcell,BC_list(j+1)
 !		write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,rgb(col)
 !		call logger(logmsg)
 	endif
 enddo
 if (show_noncognate) then
     ! Non-cognate cells, a specified fraction noncogfraction are displayed
-    noncogfraction = 0.001
     noncnt = 0
-    do kcell = 1,noncogfraction*nlist
-        if (associated(cellist(kcell)%cptr)) cycle
+    do kcell = 1,noncog_display_fraction*nlist
+        if (associated(cellist(kcell)%cptr)) then
+            write(nflog,*) 'cell associated: ',kcell
+            cycle
+        endif
 	    if (cellist(kcell)%exists) then
 	        noncnt = noncnt + 1
 		    k = k+1
 		    j = ninfo*(k-1)
 		    site = cellist(kcell)%site
 		    call BcellColour(kcell,col)
-		    BC_list(j+1) = kcell + last_id2
+!		    BC_list(j+1) = kcell + last_id2
+		    BC_list(j+1) = noncnt + last_id2
 		    BC_list(j+2:j+4) = site
 		    BC_list(j+5) = rgb(col)
+!    		write(nflog,*) 'non: ',k,kcell,BC_list(j+1)
 !		    write(logmsg,'(a,7i8)') 'noncog: ',noncnt,k,kcell,col,rgb(col)
 !		    call logger(logmsg)
+        else
+            write(nflog,*) 'cell nonexistent: ',kcell
 	    endif
     enddo
 endif
-nBC_list = k
-
+nBC_list = noncnt + last_id2 + 1
 ! FDC section
 if (NFDC > 0) then
 	k = 0

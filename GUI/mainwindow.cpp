@@ -107,10 +107,15 @@ MainWindow::MainWindow(QWidget *parent)
 	nParams = parm->nParams;
 	grph = new Graphs();
 	nGraphs = grph->nGraphs;
+    LOG_QMSG("did Graphs");
 	createLists();
-	createActions();
-	drawDistPlots();
-	loadParams();
+    LOG_QMSG("did createLists");
+    createActions();
+    LOG_QMSG("did createActions");
+    drawDistPlots();
+    LOG_QMSG("did drawDistPlots");
+    loadParams();
+    LOG_QMSG("Did loadparams");
 	writeout();
     timer = new QTimer(this);
 //	vtk = new MyVTK(page_3D);
@@ -158,8 +163,8 @@ void MainWindow::createActions()
     connect(action_remove_graph, SIGNAL(triggered()), this, SLOT(removeGraph()));
     connect(action_remove_all, SIGNAL(triggered()), this, SLOT(removeAllGraphs()));
     connect(action_save_snapshot, SIGNAL(triggered()), this, SLOT(saveSnapshot()));
-    connect(action_show_gradient3D, SIGNAL(triggered()), this, SLOT(showGradient3D()));
-    connect(action_show_gradient2D, SIGNAL(triggered()), this, SLOT(showGradient2D()));
+//    connect(action_show_gradient3D, SIGNAL(triggered()), this, SLOT(showGradient3D()));
+//    connect(action_show_gradient2D, SIGNAL(triggered()), this, SLOT(showGradient2D()));
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1262,7 +1267,7 @@ void MainWindow::showGradient2D()
     QSize size = mySimpleView2D->size();
     sprintf(msg,"mySimpleView2D size: %d %d",size.height(),size.width());
     LOG_MSG(msg);
-    mySimpleView2D->show();
+   mySimpleView2D->show();
     mySimpleView2D->AimCamera();
 }
 
@@ -3059,4 +3064,14 @@ void MainWindow::setCurrentFile(const QString &fileName)
 QString MainWindow::strippedName(const QString &fullFileName)
 {
     return QFileInfo(fullFileName).fileName();
+}
+
+void MainWindow::on_cbox_SHOW_NONCOGNATE_toggled(bool checked)
+{
+    QLineEdit *le = findChild<QLineEdit*>("line_DISPLAY_FRACTION");
+    if (checked) {
+        le->setEnabled(true);
+    } else {
+        le->setEnabled(false);
+    }
 }

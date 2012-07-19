@@ -1,8 +1,8 @@
 /********************************************************************************
 ** Form generated from reading UI file 'Bcell_GUI.ui'
 **
-** Created: Mon 9. Jul 14:06:54 2012
-**      by: Qt User Interface Compiler version 4.7.3
+** Created: Tue 17. Jul 15:58:31 2012
+**      by: Qt User Interface Compiler version 4.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -60,7 +60,8 @@ public:
     QAction *action_play_VTK;
     QAction *action_set_speed;
     QAction *action_save_snapshot;
-    QAction *action_show_gradient;
+    QAction *action_show_gradient3D;
+    QAction *action_show_gradient2D;
     QWidget *centralwidget;
     QGridLayout *gridLayout_5;
     QStackedWidget *stackedWidget;
@@ -69,20 +70,20 @@ public:
     QTabWidget *tabs;
     QWidget *tab_B;
     QMyLabel *label_BC_AVIDITY_MEDIAN;
-    QSlider *slider_TC_AVIDITY_MEDIAN;
+    QSlider *slider_BC_AVIDITY_MEDIAN;
     QLineEdit *line_BC_AVIDITY_MEDIAN;
     QMyLabel *label_BC_AVIDITY_SHAPE;
-    QSlider *slider_TC_AVIDITY_SHAPE;
+    QSlider *slider_BC_AVIDITY_SHAPE;
     QLineEdit *line_BC_AVIDITY_SHAPE;
     QWidget *layoutWidget;
     QGridLayout *gridLayout;
     QMyLabel *label_BC_COGNATE_FRACTION;
     QSpacerItem *horizontalSpacer_3;
-    QSlider *slider_TC_COGNATE_FRACTION;
+    QSlider *slider_BC_COGNATE_FRACTION;
     QLineEdit *line_BC_COGNATE_FRACTION;
     QMyLabel *label_BC_STIM_RATE_CONSTANT;
     QSpacerItem *horizontalSpacer_4;
-    QSlider *slider_TC_STIM_RATE_CONSTANT;
+    QSlider *slider_BC_STIM_RATE_CONSTANT;
     QLineEdit *line_BC_STIM_RATE_CONSTANT;
     QMyLabel *label_BC_STIM_HALFLIFE;
     QSpacerItem *horizontalSpacer_5;
@@ -94,7 +95,7 @@ public:
     QMyLabel *label_MOTILITY_RHO;
     QSpacerItem *horizontalSpacer_11;
     QLineEdit *line_MOTILITY_RHO;
-    QSlider *slider_TC_STIM_HALFLIFE;
+    QSlider *slider_BC_STIM_HALFLIFE;
     QSlider *slider_MOTILITY_BETA;
     QSlider *slider_MOTILITY_RHO;
     QwtPlot *qwtPlot_TC_AVIDITY;
@@ -218,6 +219,45 @@ public:
     QRadioButton *rbut_CCL21_BDRY_1;
     QRadioButton *rbut_OXY_BDRY_1;
     QRadioButton *rbut_CXCL13_BDRY_1;
+    QWidget *gridLayoutWidget;
+    QGridLayout *gridLayout_receptors;
+    QLabel *label_S1PR1;
+    QLabel *label_S1PR2;
+    QLabel *label_CCR7;
+    QLabel *label_EBI2;
+    QLabel *label_CXCR5;
+    QLabel *label_stagename;
+    QLineEdit *line_S1PR1_1;
+    QLineEdit *line_S1PR2_1;
+    QLineEdit *line_CCR7_1;
+    QLineEdit *line_EBI2_1;
+    QLineEdit *line_CXCR5_1;
+    QLabel *label_1;
+    QLabel *label_2;
+    QLineEdit *line_S1PR1_2;
+    QLineEdit *line_CXCR5_2;
+    QLineEdit *line_EBI2_2;
+    QLineEdit *line_CCR7_2;
+    QLineEdit *line_S1PR2_2;
+    QLineEdit *line_S1PR1_3;
+    QLineEdit *line_S1PR2_3;
+    QLineEdit *line_CCR7_3;
+    QLineEdit *line_EBI2_3;
+    QLineEdit *line_CXCR5_3;
+    QLabel *label_3;
+    QLineEdit *line_S1PR1_4;
+    QLineEdit *line_S1PR2_4;
+    QLineEdit *line_CCR7_4;
+    QLineEdit *line_EBI2_4;
+    QLineEdit *line_CXCR5_4;
+    QLabel *label_4;
+    QLineEdit *line_S1PR1_5;
+    QLineEdit *line_S1PR2_5;
+    QLineEdit *line_CCR7_5;
+    QLineEdit *line_EBI2_5;
+    QLineEdit *line_CXCR5_5;
+    QLabel *label_5;
+    QLabel *label_receptors;
     QWidget *tab_TCR;
     QWidget *layoutWidget_2;
     QGridLayout *gridLayout_3;
@@ -287,8 +327,10 @@ public:
     QMyLabel *label_NCPU;
     QSpacerItem *horizontalSpacer_34;
     QSpinBox *spin_NCPU;
-    QCheckBox *cbox_savepos;
-    QCheckBox *cbox_IV_SHOW_NONCOGNATE;
+    QLineEdit *line_TEST_CASE;
+    QLabel *label_TEST_CASE;
+    QSpacerItem *horizontalSpacer_33;
+    QCheckBox *cbox_SHOW_NONCOGNATE;
     QCheckBox *cbox_USE_TRAFFIC;
     QRadioButton *rbut_SPECIES_1;
     QRadioButton *rbut_SPECIES_0;
@@ -296,6 +338,9 @@ public:
     QCheckBox *cbox_COMPUTED_OUTFLOW;
     QMyLabel *label_INPUT_FILE;
     QLineEdit *text_INPUT_FILE;
+    QCheckBox *cbox_savepos;
+    QLineEdit *line_DISPLAY_FRACTION;
+    QLabel *label_display_fraction;
     QLabel *label_input;
     QTextEdit *text_more;
     QWidget *page_output;
@@ -401,8 +446,10 @@ public:
         action_set_speed->setObjectName(QString::fromUtf8("action_set_speed"));
         action_save_snapshot = new QAction(MainWindow);
         action_save_snapshot->setObjectName(QString::fromUtf8("action_save_snapshot"));
-        action_show_gradient = new QAction(MainWindow);
-        action_show_gradient->setObjectName(QString::fromUtf8("action_show_gradient"));
+        action_show_gradient3D = new QAction(MainWindow);
+        action_show_gradient3D->setObjectName(QString::fromUtf8("action_show_gradient3D"));
+        action_show_gradient2D = new QAction(MainWindow);
+        action_show_gradient2D->setObjectName(QString::fromUtf8("action_show_gradient2D"));
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         gridLayout_5 = new QGridLayout(centralwidget);
@@ -441,10 +488,10 @@ public:
         label_BC_AVIDITY_MEDIAN->setMouseTracking(true);
         label_BC_AVIDITY_MEDIAN->setWordWrap(false);
         label_BC_AVIDITY_MEDIAN->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-        slider_TC_AVIDITY_MEDIAN = new QSlider(tab_B);
-        slider_TC_AVIDITY_MEDIAN->setObjectName(QString::fromUtf8("slider_TC_AVIDITY_MEDIAN"));
-        slider_TC_AVIDITY_MEDIAN->setGeometry(QRect(823, 80, 61, 20));
-        slider_TC_AVIDITY_MEDIAN->setOrientation(Qt::Horizontal);
+        slider_BC_AVIDITY_MEDIAN = new QSlider(tab_B);
+        slider_BC_AVIDITY_MEDIAN->setObjectName(QString::fromUtf8("slider_BC_AVIDITY_MEDIAN"));
+        slider_BC_AVIDITY_MEDIAN->setGeometry(QRect(823, 80, 61, 20));
+        slider_BC_AVIDITY_MEDIAN->setOrientation(Qt::Horizontal);
         line_BC_AVIDITY_MEDIAN = new QLineEdit(tab_B);
         line_BC_AVIDITY_MEDIAN->setObjectName(QString::fromUtf8("line_BC_AVIDITY_MEDIAN"));
         line_BC_AVIDITY_MEDIAN->setEnabled(false);
@@ -456,10 +503,10 @@ public:
         sizePolicy1.setHeightForWidth(label_BC_AVIDITY_SHAPE->sizePolicy().hasHeightForWidth());
         label_BC_AVIDITY_SHAPE->setSizePolicy(sizePolicy1);
         label_BC_AVIDITY_SHAPE->setWordWrap(false);
-        slider_TC_AVIDITY_SHAPE = new QSlider(tab_B);
-        slider_TC_AVIDITY_SHAPE->setObjectName(QString::fromUtf8("slider_TC_AVIDITY_SHAPE"));
-        slider_TC_AVIDITY_SHAPE->setGeometry(QRect(823, 120, 61, 20));
-        slider_TC_AVIDITY_SHAPE->setOrientation(Qt::Horizontal);
+        slider_BC_AVIDITY_SHAPE = new QSlider(tab_B);
+        slider_BC_AVIDITY_SHAPE->setObjectName(QString::fromUtf8("slider_BC_AVIDITY_SHAPE"));
+        slider_BC_AVIDITY_SHAPE->setGeometry(QRect(823, 120, 61, 20));
+        slider_BC_AVIDITY_SHAPE->setOrientation(Qt::Horizontal);
         line_BC_AVIDITY_SHAPE = new QLineEdit(tab_B);
         line_BC_AVIDITY_SHAPE->setObjectName(QString::fromUtf8("line_BC_AVIDITY_SHAPE"));
         line_BC_AVIDITY_SHAPE->setEnabled(false);
@@ -483,11 +530,11 @@ public:
 
         gridLayout->addItem(horizontalSpacer_3, 0, 1, 1, 1);
 
-        slider_TC_COGNATE_FRACTION = new QSlider(layoutWidget);
-        slider_TC_COGNATE_FRACTION->setObjectName(QString::fromUtf8("slider_TC_COGNATE_FRACTION"));
-        slider_TC_COGNATE_FRACTION->setOrientation(Qt::Horizontal);
+        slider_BC_COGNATE_FRACTION = new QSlider(layoutWidget);
+        slider_BC_COGNATE_FRACTION->setObjectName(QString::fromUtf8("slider_BC_COGNATE_FRACTION"));
+        slider_BC_COGNATE_FRACTION->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(slider_TC_COGNATE_FRACTION, 0, 2, 1, 1);
+        gridLayout->addWidget(slider_BC_COGNATE_FRACTION, 0, 2, 1, 1);
 
         line_BC_COGNATE_FRACTION = new QLineEdit(layoutWidget);
         line_BC_COGNATE_FRACTION->setObjectName(QString::fromUtf8("line_BC_COGNATE_FRACTION"));
@@ -509,12 +556,12 @@ public:
 
         gridLayout->addItem(horizontalSpacer_4, 1, 1, 1, 1);
 
-        slider_TC_STIM_RATE_CONSTANT = new QSlider(layoutWidget);
-        slider_TC_STIM_RATE_CONSTANT->setObjectName(QString::fromUtf8("slider_TC_STIM_RATE_CONSTANT"));
-        slider_TC_STIM_RATE_CONSTANT->setEnabled(true);
-        slider_TC_STIM_RATE_CONSTANT->setOrientation(Qt::Horizontal);
+        slider_BC_STIM_RATE_CONSTANT = new QSlider(layoutWidget);
+        slider_BC_STIM_RATE_CONSTANT->setObjectName(QString::fromUtf8("slider_BC_STIM_RATE_CONSTANT"));
+        slider_BC_STIM_RATE_CONSTANT->setEnabled(true);
+        slider_BC_STIM_RATE_CONSTANT->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(slider_TC_STIM_RATE_CONSTANT, 1, 2, 1, 1);
+        gridLayout->addWidget(slider_BC_STIM_RATE_CONSTANT, 1, 2, 1, 1);
 
         line_BC_STIM_RATE_CONSTANT = new QLineEdit(layoutWidget);
         line_BC_STIM_RATE_CONSTANT->setObjectName(QString::fromUtf8("line_BC_STIM_RATE_CONSTANT"));
@@ -590,11 +637,11 @@ public:
 
         gridLayout->addWidget(line_MOTILITY_RHO, 4, 3, 1, 1);
 
-        slider_TC_STIM_HALFLIFE = new QSlider(layoutWidget);
-        slider_TC_STIM_HALFLIFE->setObjectName(QString::fromUtf8("slider_TC_STIM_HALFLIFE"));
-        slider_TC_STIM_HALFLIFE->setOrientation(Qt::Horizontal);
+        slider_BC_STIM_HALFLIFE = new QSlider(layoutWidget);
+        slider_BC_STIM_HALFLIFE->setObjectName(QString::fromUtf8("slider_BC_STIM_HALFLIFE"));
+        slider_BC_STIM_HALFLIFE->setOrientation(Qt::Horizontal);
 
-        gridLayout->addWidget(slider_TC_STIM_HALFLIFE, 2, 2, 1, 1);
+        gridLayout->addWidget(slider_BC_STIM_HALFLIFE, 2, 2, 1, 1);
 
         slider_MOTILITY_BETA = new QSlider(layoutWidget);
         slider_MOTILITY_BETA->setObjectName(QString::fromUtf8("slider_MOTILITY_BETA"));
@@ -1180,7 +1227,7 @@ public:
         rbut_S1P_BDRY_0->setGeometry(QRect(310, 130, 91, 21));
         label_chemokine = new QLabel(tab_chemo);
         label_chemokine->setObjectName(QString::fromUtf8("label_chemokine"));
-        label_chemokine->setGeometry(QRect(280, 30, 221, 16));
+        label_chemokine->setGeometry(QRect(270, 60, 221, 16));
         label_chemokine->setFont(font1);
         rbut_S1P_BDRY_1 = new QRadioButton(tab_chemo);
         buttonGroup_S1P_BDRY->addButton(rbut_S1P_BDRY_1);
@@ -1202,6 +1249,227 @@ public:
         rbut_CXCL13_BDRY_1->setObjectName(QString::fromUtf8("rbut_CXCL13_BDRY_1"));
         rbut_CXCL13_BDRY_1->setGeometry(QRect(670, 390, 121, 21));
         rbut_CXCL13_BDRY_1->setChecked(true);
+        gridLayoutWidget = new QWidget(tab_chemo);
+        gridLayoutWidget->setObjectName(QString::fromUtf8("gridLayoutWidget"));
+        gridLayoutWidget->setGeometry(QRect(800, 90, 411, 171));
+        gridLayout_receptors = new QGridLayout(gridLayoutWidget);
+        gridLayout_receptors->setObjectName(QString::fromUtf8("gridLayout_receptors"));
+        gridLayout_receptors->setContentsMargins(0, 0, 0, 0);
+        label_S1PR1 = new QLabel(gridLayoutWidget);
+        label_S1PR1->setObjectName(QString::fromUtf8("label_S1PR1"));
+        label_S1PR1->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_S1PR1, 0, 0, 1, 1);
+
+        label_S1PR2 = new QLabel(gridLayoutWidget);
+        label_S1PR2->setObjectName(QString::fromUtf8("label_S1PR2"));
+        label_S1PR2->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_S1PR2, 0, 1, 1, 1);
+
+        label_CCR7 = new QLabel(gridLayoutWidget);
+        label_CCR7->setObjectName(QString::fromUtf8("label_CCR7"));
+        label_CCR7->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_CCR7, 0, 2, 1, 1);
+
+        label_EBI2 = new QLabel(gridLayoutWidget);
+        label_EBI2->setObjectName(QString::fromUtf8("label_EBI2"));
+        label_EBI2->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_EBI2, 0, 3, 1, 1);
+
+        label_CXCR5 = new QLabel(gridLayoutWidget);
+        label_CXCR5->setObjectName(QString::fromUtf8("label_CXCR5"));
+        label_CXCR5->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_CXCR5, 0, 4, 1, 1);
+
+        label_stagename = new QLabel(gridLayoutWidget);
+        label_stagename->setObjectName(QString::fromUtf8("label_stagename"));
+        label_stagename->setFont(font3);
+
+        gridLayout_receptors->addWidget(label_stagename, 0, 5, 1, 1);
+
+        line_S1PR1_1 = new QLineEdit(gridLayoutWidget);
+        line_S1PR1_1->setObjectName(QString::fromUtf8("line_S1PR1_1"));
+        line_S1PR1_1->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR1_1, 1, 0, 1, 1);
+
+        line_S1PR2_1 = new QLineEdit(gridLayoutWidget);
+        line_S1PR2_1->setObjectName(QString::fromUtf8("line_S1PR2_1"));
+        line_S1PR2_1->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR2_1, 1, 1, 1, 1);
+
+        line_CCR7_1 = new QLineEdit(gridLayoutWidget);
+        line_CCR7_1->setObjectName(QString::fromUtf8("line_CCR7_1"));
+        line_CCR7_1->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CCR7_1, 1, 2, 1, 1);
+
+        line_EBI2_1 = new QLineEdit(gridLayoutWidget);
+        line_EBI2_1->setObjectName(QString::fromUtf8("line_EBI2_1"));
+        line_EBI2_1->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_EBI2_1, 1, 3, 1, 1);
+
+        line_CXCR5_1 = new QLineEdit(gridLayoutWidget);
+        line_CXCR5_1->setObjectName(QString::fromUtf8("line_CXCR5_1"));
+        line_CXCR5_1->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CXCR5_1, 1, 4, 1, 1);
+
+        label_1 = new QLabel(gridLayoutWidget);
+        label_1->setObjectName(QString::fromUtf8("label_1"));
+
+        gridLayout_receptors->addWidget(label_1, 1, 5, 1, 1);
+
+        label_2 = new QLabel(gridLayoutWidget);
+        label_2->setObjectName(QString::fromUtf8("label_2"));
+
+        gridLayout_receptors->addWidget(label_2, 2, 5, 1, 1);
+
+        line_S1PR1_2 = new QLineEdit(gridLayoutWidget);
+        line_S1PR1_2->setObjectName(QString::fromUtf8("line_S1PR1_2"));
+        line_S1PR1_2->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR1_2, 2, 0, 1, 1);
+
+        line_CXCR5_2 = new QLineEdit(gridLayoutWidget);
+        line_CXCR5_2->setObjectName(QString::fromUtf8("line_CXCR5_2"));
+        line_CXCR5_2->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CXCR5_2, 2, 4, 1, 1);
+
+        line_EBI2_2 = new QLineEdit(gridLayoutWidget);
+        line_EBI2_2->setObjectName(QString::fromUtf8("line_EBI2_2"));
+        line_EBI2_2->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_EBI2_2, 2, 3, 1, 1);
+
+        line_CCR7_2 = new QLineEdit(gridLayoutWidget);
+        line_CCR7_2->setObjectName(QString::fromUtf8("line_CCR7_2"));
+        line_CCR7_2->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CCR7_2, 2, 2, 1, 1);
+
+        line_S1PR2_2 = new QLineEdit(gridLayoutWidget);
+        line_S1PR2_2->setObjectName(QString::fromUtf8("line_S1PR2_2"));
+        line_S1PR2_2->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR2_2, 2, 1, 1, 1);
+
+        line_S1PR1_3 = new QLineEdit(gridLayoutWidget);
+        line_S1PR1_3->setObjectName(QString::fromUtf8("line_S1PR1_3"));
+        line_S1PR1_3->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR1_3, 3, 0, 1, 1);
+
+        line_S1PR2_3 = new QLineEdit(gridLayoutWidget);
+        line_S1PR2_3->setObjectName(QString::fromUtf8("line_S1PR2_3"));
+        line_S1PR2_3->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR2_3, 3, 1, 1, 1);
+
+        line_CCR7_3 = new QLineEdit(gridLayoutWidget);
+        line_CCR7_3->setObjectName(QString::fromUtf8("line_CCR7_3"));
+        line_CCR7_3->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CCR7_3, 3, 2, 1, 1);
+
+        line_EBI2_3 = new QLineEdit(gridLayoutWidget);
+        line_EBI2_3->setObjectName(QString::fromUtf8("line_EBI2_3"));
+        line_EBI2_3->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_EBI2_3, 3, 3, 1, 1);
+
+        line_CXCR5_3 = new QLineEdit(gridLayoutWidget);
+        line_CXCR5_3->setObjectName(QString::fromUtf8("line_CXCR5_3"));
+        line_CXCR5_3->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CXCR5_3, 3, 4, 1, 1);
+
+        label_3 = new QLabel(gridLayoutWidget);
+        label_3->setObjectName(QString::fromUtf8("label_3"));
+
+        gridLayout_receptors->addWidget(label_3, 3, 5, 1, 1);
+
+        line_S1PR1_4 = new QLineEdit(gridLayoutWidget);
+        line_S1PR1_4->setObjectName(QString::fromUtf8("line_S1PR1_4"));
+        line_S1PR1_4->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR1_4, 4, 0, 1, 1);
+
+        line_S1PR2_4 = new QLineEdit(gridLayoutWidget);
+        line_S1PR2_4->setObjectName(QString::fromUtf8("line_S1PR2_4"));
+        line_S1PR2_4->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR2_4, 4, 1, 1, 1);
+
+        line_CCR7_4 = new QLineEdit(gridLayoutWidget);
+        line_CCR7_4->setObjectName(QString::fromUtf8("line_CCR7_4"));
+        line_CCR7_4->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CCR7_4, 4, 2, 1, 1);
+
+        line_EBI2_4 = new QLineEdit(gridLayoutWidget);
+        line_EBI2_4->setObjectName(QString::fromUtf8("line_EBI2_4"));
+        line_EBI2_4->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_EBI2_4, 4, 3, 1, 1);
+
+        line_CXCR5_4 = new QLineEdit(gridLayoutWidget);
+        line_CXCR5_4->setObjectName(QString::fromUtf8("line_CXCR5_4"));
+        line_CXCR5_4->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CXCR5_4, 4, 4, 1, 1);
+
+        label_4 = new QLabel(gridLayoutWidget);
+        label_4->setObjectName(QString::fromUtf8("label_4"));
+
+        gridLayout_receptors->addWidget(label_4, 4, 5, 1, 1);
+
+        line_S1PR1_5 = new QLineEdit(gridLayoutWidget);
+        line_S1PR1_5->setObjectName(QString::fromUtf8("line_S1PR1_5"));
+        line_S1PR1_5->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR1_5, 5, 0, 1, 1);
+
+        line_S1PR2_5 = new QLineEdit(gridLayoutWidget);
+        line_S1PR2_5->setObjectName(QString::fromUtf8("line_S1PR2_5"));
+        line_S1PR2_5->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_S1PR2_5, 5, 1, 1, 1);
+
+        line_CCR7_5 = new QLineEdit(gridLayoutWidget);
+        line_CCR7_5->setObjectName(QString::fromUtf8("line_CCR7_5"));
+        line_CCR7_5->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CCR7_5, 5, 2, 1, 1);
+
+        line_EBI2_5 = new QLineEdit(gridLayoutWidget);
+        line_EBI2_5->setObjectName(QString::fromUtf8("line_EBI2_5"));
+        line_EBI2_5->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_EBI2_5, 5, 3, 1, 1);
+
+        line_CXCR5_5 = new QLineEdit(gridLayoutWidget);
+        line_CXCR5_5->setObjectName(QString::fromUtf8("line_CXCR5_5"));
+        line_CXCR5_5->setMaximumSize(QSize(40, 16777215));
+
+        gridLayout_receptors->addWidget(line_CXCR5_5, 5, 4, 1, 1);
+
+        label_5 = new QLabel(gridLayoutWidget);
+        label_5->setObjectName(QString::fromUtf8("label_5"));
+
+        gridLayout_receptors->addWidget(label_5, 5, 5, 1, 1);
+
+        label_receptors = new QLabel(tab_chemo);
+        label_receptors->setObjectName(QString::fromUtf8("label_receptors"));
+        label_receptors->setGeometry(QRect(870, 60, 161, 16));
+        label_receptors->setFont(font1);
         tabs->addTab(tab_chemo, QString());
         tab_TCR = new QWidget();
         tab_TCR->setObjectName(QString::fromUtf8("tab_TCR"));
@@ -1604,17 +1872,29 @@ public:
 
         gridLayout_4->addWidget(spin_NCPU, 13, 2, 1, 1);
 
-        cbox_savepos = new QCheckBox(layoutWidget2);
-        cbox_savepos->setObjectName(QString::fromUtf8("cbox_savepos"));
+        line_TEST_CASE = new QLineEdit(layoutWidget2);
+        line_TEST_CASE->setObjectName(QString::fromUtf8("line_TEST_CASE"));
+        line_TEST_CASE->setMaximumSize(QSize(120, 16777215));
+        line_TEST_CASE->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
-        gridLayout_4->addWidget(cbox_savepos, 15, 2, 1, 1);
+        gridLayout_4->addWidget(line_TEST_CASE, 15, 2, 1, 1);
 
-        cbox_IV_SHOW_NONCOGNATE = new QCheckBox(tab_run);
-        cbox_IV_SHOW_NONCOGNATE->setObjectName(QString::fromUtf8("cbox_IV_SHOW_NONCOGNATE"));
-        cbox_IV_SHOW_NONCOGNATE->setGeometry(QRect(450, 600, 171, 18));
+        label_TEST_CASE = new QLabel(layoutWidget2);
+        label_TEST_CASE->setObjectName(QString::fromUtf8("label_TEST_CASE"));
+
+        gridLayout_4->addWidget(label_TEST_CASE, 15, 0, 1, 1);
+
+        horizontalSpacer_33 = new QSpacerItem(40, 13, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        gridLayout_4->addItem(horizontalSpacer_33, 15, 1, 1, 1);
+
+        cbox_SHOW_NONCOGNATE = new QCheckBox(tab_run);
+        cbox_SHOW_NONCOGNATE->setObjectName(QString::fromUtf8("cbox_SHOW_NONCOGNATE"));
+        cbox_SHOW_NONCOGNATE->setEnabled(true);
+        cbox_SHOW_NONCOGNATE->setGeometry(QRect(450, 600, 171, 18));
         cbox_USE_TRAFFIC = new QCheckBox(tab_run);
         cbox_USE_TRAFFIC->setObjectName(QString::fromUtf8("cbox_USE_TRAFFIC"));
-        cbox_USE_TRAFFIC->setEnabled(false);
+        cbox_USE_TRAFFIC->setEnabled(true);
         cbox_USE_TRAFFIC->setGeometry(QRect(450, 290, 121, 18));
         rbut_SPECIES_1 = new QRadioButton(tab_run);
         buttonGroup_SPECIES = new QButtonGroup(MainWindow);
@@ -1637,10 +1917,21 @@ public:
         cbox_COMPUTED_OUTFLOW->setGeometry(QRect(450, 400, 151, 18));
         label_INPUT_FILE = new QMyLabel(tab_run);
         label_INPUT_FILE->setObjectName(QString::fromUtf8("label_INPUT_FILE"));
-        label_INPUT_FILE->setGeometry(QRect(10, 680, 121, 16));
+        label_INPUT_FILE->setGeometry(QRect(10, 700, 121, 16));
         text_INPUT_FILE = new QLineEdit(tab_run);
         text_INPUT_FILE->setObjectName(QString::fromUtf8("text_INPUT_FILE"));
-        text_INPUT_FILE->setGeometry(QRect(130, 680, 151, 20));
+        text_INPUT_FILE->setGeometry(QRect(130, 700, 151, 20));
+        cbox_savepos = new QCheckBox(tab_run);
+        cbox_savepos->setObjectName(QString::fromUtf8("cbox_savepos"));
+        cbox_savepos->setEnabled(false);
+        cbox_savepos->setGeometry(QRect(450, 650, 120, 16));
+        line_DISPLAY_FRACTION = new QLineEdit(tab_run);
+        line_DISPLAY_FRACTION->setObjectName(QString::fromUtf8("line_DISPLAY_FRACTION"));
+        line_DISPLAY_FRACTION->setEnabled(false);
+        line_DISPLAY_FRACTION->setGeometry(QRect(450, 620, 31, 20));
+        label_display_fraction = new QLabel(tab_run);
+        label_display_fraction->setObjectName(QString::fromUtf8("label_display_fraction"));
+        label_display_fraction->setGeometry(QRect(490, 620, 101, 21));
         tabs->addTab(tab_run, QString());
 
         verticalLayout->addWidget(tabs);
@@ -1734,7 +2025,7 @@ public:
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1319, 21));
+        menubar->setGeometry(QRect(0, 0, 1319, 18));
         menuFile = new QMenu(menubar);
         menuFile->setObjectName(QString::fromUtf8("menuFile"));
         menuEdit = new QMenu(menubar);
@@ -1800,7 +2091,8 @@ public:
         menuPlayer->addAction(action_play_VTK);
         menuPlayer->addAction(action_set_speed);
         menuSnapshot->addAction(action_save_snapshot);
-        menuChemokine->addAction(action_show_gradient);
+        menuChemokine->addAction(action_show_gradient3D);
+        menuChemokine->addAction(action_show_gradient2D);
         toolBar1->addAction(action_run);
         toolBar1->addAction(action_pause);
         toolBar1->addAction(action_stop);
@@ -1861,7 +2153,8 @@ public:
         action_play_VTK->setText(QApplication::translate("MainWindow", "Play cell animation", 0, QApplication::UnicodeUTF8));
         action_set_speed->setText(QApplication::translate("MainWindow", "Set speed", 0, QApplication::UnicodeUTF8));
         action_save_snapshot->setText(QApplication::translate("MainWindow", "Save snapshot", 0, QApplication::UnicodeUTF8));
-        action_show_gradient->setText(QApplication::translate("MainWindow", "Show gradient", 0, QApplication::UnicodeUTF8));
+        action_show_gradient3D->setText(QApplication::translate("MainWindow", "Show 3D gradient field", 0, QApplication::UnicodeUTF8));
+        action_show_gradient2D->setText(QApplication::translate("MainWindow", "Show 2D gradient field", 0, QApplication::UnicodeUTF8));
 #ifndef QT_NO_TOOLTIP
         label_BC_AVIDITY_MEDIAN->setToolTip(QApplication::translate("MainWindow", "TCR avidity has a lognormal distribution, described by the mean and shape parameters.", 0, QApplication::UnicodeUTF8));
 #endif // QT_NO_TOOLTIP
@@ -1976,6 +2269,18 @@ public:
         rbut_CCL21_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
         rbut_OXY_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
         rbut_CXCL13_BDRY_1->setText(QApplication::translate("MainWindow", "Use concentration", 0, QApplication::UnicodeUTF8));
+        label_S1PR1->setText(QApplication::translate("MainWindow", "S1PR1", 0, QApplication::UnicodeUTF8));
+        label_S1PR2->setText(QApplication::translate("MainWindow", "S1PR2", 0, QApplication::UnicodeUTF8));
+        label_CCR7->setText(QApplication::translate("MainWindow", "CCR7", 0, QApplication::UnicodeUTF8));
+        label_EBI2->setText(QApplication::translate("MainWindow", "EBI2", 0, QApplication::UnicodeUTF8));
+        label_CXCR5->setText(QApplication::translate("MainWindow", "CXCR5", 0, QApplication::UnicodeUTF8));
+        label_stagename->setText(QApplication::translate("MainWindow", "Cell differentiation stage", 0, QApplication::UnicodeUTF8));
+        label_1->setText(QApplication::translate("MainWindow", "Naive cell", 0, QApplication::UnicodeUTF8));
+        label_2->setText(QApplication::translate("MainWindow", "Antigen met (CCR7 up)", 0, QApplication::UnicodeUTF8));
+        label_3->setText(QApplication::translate("MainWindow", "Cell activated (BCL6 lo)", 0, QApplication::UnicodeUTF8));
+        label_4->setText(QApplication::translate("MainWindow", "GC commitment (BCL6 hi)", 0, QApplication::UnicodeUTF8));
+        label_5->setText(QApplication::translate("MainWindow", "Plasma cell", 0, QApplication::UnicodeUTF8));
+        label_receptors->setText(QApplication::translate("MainWindow", "Receptor Levels", 0, QApplication::UnicodeUTF8));
         tabs->setTabText(tabs->indexOf(tab_chemo), QApplication::translate("MainWindow", "Chemokine", 0, QApplication::UnicodeUTF8));
         label_IL2_THRESHOLD->setText(QApplication::translate("MainWindow", "label_IL2_THRESHOLD", 0, QApplication::UnicodeUTF8));
         label_ACTIVATION_THRESHOLD->setText(QApplication::translate("MainWindow", "label_ACTIVATION_THRESHOLD", 0, QApplication::UnicodeUTF8));
@@ -2023,14 +2328,18 @@ public:
         label_NCPU->setToolTip(QApplication::translate("MainWindow", "animation update interval", 0, QApplication::UnicodeUTF8));
 #endif // QT_NO_TOOLTIP
         label_NCPU->setText(QApplication::translate("MainWindow", "label_NCPU", 0, QApplication::UnicodeUTF8));
-        cbox_savepos->setText(QApplication::translate("MainWindow", "Save cell paths", 0, QApplication::UnicodeUTF8));
-        cbox_IV_SHOW_NONCOGNATE->setText(QApplication::translate("MainWindow", "Display non-cognate B cells? ", 0, QApplication::UnicodeUTF8));
+        line_TEST_CASE->setText(QApplication::translate("MainWindow", "0", 0, QApplication::UnicodeUTF8));
+        label_TEST_CASE->setText(QApplication::translate("MainWindow", "label_TEST_CASE", 0, QApplication::UnicodeUTF8));
+        cbox_SHOW_NONCOGNATE->setText(QApplication::translate("MainWindow", "Display non-cognate B cells? ", 0, QApplication::UnicodeUTF8));
         cbox_USE_TRAFFIC->setText(QApplication::translate("MainWindow", "B cell trafficking? ", 0, QApplication::UnicodeUTF8));
         rbut_SPECIES_1->setText(QApplication::translate("MainWindow", "Human", 0, QApplication::UnicodeUTF8));
         rbut_SPECIES_0->setText(QApplication::translate("MainWindow", "Mouse", 0, QApplication::UnicodeUTF8));
         cbox_USE_EXIT_CHEMOTAXIS->setText(QApplication::translate("MainWindow", "Use exit chemotaxis?", 0, QApplication::UnicodeUTF8));
         cbox_COMPUTED_OUTFLOW->setText(QApplication::translate("MainWindow", "Compute B cell outflow?", 0, QApplication::UnicodeUTF8));
         label_INPUT_FILE->setText(QApplication::translate("MainWindow", "Auxiliary input data file", 0, QApplication::UnicodeUTF8));
+        cbox_savepos->setText(QApplication::translate("MainWindow", "Save cell paths", 0, QApplication::UnicodeUTF8));
+        line_DISPLAY_FRACTION->setText(QApplication::translate("MainWindow", "0", 0, QApplication::UnicodeUTF8));
+        label_display_fraction->setText(QApplication::translate("MainWindow", "Fraction to display", 0, QApplication::UnicodeUTF8));
         tabs->setTabText(tabs->indexOf(tab_run), QApplication::translate("MainWindow", "Run", 0, QApplication::UnicodeUTF8));
         label_input->setText(QApplication::translate("MainWindow", "Inputs", 0, QApplication::UnicodeUTF8));
         text_more->setDocumentTitle(QString());
