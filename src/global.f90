@@ -115,10 +115,11 @@ real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the l
 logical, parameter :: use_ode_diffusion = .false.	! otherwise use the original method in fields.f90 
 integer, parameter :: NDIFFSTEPS = 6    ! divisions of DELTA_T for diffusion computation
 logical, parameter :: use_SS_fields = .true.
+logical, parameter :: USE_CELL_SITES = .true.	! FDC and MRC cell sites have bdry chemo conc
 
 ! B cell parameters
 logical, parameter :: random_cognate = .false.          ! number of cognate seed cells is random or determined
-integer, parameter :: MMAX_GEN = 20     ! max number of generations (for array dimension only)
+integer, parameter :: MMAX_GEN = 30     ! max number of generations (for array dimension only)
 
 ! B cell region
 integer, parameter :: FOLLICLE = 1

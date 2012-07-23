@@ -161,6 +161,7 @@ max_nlist = 1.5*NX*NY*NZ
 
 allocate(DClist(MAX_DC))
 allocate(FDClist(MAX_FDC))
+allocate(MRClist(MAX_MRC))
 allocate(occupancy(NX,NY,NZ))
 allocate(cellist(max_nlist))
 allocate(gaplist(max_ngaps))
@@ -215,7 +216,8 @@ end subroutine
 ! blobrange(2,1) <= y <= blobrange(2,2)
 ! blobrange(3,1) <= z <= blobrange(3,2)
 !--------------------------------------------------------------------------------
-subroutine make_split
+subroutine make_split(force)
+logical :: force
 integer :: k, wsum, kdomain, nsum, Ntot, N, last, x, y, z
 integer, allocatable :: scount(:)
 integer, allocatable :: wz(:), ztotal(:)
@@ -223,7 +225,7 @@ integer :: Mslices
 real :: dNT, diff1, diff2
 logical :: show = .false.
 
-!write(*,*) 'make_split: Mnodes: ',Mnodes
+!write(*,*) 'make_split: istep,Mnodes: ',istep,Mnodes
 if (Mnodes == 1) then
     Mslices = 1
     zdomain = 0
@@ -231,7 +233,7 @@ else
 	Mslices = 2*Mnodes
 endif
 dNT = abs(NBcells - lastNBcells)/real(lastNBcells+1)
-if (dNT < 0.03) then
+if (.not.force .and. dNT < 0.03) then
     return
 endif
 lastNBcells = NBcells
@@ -412,7 +414,7 @@ do ibeta = 1,nbeta
 	    write(*,'(10f7.3)') dirprob(0:nreldir)
 	    call placeCells(ok)
 	    if (.not.ok) stop
-        call make_split
+        call make_split(.true.)
         if (nlist > 0) then
 	        write(*,*) 'make tag list: NBcells,nlist,ntagged: ',NBcells,nlist,ntagged
 
@@ -519,7 +521,7 @@ x = NX/4
 !call analytical_soln(x,Canalytic,Ntimes)
 call placeCells(ok)
 if (.not.ok) stop
-call make_split
+call make_split(.true.)
 
 call cpu_time(t1)
 do x = 1,NX
@@ -805,9 +807,10 @@ NBcells = NBcells - 1
 if (cognate) then
     call set_stage(p,LEFT)
 	call set_region(p,GONE)
+	write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID,stage
 endif
 cellist(kcell)%exists = .false.
-write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID
+!write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID
 if (use_gaplist .and. .not.cognate) then
 	cellist(kcell)%ID = 0
 	ngaps = ngaps + 1
@@ -969,7 +972,7 @@ if ((abs(nadd_total) > nadd_limit) .or. (tnow > lastbalancetime + BALANCER_INTER
     nadd_sites = 0
     if (blob_changed) then
 		if (dbug) write(nflog,*) 'call make_split'
-        call make_split
+        call make_split(.false.)
     endif
 else
     call set_globalvar
@@ -1541,7 +1544,6 @@ integer, parameter :: ninfo = 5			! the size of the info package for a cell (num
 integer, parameter :: nax = 6			! number of points used to delineate the follicle
 
 nFDC_list = 0
-k = 0
 ! Need some markers to delineate the follicle extent.  These nax "cells" are used to convey (the follicle centre
 ! and) the approximate ellipsoidal blob limits in the 3 axis directions.
 do k = 1,nax
@@ -1596,7 +1598,7 @@ do k = 1,nax
 	BC_list(j+5) = ibcstate
 	last_id1 = k-1
 enddo
-k = k - 1   ! because at end of loop k is 1 + loop limit 
+k = last_id1 + 1
 
 ! B cell section
 
@@ -1612,14 +1614,16 @@ do kc = 1,lastcogID
 		BC_list(j+2:j+4) = site
 		BC_list(j+5) = rgb(col)
 		last_id2 = kc + last_id1
-		write(nflog,*) 'cog: ',k,kcell,BC_list(j+1)
-!		write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,rgb(col)
-!		call logger(logmsg)
+!		write(nflog,'(a,8i7)') 'cog: ',k,BC_list(j+1),kcell,get_stage(cellist(kcell)%cptr),kc,last_id1
+!		if (istep > 14000) then
+!			write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,get_stage(cellist(kcell)%cptr)
+!			call logger(logmsg)
+!		endif
 	endif
 enddo
+noncnt = 0
 if (show_noncognate) then
     ! Non-cognate cells, a specified fraction noncogfraction are displayed
-    noncnt = 0
     do kcell = 1,noncog_display_fraction*nlist
         if (associated(cellist(kcell)%cptr)) then
             write(nflog,*) 'cell associated: ',kcell
@@ -1643,23 +1647,42 @@ if (show_noncognate) then
 	    endif
     enddo
 endif
-nBC_list = noncnt + last_id2 + 1
+nBC_list = k
+!write(logmsg,*) 'nBC_list: ',nBC_list
+!call logger(logmsg)
 ! FDC section
+k = 0
 if (NFDC > 0) then
-	k = 0
     do kcell = 1,NFDC
         if (FDClist(kcell)%alive) then
 			k = k+1
 			j = ninfo*(k-1)
             site = FDClist(kcell)%site
-            ifdcstate = 100
+!            write(logmsg,*) 'FDC site: ',kcell,site
+!            call logger(logmsg)
 			FDC_list(j+1) = kcell-1
 			FDC_list(j+2:j+4) = site
-			FDC_list(j+5) = ifdcstate
+			FDC_list(j+5) = 100
         endif
     enddo
-    nFDC_list = k
 endif
+if (NMRC > 0) then
+    do kcell = 1,NMRC
+        if (MRClist(kcell)%alive) then
+			k = k+1
+			j = ninfo*(k-1)
+            site = MRClist(kcell)%site
+!            write(logmsg,*) 'MRC site: ',kcell,site
+!            call logger(logmsg)
+			FDC_list(j+1) = NFDC + kcell-1
+			FDC_list(j+2:j+4) = site
+			FDC_list(j+5) = 200
+        endif
+    enddo
+endif
+nFDC_list = k
+!write(logmsg,*) 'istep, nFDC_list: ',istep,nFDC_list
+!call logger(logmsg)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1894,6 +1917,7 @@ if (mod(istep,240) == 0) then
     total_out = 0
 !	call cpu_time(t1)
 	if (use_SS_fields) then
+		call make_split(.true.)		! just to be sure
 		if (sim_dbug) write(nflog,*) 'call UpdateSSFields'
 		call UpdateSSFields
 		if (sim_dbug) write(nflog,*) 'did UpdateSSFields'
@@ -2113,7 +2137,7 @@ if (vary_vascularity) then
 endif
 
 call set_globalvar
-call make_split
+call make_split(.true.)
 call init_counters
 if (save_input) then
     call save_inputfile(inputfile)
@@ -2148,6 +2172,7 @@ if (allocated(Tres_dist)) deallocate(Tres_dist)
 if (allocated(cellist)) deallocate(cellist,stat=ierr)
 if (allocated(DClist)) deallocate(DClist,stat=ierr)
 if (allocated(FDClist)) deallocate(FDClist,stat=ierr)
+if (allocated(MRClist)) deallocate(MRClist,stat=ierr)
 if (ierr /= 0) then
     write(logmsg,*) 'deallocate error: ',ierr
     call logger(logmsg)

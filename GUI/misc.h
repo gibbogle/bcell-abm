@@ -5,6 +5,7 @@
 #include <QTcpServer>
 
 #include "libBcell32.h"
+#include "SimpleView2DUI.h"
 
 class SocketHandler : public QThread
  {
@@ -44,6 +45,7 @@ public:
 	ExecThread(QString);
 	void run();
 	void snapshot();
+    void saveGradient2D(int k);
 	void pause();
 	void unpause();
 	void stop();

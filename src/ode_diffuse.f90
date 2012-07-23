@@ -197,11 +197,12 @@ end subroutine
 !----------------------------------------------------------------------------------
 ! The sources of chemokine are now being recorded in:
 ! occupancy%bdry (for those chemokines that enter at the follicle boundary), and 
-! occupancy%FDC_nbdry (for CXCL13, secreted by FDCs)
+! occupancy%FDC_nbdry, occupancy%MRC_nbdry  
+! (for CXCL13, secreted by FDCs and MRCs - for now, at the same rate)
 !----------------------------------------------------------------------------------
 subroutine deriv(t,v,dv)
 real(REAL_KIND) :: t, v(*), dv(*)
-integer :: i, k, n, x, y, z, idbug, ifdc, site(3), dx, dy, dz, ic, nf
+integer :: i, k, n, x, y, z, idbug, ifdc, site(3), dx, dy, dz, ic, nf_FDC, nf_MRC
 real(REAL_KIND) :: sum, s, vtemp, ctemp
 logical :: dbug
 
@@ -229,10 +230,11 @@ do i = 1,n
 			enddo
 		endif
 	else
-		nf = occupancy(site(1),site(2),site(3))%FDC_nbdry 
-		if (nf > 0) then
+		nf_FDC = occupancy(site(1),site(2),site(3))%FDC_nbdry 
+		nf_MRC = occupancy(site(1),site(2),site(3))%MRC_nbdry 
+		if (nf_FDC + nf_MRC > 0) then
 			if (chemo(CXCL13)%use_secretion) then
-				dv(i) = dv(i) + nf*chemo(CXCL13)%bdry_rate
+				dv(i) = dv(i) + (nf_FDC+nf_MRC)*chemo(CXCL13)%bdry_rate
 			else
 				dv(i) = 0
 			endif

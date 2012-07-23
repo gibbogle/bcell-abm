@@ -438,7 +438,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine CheckBdryList
 type (boundary_type), pointer :: bdry => null(), ocbdry => null()
-integer :: x, y, z, site(3), dy, nb1, nb2, nbx
+integer :: x, y, z, site(3), dy, nb1, nb2, nbx, indx(2)
 
 nb1 = 0
 nbx = 0
@@ -453,6 +453,18 @@ do while ( associated ( bdry ))
 		call logger(logmsg)
 		stop
 	endif
+	indx = occupancy(site(1),site(2),site(3))%indx
+	if (indx(1) == OUTSIDE_TAG) then
+		write(logmsg,*) 'Error: CheckBdryList: site is outside: ',site
+		call logger(logmsg)
+		stop
+	endif
+	if (.not.isbdry(site(1),site(2),site(3))) then
+		write(logmsg,*) 'Error: CheckBdryList: bdry site is NOT bdry: ',site
+		call logger(logmsg)
+		stop
+	endif
+		
     bdry => bdry%next
 enddo
 nb2 = 0
@@ -649,7 +661,8 @@ do k = 1,27
     y = site(2) + jumpvec(2,k)
     z = site(3) + jumpvec(3,k)
     if (outside_xyz(x,y,z)) cycle
-    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+    if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! site not accessible by chemokines
     nave = nave + 1
     cave = cave + C(x,y,z)
     gave = gave + G(:,x,y,z)
@@ -688,7 +701,8 @@ do k = 1,27
     y = site(2) + jumpvec(2,k)
     z = site(3) + jumpvec(3,k)
     if (outside_xyz(x,y,z)) cycle
-    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+    if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! site not accessible by chemokines
     nave = nave + 1
     cave = cave + C(x,y,z)
     gave = gave + G(:,x,y,z)
@@ -738,33 +752,47 @@ end subroutine
 
 !----------------------------------------------------------------------------------------
 ! Set up boundary concentrations for the chemokines.
-! These values do not change as long as the boundaries or FDCs do not move.
+! These values do not change as long as the boundaries or FDCs/MRCs do not move.
+! Note that the concentrations produced by FDCs and MRCs are currently treated as the same.
 !----------------------------------------------------------------------------------------
 subroutine BdryConcentrations
-integer :: ic, i, site(3)
+integer :: ichemo, i, site(3)
 type (boundary_type), pointer :: bdry
 
 write(logmsg,*) 'BdryConcentrations'
 call logger(logmsg)
-do ic = 1,MAX_CHEMO
-	if (chemo(ic)%used .and. .not.chemo(ic)%use_secretion) then
-		if (ic /= CXCL13) then
+call CheckBdryList
+do ichemo = 1,MAX_CHEMO
+	if (chemo(ichemo)%used .and. .not.chemo(ichemo)%use_secretion) then
+		if (ichemo /= CXCL13) then
 			bdry => bdrylist
 			do while ( associated ( bdry )) 
-				if (bdry%chemo_influx(ic)) then
+				if (bdry%chemo_influx(ichemo)) then
 					site = bdry%site
-					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
+					chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
 				endif
 				bdry => bdry%next
 			enddo
-		else	! special treatment needed for CXCL13, which is secreted by FDCs
+		else	! special treatment needed for CXCL13, which is secreted by FDCs and MRCs
+			if (USE_CELL_SITES) then
+				do i = 1,NFDC
+					site = FDClist(i)%site
+					chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
+				enddo
+				do i = 1,NMRC
+					site = MRClist(i)%site
+					chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
+				enddo
+			else
 				! need to maintain a list of FDC neighbour sites - for now use occupancy()%FDC_nbdry, OK if FDCs do not move
-			do i = 1,ODEdiff%nvars
-				site = ODEdiff%varsite(i,:)
-				if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0) then
-					chemo(ic)%conc(site(1),site(2),site(3)) = chemo(ic)%bdry_conc
-				endif
-			enddo
+				do i = 1,ODEdiff%nvars
+					site = ODEdiff%varsite(i,:)
+					if (occupancy(site(1),site(2),site(3))%FDC_nbdry > 0 &
+					.or. occupancy(site(1),site(2),site(3))%MRC_nbdry > 0) then
+						chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
+					endif
+				enddo
+			endif
 		endif
 	endif
 enddo
@@ -896,7 +924,8 @@ do i = 1,MAX_CHEMO
 	if (chemo(i)%used) then
 		write(nfout,'(a,a)') chemo(i)%name,'  conc        gradient' 
 		do y = 1,NY
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! site not accessible by chemokines
 			gamp = norm(chemo(i)%grad(:,x,y,z))
 		    write(nfout,'(3i4,4e12.4,4x,f8.4)') x,y,z,chemo(i)%conc(x,y,z),chemo(i)%grad(:,x,y,z),gamp
 		enddo
@@ -918,9 +947,71 @@ real :: dx2diff, total, maxchange, maxchange_par, total_par
 real, parameter :: alpha = 0.5
 real, parameter :: tol = 1.0e-5		! max change in C at any site as fraction of average C
 integer :: nc, nc_par, k, it, n, kpar
+integer :: nsweeps, sweep, slice
 integer :: z1, z2, zfr, zto	
 real, allocatable :: C_par(:,:,:)
 integer :: nt = 10000
+character*(12) :: msg
+
+if (Mnodes == 1) then
+    nsweeps = 1
+else
+    nsweeps = 2
+endif
+
+do ichemo = 1,MAX_CHEMO
+	if (.not.chemo(ichemo)%used) cycle
+	Cptr => chemo(ichemo)
+	Kdiffusion = Cptr%diff_coef
+	Kdecay = Cptr%decay_rate
+	do it = 1,nt
+		maxchange = 0
+		total = 0
+		nc = 0
+	do sweep = 0,nsweeps-1
+		!$omp parallel do private(slice,z1,z2,n,C_par,maxchange_par,total_par,nc_par)
+		do kpar = 0,Mnodes-1
+			slice = sweep + 2*kpar
+	        if (Mnodes == 1) then
+	            z1 = blobrange(3,1)
+	            z2 = blobrange(3,2)
+	        else
+    	        z1 = max(zoffset(slice) + 1,blobrange(3,1))
+	            z2 = min(zoffset(slice+1),blobrange(3,2))
+	        endif
+			n = z2 - z1 + 1
+			allocate(C_par(NX,NY,n))
+			call par_steadystate_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,z1,z2,maxchange_par,total_par,nc_par,kpar,sweep)
+			Cptr%conc(:,:,z1:z2) = C_par(:,:,1:n)
+			deallocate(C_par)
+			nc = nc + nc_par
+			total = total + total_par
+			maxchange = max(maxchange,maxchange_par)
+		enddo
+	enddo
+		if (maxchange < tol*total/nc) then
+			write(logmsg,'(a,a,a,i4)') 'Convergence reached for: ',chemo(ichemo)%name,' # of iterations: ',it
+			call logger(logmsg)
+			exit
+		endif
+	enddo
+	call gradient(Cptr%conc,Cptr%grad)
+enddo
+end subroutine	
+
+!----------------------------------------------------------------------------------------
+subroutine SolveSteadystate_A_original
+type(chemokine_type), pointer :: Cptr
+integer :: ichemo
+real :: Kdiffusion, Kdecay
+real :: dx2diff, total, maxchange, maxchange_par, total_par
+real, parameter :: alpha = 0.5
+real, parameter :: tol = 1.0e-5		! max change in C at any site as fraction of average C
+integer :: nc, nc_par, k, it, n, kpar
+integer :: z1, z2, zfr, zto	
+real, allocatable :: C_par(:,:,:)
+integer :: nt = 10000
+integer :: sweep = 0
 
 do ichemo = 1,MAX_CHEMO
 	if (.not.chemo(ichemo)%used) cycle
@@ -942,7 +1033,7 @@ do ichemo = 1,MAX_CHEMO
 	        endif
 			n = z2 - z1 + 1
 			allocate(C_par(NX,NY,n))
-			call par_steadystate_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,z1,z2,maxchange_par,total_par,nc_par,kpar)
+			call par_steadystate_A(ichemo,Cptr%conc,Kdiffusion,Kdecay,C_par,z1,z2,maxchange_par,total_par,nc_par,kpar,sweep)
 			Cptr%conc(:,:,z1:z2) = C_par(:,:,1:n)
 			deallocate(C_par)
 			nc = nc + nc_par
@@ -970,14 +1061,14 @@ end subroutine
 ! Method A solves in an iterative fashion dC/dt = 0, with specified concentrations
 ! in the source gridcells.
 !----------------------------------------------------------------------------------------
-subroutine par_steadystate_A(ichemo,C,Kdiffusion,Kdecay,Ctemp,z1,z2,maxchange,total,nc,kpar)
-integer :: ichemo
+subroutine par_steadystate_A(ichemo,C,Kdiffusion,Kdecay,Ctemp,z1,z2,maxchange,total,nc,kpar,sweep)
+integer :: ichemo, sweep
 real :: C(:,:,:), Ctemp(:,:,:)
 integer :: z1, z2, kpar
 real :: Kdiffusion, Kdecay
 real :: dx2diff, total, maxchange, dC, sum, dV
-real, parameter :: alpha = 0.7
-integer :: x, y, z, xx, yy, zz, nb, nc, k, zpar, indx(2), i
+real, parameter :: alpha = 0.5		!0.7
+integer :: x, y, z, xx, yy, zz, nb, nc, k, zpar, indx(2), i, maxsite(3)
 logical :: source_site
 
 dx2diff = DELTA_X**2/Kdiffusion
@@ -990,7 +1081,7 @@ do zpar = 1,z2-z1+1
     do y = blobrange(2,1),blobrange(2,2)
         do x = blobrange(3,1),blobrange(3,2)
 		    indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle      ! outside or DC
+			if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
             source_site = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
                 ! Check for chemo bdry site - no change to the concentration at such a site
@@ -1001,7 +1092,8 @@ do zpar = 1,z2-z1+1
 				        source_site = .true.
 					endif
 				enddo
-			elseif (ichemo == CXCL13 .and. occupancy(x,y,z)%FDC_nbdry > 0) then
+			elseif (ichemo == CXCL13 .and. &
+			  (occupancy(x,y,z)%FDC_nbdry > 0 .or. occupancy(x,y,z)%MRC_nbdry > 0)) then
                 C(x,y,z) = chemo(ichemo)%bdry_conc
 	            Ctemp(x,y,zpar) = C(x,y,z)
 		        source_site = .true.
@@ -1014,18 +1106,59 @@ do zpar = 1,z2-z1+1
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+!    				if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+					indx = occupancy(xx,yy,zz)%indx
+					if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)
 			    enddo
 			    Ctemp(x,y,zpar) = alpha*(DELTA_X*Kdiffusion*sum)/(Kdecay*dV + nb*DELTA_X*Kdiffusion) + (1-alpha)*C(x,y,z)
 			    dC = abs(Ctemp(x,y,zpar) - C(x,y,z))
-			    maxchange = max(dC,maxchange)
+!			    maxchange = max(dC,maxchange)
+				if (dC > maxchange) then
+					maxchange = DC
+					maxsite = (/x,y,z/)
+				endif
 			endif
 			nc = nc + 1
 			total = total + Ctemp(x,y,zpar)
 		enddo
 	enddo
+enddo
+end subroutine
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+subroutine debug_grad(msg)
+character*(12) :: msg
+integer :: x, y, z, indx(2)
+real :: cbnd, cprev
+logical :: bnd
+
+write(*,'(a,$)') msg
+y = Centre(2)
+z = Centre(3)
+cprev = -1
+do x = 65,72
+	indx = occupancy(x,y,z)%indx
+	if (indx(1) == OUTSIDE_TAG) then
+		write(*,*)
+		if (cprev == 0) stop
+		exit
+	endif
+	write(*,'(f6.1,$)') chemo(1)%conc(x,y,z)
+	cprev = chemo(1)%conc(x,y,z)
+	if (associated(occupancy(x,y,z)%bdry)) then
+		bnd = .true.
+		if (occupancy(x,y,z)%bdry%chemo_influx(1)) then
+			cbnd = chemo(1)%bdry_conc
+		else
+			cbnd = 0
+		endif
+		write(*,'(a,f6.1,$)') '  BND:',cbnd
+	else
+		bnd = .false.
+	endif
 enddo
 end subroutine
 
@@ -1048,7 +1181,8 @@ do zpar = 1,z2-z1+1
     do y = blobrange(2,1),blobrange(2,2)
         do x = blobrange(1,1),blobrange(1,2)
 		    indx = occupancy(x,y,z)%indx
-            if (indx(1) < 0) cycle      ! outside or DC
+!            if (indx(1) < 0) cycle      ! outside or DC
+			if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
             source_site = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
                 ! Check for chemo bdry site - no change to the concentration at such a site
@@ -1059,7 +1193,8 @@ do zpar = 1,z2-z1+1
 				        source_site = .true.
 					endif
 				enddo
-			elseif (ichemo == CXCL13 .and. occupancy(x,y,z)%FDC_nbdry > 0) then
+			elseif (ichemo == CXCL13 .and. &
+			(occupancy(x,y,z)%FDC_nbdry > 0 .or. occupancy(x,y,z)%MRC_nbdry > 0)) then
                 C(x,y,z) = chemo(ichemo)%bdry_conc
 	            Ctemp(x,y,zpar) = C(x,y,z)
 		        source_site = .true.
@@ -1073,7 +1208,9 @@ do zpar = 1,z2-z1+1
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+!				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+					indx = occupancy(xx,yy,zz)%indx
+					if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)
 			    enddo
@@ -1096,7 +1233,7 @@ real :: C(:,:,:)
 real :: Kdiffusion, Kdecay, dt
 real :: dx2diff, total, maxchange, C0, dC, sum, dV, dMdt
 real, parameter :: alpha = 0.99
-integer :: x, y, z, xx, yy, zz, nb, nc, k, it, i
+integer :: x, y, z, xx, yy, zz, nb, nc, k, it, i, indx(2)
 real, allocatable :: Ctemp(:,:,:)
 logical :: bdry_conc
 
@@ -1105,7 +1242,9 @@ allocate(Ctemp(NX,NY,NZ))
 do z = blobrange(3,1),blobrange(3,2)
     do y = blobrange(2,1),blobrange(2,2)
         do x = blobrange(1,1),blobrange(1,2)
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			indx = occupancy(x,y,z)%indx
+			if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
 			C0 = C(x,y,z)
             bdry_conc = .false.
             if (associated(occupancy(x,y,z)%bdry)) then
@@ -1126,7 +1265,9 @@ do z = blobrange(3,1),blobrange(3,2)
 				    yy = y + neumann(2,k)
 				    zz = z + neumann(3,k)
 				    if (outside_xyz(xx,yy,zz)) cycle
-				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+!				    if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+					indx = occupancy(xx,yy,zz)%indx
+					if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
 				    nb = nb + 1
 				    sum = sum + C(xx,yy,zz)
 			    enddo
@@ -1144,7 +1285,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 subroutine gradient(C,grad)
 real :: C(:,:,:), grad(:,:,:,:)
-integer :: x, y, z, xx, yy, zz, x1, x2, y1, y2, z1, z2, i, k
+integer :: x, y, z, xx, yy, zz, x1, x2, y1, y2, z1, z2, i, k, indx(2)
 real :: g(3)
 logical :: missed
 real, parameter :: MISSING_VAL = 1.0e10
@@ -1153,12 +1294,15 @@ grad = 0
 do z = blobrange(3,1),blobrange(3,2)
     do y = blobrange(2,1),blobrange(2,2)
         do x = blobrange(1,1),blobrange(1,2)
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			indx = occupancy(x,y,z)%indx
+			if (.not.ChemoRegion(indx)) cycle	! site not accessible by chemokines
 			x1 = x - 1
 			x2 = x + 1
 			if (x1 < 1 .or. x2 > NX) then
 				g(1) = 0
-			elseif (occupancy(x1,y,z)%indx(1) >= 0 .and. occupancy(x2,y,z)%indx(1) >= 0) then
+!			elseif (occupancy(x1,y,z)%indx(1) >= 0 .and. occupancy(x2,y,z)%indx(1) >= 0) then
+			elseif (ChemoRegion(occupancy(x1,y,z)%indx) .and. ChemoRegion(occupancy(x2,y,z)%indx)) then
 				g(1) = (C(x2,y,z) - C(x1,y,z))/(2*DELTA_X)
 			else
 				g(1) = MISSING_VAL
@@ -1167,7 +1311,8 @@ do z = blobrange(3,1),blobrange(3,2)
 			y2 = y + 1
 			if (y1 < 1 .or. y2 > NY) then
 				g(2) = 0
-			elseif (occupancy(x,y1,z)%indx(1) >= 0 .and. occupancy(x,y2,z)%indx(1) >= 0) then
+!			elseif (occupancy(x,y1,z)%indx(1) >= 0 .and. occupancy(x,y2,z)%indx(1) >= 0) then
+			elseif (ChemoRegion(occupancy(x,y1,z)%indx) .and. ChemoRegion(occupancy(x,y2,z)%indx)) then
 				g(2) = (C(x,y2,z) - C(x,y1,z))/(2*DELTA_X)
 			else
 				g(2) = MISSING_VAL
@@ -1176,7 +1321,8 @@ do z = blobrange(3,1),blobrange(3,2)
 			z2 = z + 1
 			if (z1 < 1 .or. z2 > NZ) then
 				g(3) = 0
-			elseif (occupancy(x,y,z1)%indx(1) >= 0 .and. occupancy(x,y,z2)%indx(1) >= 0) then
+!			elseif (occupancy(x,y,z1)%indx(1) >= 0 .and. occupancy(x,y,z2)%indx(1) >= 0) then
+			elseif (ChemoRegion(occupancy(x,y,z1)%indx) .and. ChemoRegion(occupancy(x,y,z2)%indx)) then
 				g(3) = (C(x,y,z2) - C(x,y,z1))/(2*DELTA_X)
 			else
 				g(3) = MISSING_VAL
@@ -1188,7 +1334,8 @@ enddo
 do z = blobrange(3,1),blobrange(3,2)
     do y = blobrange(2,1),blobrange(2,2)
         do x = blobrange(1,1),blobrange(1,2)
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle
 			do i = 1,3
 				if (grad(i,x,y,z) == MISSING_VAL) then
 					missed = .true.
@@ -1198,7 +1345,8 @@ do z = blobrange(3,1),blobrange(3,2)
 						yy = y + neumann(2,k)
 						zz = z + neumann(3,k)
 						if (outside_xyz(xx,yy,zz)) cycle
-						if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+!						if (occupancy(xx,yy,zz)%indx(1) < 0) cycle	! outside or DC
+						if (.not.ChemoRegion(occupancy(xx,yy,zz)%indx)) cycle
 						if (grad(i,xx,yy,zz) /= MISSING_VAL) then
 							grad(i,x,y,z) = grad(i,xx,yy,zz)
 							missed = .false.
@@ -1241,7 +1389,8 @@ do z = blobrange(3,1),blobrange(3,2)
         if (halve .and. mod(y,2) == 0) cycle
         do x = blobrange(1,1),blobrange(1,2)
             if (halve .and. mod(x,2) == 0) cycle
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! outside or DC
 			ns = ns+1
         enddo
     enddo
@@ -1269,7 +1418,8 @@ do z = blobrange(3,1),blobrange(3,2)
         if (halve .and. mod(y,2) == 0) cycle
         do x = blobrange(1,1),blobrange(1,2)
             if (halve .and. mod(x,2) == 0) cycle
-			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!			if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+			if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! outside or DC
 			ns = ns+1
 			k = k+1
 			gradient_array(k) = x
@@ -1335,7 +1485,8 @@ do z = rng(3,1),rng(3,2)
         if (halve .and. axis /= 2 .and. mod(y,2) == 0) cycle
         do x = rng(1,1),rng(1,2)
             if (halve .and. axis /= 1 .and. mod(x,2) == 0) cycle
-		    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!		    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+		    if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! outside or DC
 		    ns = ns+1
         enddo
     enddo
@@ -1370,7 +1521,8 @@ do z = rng(3,1),rng(3,2)
         if (halve .and. axis /= 2 .and. mod(y,2) == 0) cycle
         do x = rng(1,1),rng(1,2)
             if (halve .and. axis /= 1 .and. mod(x,2) == 0) cycle
-		    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+!		    if (occupancy(x,y,z)%indx(1) < 0) cycle	! outside or DC
+		    if (.not.ChemoRegion(occupancy(x,y,z)%indx)) cycle	! outside or DC
 		    ns = ns+1
 		    k = k+1
 		    gradient_array(k) = x
@@ -1403,4 +1555,37 @@ if (ns /= ntsites) then
 endif
 !write(nflog,'(3f6.1,12f8.4)') gradient_array(1:ntsites*15) 
 end subroutine
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+logical function ChemoRegion(indx)
+integer :: indx(2)
+
+if (indx(1) == OUTSIDE_TAG .or. (.not.USE_CELL_SITES .and. indx(1) < 0)) then
+	ChemoRegion = .false.
+else
+	ChemoRegion = .true.
+endif
+end function
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+subroutine CheckGradient
+integer :: x, y, z
+real :: g(3)
+logical :: err = .false.
+
+y = Centre(2)
+z = Centre(3)
+do x = Centre(1)+1,NX
+	if (occupancy(x,y,z)%indx(1) == OUTSIDE_TAG) cycle
+	g = chemo(1)%grad(:,x,y,z)
+	if (g(1) < 0) then
+		write(*,*) 'CheckGradient: ',x,g(1)
+		err = .true.
+	endif
+enddo
+if (err) stop
+end subroutine
+
 end module

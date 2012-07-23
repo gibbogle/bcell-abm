@@ -205,7 +205,8 @@ stay_prob = dirprob(0)
 ischemo = .false.
 do kr = 1,MAX_RECEPTOR
     if (cell%receptor_saturation_time(kr) /= 0) then
-        if (tnow > cell%receptor_saturation_time(kr) + T_RECEPTOR_REFRACTORY) then
+!        if (tnow > cell%receptor_saturation_time(kr) + T_RECEPTOR_REFRACTORY) then
+        if (tnow > cell%receptor_saturation_time(kr) + receptor(kr)%refractory_time) then
             cell%receptor_saturation_time(kr) = 0
         endif
     endif
@@ -220,9 +221,9 @@ if (ischemo) then
     do kr = 1,MAX_RECEPTOR
         if (receptor(kr)%used .and. (cell%receptor_saturation_time(kr) == 0)) then
 			ichemo = receptor(kr)%chemokine
-            f = receptor(kr)%sign*cell%receptor_level(kr)*receptor(kr)%strength
+			f = receptor(kr)%sign*cell%receptor_level(kr)*receptor(kr)%strength
 			v = chemo(ichemo)%grad(:,site1(1),site1(2),site1(3))
-			if (receptor_saturation(site1,f,v)) then
+			if (receptor_saturation(kr,site1,f,v)) then
 			    cell%receptor_saturation_time(kr) = tnow
 			    f = f/2
 			endif
@@ -374,13 +375,15 @@ end subroutine
 ! f = total strength, which is cell%receptor_level(kr)*receptor(kr)%strength
 ! v = chemokine gradient
 !-----------------------------------------------------------------------------------------
-logical function receptor_saturation(site,f,v)
-integer :: site(3)
-real :: f, v(3)
+logical function receptor_saturation(kr,site,f,v)
+integer :: kr, site(3)
+real :: f, v(3), a(3)
 real :: magnitude
+!real :: saturation_threshold = 0.8
 
-magnitude = norm(f*v)
-if (magnitude > 1) then
+a = f*v
+magnitude = norm(a)
+if (magnitude > receptor(kr)%saturation_threshold) then
     receptor_saturation = .true.
 else
     receptor_saturation = .false.

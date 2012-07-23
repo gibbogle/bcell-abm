@@ -160,7 +160,9 @@ void ExecThread::run()
 		bool updated = false;
 		if (paused && !updated) {
 			snapshot();
-			updated = true;
+            sprintf(msg,"got snapshot: i: %d",i);
+            LOG_MSG(msg);
+            updated = true;
 		}
 		while(paused || leftb) {
 			Sleep(100);
@@ -172,21 +174,28 @@ void ExecThread::run()
 		if (i%240 == 0) {
 			mutex1.lock();
 			get_summary(summaryData);
-			mutex1.unlock();
+            int iframe = i/240;
+//            saveGradient2D(iframe);
+            mutex1.unlock();
 			emit summary();		// Emit signal to update summary plots, at hourly intervals
 		}
 		if (stopped) break;
 		if (i%nt_vtk == 0) {
 			if (showingVTK != 0) {
 				snapshot();
-				Sleep(10);
+                istep = i;
+//                sprintf(msg,"got snapshot: i: %d",i);
+//                LOG_MSG(msg);
+                Sleep(10);
 			}
 		}
 		if (stopped) break;
 	}
 	LOG_MSG("ExecThread::run: stopped");
 	snapshot();
-	Sleep(10);
+    sprintf(msg,"got snapshot:");
+    LOG_MSG(msg);
+    Sleep(10);
 	LOG_MSG("ExecThread::run: call terminate_run");
 	terminate_run(&res);
 
@@ -219,6 +228,17 @@ void ExecThread::snapshot()
 	emit display(); // Emit signal to update VTK display
 }
 
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void ExecThread::saveGradient2D(int i)
+{
+    LOG_QMSG("saveGradient2D");
+    paused = true;
+    SimpleView2D *sv2D = new SimpleView2D();
+    sv2D->makeFrame(i);
+    paused = false;
+    delete sv2D;
+}
 //-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
 void ExecThread::stop()

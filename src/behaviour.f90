@@ -115,14 +115,24 @@ end select
 end function
 
 !--------------------------------------------------------------------------------------
+! idist = 1 is the first division - for now just use the median (put p2 = 0)
+!       = 2 is later divisions, log-normally distributed
 !--------------------------------------------------------------------------------------
-real function DivisionTime()
+real function DivisionTime(idist)
+integer :: idist
 integer :: kpar = 0
 real, parameter :: rndfraction = 0.2
 real(DP) :: R
 
-R = par_uni(kpar)
-DivisionTime = T_DIVISION*(1 + rndfraction*(2*R-1))
+!R = par_uni(kpar)
+!DivisionTime = T_DIVISION*(1 + rndfraction*(2*R-1))
+if (idist == 1) then
+	DivisionTime = rv_lognormal(divide_dist2%p1,0.0,kpar)
+else
+	DivisionTime = rv_lognormal(divide_dist2%p1,divide_dist2%p2,kpar)
+endif
+!write(logmsg,*) 'DivisionTime: ',idist,DivisionTime
+!call logger(logmsg)
 end function
 
 !--------------------------------------------------------------------------------------
@@ -301,9 +311,14 @@ read(nfcell,*) receptor(S1PR2)%strength
 do k = 1,5
 	read(nfcell,*) receptor_level(S1PR1,k)
 enddo
+read(nfcell,*) receptor(S1PR1)%saturation_threshold
+read(nfcell,*) receptor(S1PR1)%refractory_time
 do k = 1,5
 	read(nfcell,*) receptor_level(S1PR2,k)
 enddo
+read(nfcell,*) receptor(S1PR2)%saturation_threshold
+read(nfcell,*) receptor(S1PR2)%refractory_time
+
 read(nfcell,*) iuse(CCR7)
 read(nfcell,*) iuse_rate(CCL21)
 read(nfcell,*) chemo(CCL21)%bdry_rate
@@ -314,6 +329,9 @@ read(nfcell,*) receptor(CCR7)%strength
 do k = 1,5
 	read(nfcell,*) receptor_level(CCR7,k)
 enddo
+read(nfcell,*) receptor(CCR7)%saturation_threshold
+read(nfcell,*) receptor(CCR7)%refractory_time
+
 read(nfcell,*) iuse(EBI2)
 read(nfcell,*) iuse_rate(OXY)
 read(nfcell,*) chemo(OXY)%bdry_rate
@@ -324,6 +342,9 @@ read(nfcell,*) receptor(EBI2)%strength
 do k = 1,5
 	read(nfcell,*) receptor_level(EBI2,k)
 enddo
+read(nfcell,*) receptor(EBI2)%saturation_threshold
+read(nfcell,*) receptor(EBI2)%refractory_time
+
 read(nfcell,*) iuse(CXCR5)
 read(nfcell,*) iuse_rate(CXCL13)
 read(nfcell,*) chemo(CXCL13)%bdry_rate
@@ -334,7 +355,11 @@ read(nfcell,*) receptor(CXCR5)%strength
 do k = 1,5
 	read(nfcell,*) receptor_level(CXCR5,k)
 enddo
+read(nfcell,*) receptor(CXCR5)%saturation_threshold
+read(nfcell,*) receptor(CXCR5)%refractory_time
+
 read(nfcell,*) BASE_NFDC			        ! base number of FDCs
+read(nfcell,*) BASE_NMRC			        ! base number of MRCs
 read(nfcell,*) base_exit_prob               ! base probability of exit at a boundary site
 read(nfcell,*) days							! number of days to simulate
 read(nfcell,*) itestcase                    ! test case to simulate
@@ -396,7 +421,12 @@ if (BASE_NFDC == 0) then
 else
     use_FDCs = .true.
 endif
-if (.not.use_FDCs) then
+if (BASE_NMRC == 0) then
+    use_MRCs = .false.
+else
+    use_MRCs = .true.
+endif
+if (.not.use_FDCs .and. .not.use_MRCs) then
     receptor(CXCR5)%used = .false.
     chemo(CXCL13)%used = .false.
 endif
@@ -693,7 +723,7 @@ if (status == BCL6_LO) then
 	R = par_uni(kpar)	
 	if (R > prob_gcc + prob_plasma) then
 		call set_stage(p1,DIVIDING)
-		p1%stagetime = tnow + DivisionTime()
+		p1%stagetime = tnow + DivisionTime(2)
 	elseif (R < prob_gcc) then
 !		call set_status(p1,BCL6_HI)
 		call set_stage(p1,GCC_COMMIT)
@@ -705,7 +735,7 @@ if (status == BCL6_LO) then
 	endif
 else
 	call set_stage(p1,DIVIDING)
-	p1%stagetime = tnow + DivisionTime()
+	p1%stagetime = tnow + DivisionTime(2)
 endif
 ctype = cellist(kcell)%ctype
 site = cellist(kcell)%site
@@ -727,7 +757,7 @@ if (status == BCL6_LO) then
 	R = par_uni(kpar)	
 	if (R > prob_gcc + prob_plasma) then
 		call set_stage(p2,DIVIDING)
-		p2%stagetime = tnow + DivisionTime()
+		p2%stagetime = tnow + DivisionTime(2)
 	elseif (R < prob_gcc) then
 		call set_stage(p2,GCC_COMMIT)
 		p2%stagetime = tnow + T_BCL6_UP
@@ -738,7 +768,7 @@ if (status == BCL6_LO) then
 	endif
 else
 	call set_stage(p2,DIVIDING)
-	p2%stagetime = tnow + DivisionTime()
+	p2%stagetime = tnow + DivisionTime(2)
 endif
 ndivisions = ndivisions + 1
 occupancy(site2(1),site2(2),site2(3))%indx(freeslot) = icnew
@@ -945,6 +975,7 @@ do x = 1,NX
 	    do z = 1,NZ
             occupancy(x,y,z)%indx = 0
             occupancy(x,y,z)%FDC_nbdry = 0
+            occupancy(x,y,z)%MRC_nbdry = 0
             nullify(occupancy(x,y,z)%bdry)
             site = (/x,y,z/)
 			if (.not.InsideEllipsoid(site,Centre,Radius)) then
@@ -956,6 +987,7 @@ do x = 1,NX
     enddo
 enddo
 
+call placeMRCs(ok)
 call placeFDCs(ok)
 if (.not.ok) stop
 
@@ -1147,6 +1179,11 @@ do k = 1,tmplastcogID
     ncog = ncog + 1
 
 	! Cell death
+	if (stage == FINISHED) then
+        call BcellDeath(kcell)
+        ndie = ndie + 1
+        cycle
+    endif
 	die_prob = DeathProbability(p)
 	R = par_uni(kpar)
 	if (R < die_prob) then
@@ -1251,7 +1288,7 @@ if (tnow > nextstagetime) then		! time constraint to move to next stage is met
         p%stagetime = tnow		
 	case (EBI2_UP)
 		call set_stage(p,DIVIDING)
-		p%stagetime = tnow + DivisionTime()		! time of execution of case (DIVIDING), which sets divide_flag
+		p%stagetime = tnow + DivisionTime(1)		! time of execution of case (DIVIDING), which sets divide_flag
 	case (DIVIDING)								! the next stage for DIVIDING cells is set in cell_division()
         gen = get_generation(p)
 		if (gen == BC_MAX_GEN) then
@@ -1266,7 +1303,7 @@ if (tnow > nextstagetime) then		! time constraint to move to next stage is met
 	case (BCL6_UP)
 		call set_status(p,BCL6_HI)
 		call set_stage(p,DIVIDING)
-        p%stagetime = tnow + max(0.,DivisionTime() - T_BCL6_UP)		
+        p%stagetime = tnow + max(0.,DivisionTime(1) - T_BCL6_UP)		
 	case (FINISHED)
 
     end select

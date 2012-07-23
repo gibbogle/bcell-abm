@@ -111,7 +111,7 @@ MyVTK::MyVTK(QWidget *page, QWidget *key_page)
 
 	first_VTK = true;
 	DCmotion = false;
-	DCfade = true;
+    DCfade = false;
 	playing = false;
 	paused = false;
 
@@ -128,53 +128,60 @@ MyVTK::~MyVTK()
 //-----------------------------------------------------------------------------------------
 void MyVTK::key_canvas(QWidget *key_page)
 {
-	QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 250));
+    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 280));
     QBrush brush;
     QGraphicsTextItem *text;
-    brush.setColor(QColor(255,128,75));
-//    brush.setColor(Qt::darkMagenta);
+
+    brush.setColor(QColor(255,128,77));
     brush.setStyle(Qt::SolidPattern);
 	scene->addEllipse(10,10,20,20,Qt::NoPen, brush);
 	text = scene->addText("FDC");
     text->setPos(35, 10);
-    brush.setColor(QColor(30,20,255));
-//    brush.setColor(Qt::blue);
+
+    brush.setColor(QColor(255,77,128));
+    brush.setStyle(Qt::SolidPattern);
     scene->addEllipse(10,40,20,20,Qt::NoPen, brush);
-	text = scene->addText("Naive B cell");
+    text = scene->addText("MRC");
     text->setPos(35, 40);
-    brush.setColor(QColor(0,200,255));
-//    brush.setColor(Qt::cyan);
+
+    brush.setColor(QColor(30,20,255));
     scene->addEllipse(10,70,20,20,Qt::NoPen, brush);
-	text = scene->addText("CCR7 UP");
-	text->setPos(35, 70);
-    brush.setColor(QColor(50,255,150));
-//    brush.setColor(Qt::green);
+	text = scene->addText("Naive B cell");
+    text->setPos(35, 70);
+
+    brush.setColor(QColor(0,200,255));
     scene->addEllipse(10,100,20,20,Qt::NoPen, brush);
-	text = scene->addText("EBI2 UP");
-	text->setPos(35, 100);
-    brush.setColor(QColor(255,255,0));
-//    brush.setColor(Qt::yellow);
+	text = scene->addText("CCR7 UP");
+    text->setPos(35, 100);
+
+    brush.setColor(QColor(50,255,150));
     scene->addEllipse(10,130,20,20,Qt::NoPen, brush);
-	text = scene->addText("BCL6 HI");
-	text->setPos(35, 130);
-    brush.setColor(QColor(0,150,0));
-//    brush.setColor(Qt::darkGreen);
+	text = scene->addText("EBI2 UP");
+    text->setPos(35, 130);
+
+    brush.setColor(QColor(255,255,0));
     scene->addEllipse(10,160,20,20,Qt::NoPen, brush);
-	text = scene->addText("BCL6 LO");
-	text->setPos(35, 160);
-    brush.setColor(QColor(128,128,128));
-//    brush.setColor(Qt::gray);
+	text = scene->addText("BCL6 HI");
+    text->setPos(35, 160);
+
+    brush.setColor(QColor(0,150,0));
     scene->addEllipse(10,190,20,20,Qt::NoPen, brush);
-	text = scene->addText("Max divisions");
-	text->setPos(35, 190);
-    brush.setColor(QColor(255,0,0));
-//    brush.setColor(Qt::red);
+	text = scene->addText("BCL6 LO");
+    text->setPos(35, 190);
+
+    brush.setColor(QColor(128,128,128));
     scene->addEllipse(10,220,20,20,Qt::NoPen, brush);
+	text = scene->addText("Max divisions");
+    text->setPos(35, 220);
+
+    brush.setColor(QColor(255,0,0));
+    scene->addEllipse(10,250,20,20,Qt::NoPen, brush);
 	text = scene->addText("Plasma cell");
-	text->setPos(35, 220);
+    text->setPos(35, 250);
+
 	QGraphicsView* view = new QGraphicsView(key_page);
     view->setScene(scene);
-	view->setGeometry(QRect(0, 0, 150, 270));
+    view->setGeometry(QRect(0, 0, 150, 300));
     view->show();
 }
 //-----------------------------------------------------------------------------------------
@@ -300,12 +307,12 @@ void MyVTK::get_cell_positions(bool fast)
 		cp.state = BC_list[j+4];
 		cp.diameter = BC_diam;
 		BCpos_list.append(cp);
-        double r, g, b;
-        if (cp.state > 0) {
-            unpack(cp.state, &r, &g, &b);
-        } else {
-            r = g = b = 0;
-        }
+//        double r, g, b;
+//        if (cp.state > 0) {
+//            unpack(cp.state, &r, &g, &b);
+//        } else {
+//            r = g = b = 0;
+//        }
 //        sprintf(msg,"B cell: %d: tag: %d pos: %d %d %d state: %d %lf %lf %lf",i,cp.tag,cp.x,cp.y,cp.z,cp.state,r,g,b);
 //        LOG_MSG(msg);
 	}
@@ -316,7 +323,7 @@ void MyVTK::get_cell_positions(bool fast)
 		cp.x = DC_list[j+1];
 		cp.y = DC_list[j+2];
 		cp.z = DC_list[j+3];
-		cp.state = DC_list[j+4]/100.;
+        cp.state = DC_list[j+4];
 		cp.diameter = DC_diam;
 		DCpos_list.append(cp);
 	}
@@ -415,18 +422,20 @@ void MyVTK::cleanup()
 {
 	int i;
 	vtkActor *actor;
+    ACTOR_TYPE a;
+
 	LOG_MSG("VTK cleanup");
 	for (i = 0; i<B_Actor_list.length(); i++) {
-		actor = B_Actor_list[i];
-        ren->RemoveActor(actor);
+        a = B_Actor_list[i];
+        ren->RemoveActor(a.actor);
 	}
 	for (i = 0; i<D_Actor_list.length(); i++) {
-		actor = D_Actor_list[i];
-        ren->RemoveActor(actor);
+        a = D_Actor_list[i];
+        ren->RemoveActor(a.actor);
 	}
 	for (i = 0; i<Bnd_Actor_list.length(); i++) {
 		actor = Bnd_Actor_list[i];
-	   ren->RemoveActor(actor);
+        ren->RemoveActor(actor);
 	}
 	B_Actor_list.clear();
 	D_Actor_list.clear();
@@ -439,7 +448,7 @@ void MyVTK::cleanup()
 void MyVTK::renderCells(bool redo, bool zzz)
 {
 	process_Bcells();
-    process_Dcells(redo);
+    process_Dcells();
 //    process_bonds();
 	if (first_VTK) {
 		LOG_MSG("Initializing the renderer");
@@ -474,47 +483,77 @@ void MyVTK::unpack(int x, double *rr, double *gg, double *bb)
 }
 
 //---------------------------------------------------------------------------------------------
+// This improved, simpler method assumes only that the cell tag (cp.tag) is unique.
+// This tag is the index into B_Actor_list[], which grows as the maximum tag increases.
+// B_Actor_list now includes the field .active, which is maintained in sync with the
+// status of .actor in the renderer object ren, i.e. when the actor is added to the scene
+// .active is set to true, and when the actor is removed .active is set to false.
+// In each scene update step the status of a tag is recorded in in_pos_list[].
+// in_pos_list is compared with B_Actor_list, and actors corresponding to tags that have been
+// dropped (i.e. have in_pos_list[tag] = false but A_Actor_list[tag].active = true) are marked
+// as .active = false in B_Actor_list, and removed from the scene.
 //---------------------------------------------------------------------------------------------
 void MyVTK::process_Bcells()
 {
-	int i, tag;
-	double r, g, b, genfac;
-	double BC_MAX_GEN = 30;
+    int i, tag, maxtag;
+    double r, g, b;
 	CELL_POS cp;
 	vtkActor *actor;
 	int axis_centre = -2;	// identifies the ellipsoid centre
 	int axis_end    = -3;	// identifies the ellipsoid extent in 5 directions
 	int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 	double BCColor[] = {0.0, 0.0, 1.0};
+    bool dbug = false;
+    ACTOR_TYPE a;
+    ACTOR_TYPE *ap;
 
-	int na = B_Actor_list.length();
+ //   LOG_QMSG("process_Bcells");
 	int np = BCpos_list.length();
-    int n = na;
+    int na = B_Actor_list.length();
+    if (istep < 0) {
+        sprintf(msg,"na: %d np: %d",na,np);
+        LOG_MSG(msg);
+        dbug = true;
+    }
+    maxtag = 0;
 	for (i=0; i<np; i++) {
 		cp = BCpos_list[i];
         tag = cp.tag;
-        n = max(tag+1,n);
+        maxtag = max(tag,maxtag);
 	}
-    bool *active;
-	active = new bool[n];
-	for (i=0; i<n; i++)
-		active[i] = false;
-	for (i=0; i<np; i++) {
+    if (dbug) {
+        sprintf(msg,"maxtag: %d",maxtag);
+        LOG_MSG(msg);
+    }
+    ap = &a;
+    for (tag=na; tag<=maxtag; tag++) {
+        ap->actor = vtkActor::New();
+        ap->actor->SetMapper(BcellMapper);
+        ap->active = false;
+        B_Actor_list.append(a);
+    }
+    na = B_Actor_list.length();
+    bool *in_pos_list;
+    in_pos_list = new bool[na];
+    for (tag=0; tag<na; tag++)
+        in_pos_list[tag] = false;
+    for (i=0; i<np; i++) {
 		cp = BCpos_list[i];
         tag = cp.tag;
-        active[tag] = true;
-		if (tag >= na) {   // need to add actor, and possibly fill gaps
-			if (tag > na) {
-                for (int j=na; j<tag; j++)	//j in range(na,tag):
-					B_Actor_list.append(0);
-			}
-			actor = vtkActor::New();
-			actor->SetMapper(BcellMapper);
-//			actor->GetProperty()->SetColor(BCColor);
-            ren->AddActor(actor);
-			B_Actor_list.append(actor);
-            na = tag + 1;
-		}
+        in_pos_list[tag] = true;
+        if (dbug) {
+            sprintf(msg,"i: %d tag: %d",i,tag);
+            LOG_MSG(msg);
+        }
+        ap = &B_Actor_list[tag];
+        if (!ap->active) {  // Make active an actor with new tag in BCpos_list
+            if (dbug) {
+                sprintf(msg,"adding actor: %d",tag);
+                LOG_MSG(msg);
+            }
+            ren->AddActor(ap->actor);
+            ap->active = true;
+        }
 		if (cp.state < 0) {
 			if (cp.state == -1) {	// non-cognate
 				r = 0.5; g = 0.5; b = 0.5;
@@ -528,37 +567,195 @@ void MyVTK::process_Bcells()
 		} else {
 			unpack(cp.state, &r, &g, &b);
 		}
-		/*
-		else if (cp.state == 0) {
-			r = 0; g = 0; b = 1;
-		} else if (cp.state <= BC_MAX_GEN) {
-			genfac = (cp.state-1)/(BC_MAX_GEN-1);		// 0 - 1
-			b = genfac*0.4;
-			g = 1 - b;
-			r = 0;
-		} else {
-			r = 1.0; g = 0.6; b = 0.0;
-		}
-		*/
-		actor = B_Actor_list[tag];
-        actor->GetProperty()->SetColor(r, g, b);
-        actor->SetPosition(cp.x, cp.y, cp.z);
-		if (actor != 0) 
-			actor->SetPosition(cp.x, cp.y, cp.z);
-		else {
+        ap->actor->GetProperty()->SetColor(r, g, b);
+        ap->actor->SetPosition(cp.x, cp.y, cp.z);
+	}
+    for (int k=0; k<B_Actor_list.length(); k++) {
+        ap = &B_Actor_list[k];
+        if (ap->active && !in_pos_list[k]) {
+            if (dbug) {
+                sprintf(msg,"removing actor: %d",k);
+                LOG_MSG(msg);
+            }
+            ren->RemoveActor(ap->actor);
+            ap->active = false;
+        }
+	}
+}
+
+//---------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------
+void MyVTK::process_Dcells()
+{
+    int i, tag, maxtag;
+    double r, g, b;
+    CELL_POS cp;
+    vtkActor *actor;
+    double FDCColor[] = {1.0,0.5,0.3};
+    double MRCColor[] = {1.0,0.3,0.5};
+    bool dbug = false;
+    ACTOR_TYPE a;
+    ACTOR_TYPE *ap;
+
+//    LOG_QMSG("process_Dcells");
+    int np = DCpos_list.length();
+    int na = D_Actor_list.length();
+    if (istep < 0) {
+        sprintf(msg,"na: %d np: %d",na,np);
+        LOG_MSG(msg);
+        dbug = true;
+    }
+    maxtag = 0;
+    for (i=0; i<np; i++) {
+        cp = DCpos_list[i];
+        tag = cp.tag;
+        maxtag = max(tag,maxtag);
+    }
+    if (dbug) {
+        sprintf(msg,"maxtag: %d",maxtag);
+        LOG_MSG(msg);
+    }
+    ap = &a;
+    for (tag=na; tag<=maxtag; tag++) {
+        ap->actor = vtkActor::New();
+        ap->actor->SetMapper(FDcellMapper);
+        ap->active = false;
+        D_Actor_list.append(a);
+    }
+    na = D_Actor_list.length();
+    bool *in_pos_list;
+    in_pos_list = new bool[na];
+    for (tag=0; tag<na; tag++)
+        in_pos_list[tag] = false;
+    for (i=0; i<np; i++) {
+        cp = DCpos_list[i];
+        tag = cp.tag;
+        in_pos_list[tag] = true;
+        if (dbug) {
+            sprintf(msg,"i: %d tag: %d",i,tag);
+            LOG_MSG(msg);
+        }
+        ap = &D_Actor_list[tag];
+        if (!ap->active) {  // Make active an actor with new tag in BCpos_list
+            if (dbug) {
+                sprintf(msg,"adding actor: %d",tag);
+                LOG_MSG(msg);
+            }
+            ren->AddActor(ap->actor);
+            ap->active = true;
+        }
+        if (cp.state == 100)
+            ap->actor->GetProperty()->SetColor(FDCColor);
+        else if (cp.state == 200)
+            ap->actor->GetProperty()->SetColor(MRCColor);
+        ap->actor->SetPosition(cp.x, cp.y, cp.z);
+    }
+    for (int k=0; k<D_Actor_list.length(); k++) {
+        ap = &D_Actor_list[k];
+        if (ap->active && !in_pos_list[k]) {
+            if (dbug) {
+                sprintf(msg,"removing actor: %d",k);
+                LOG_MSG(msg);
+            }
+            ren->RemoveActor(ap->actor);
+            ap->active = false;
+        }
+    }
+}
+
+/*
+//---------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------
+void MyVTK::process_Bcells()
+{
+    int i, tag;
+    double r, g, b, genfac;
+    double BC_MAX_GEN = 30;
+    CELL_POS cp;
+    vtkActor *actor;
+    int axis_centre = -2;	// identifies the ellipsoid centre
+    int axis_end    = -3;	// identifies the ellipsoid extent in 5 directions
+    int axis_bottom = -4;	// identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
+    double BCColor[] = {0.0, 0.0, 1.0};
+    bool dbug = false;
+
+    LOG_QMSG("process_Bcells");
+    int na = B_Actor_list.length();
+    int np = BCpos_list.length();
+    if (istep > 0) {
+        sprintf(msg,"na: %d np: %d",na,np);
+        LOG_MSG(msg);
+        dbug = true;
+    }
+    int n = na;
+    for (i=0; i<np; i++) {
+        cp = BCpos_list[i];
+        tag = cp.tag;
+        n = max(tag+1,n);
+    }
+    if (dbug) {
+        sprintf(msg,"n: %d",n);
+        LOG_MSG(msg);
+    }
+    bool *active;
+    active = new bool[n];
+    for (i=0; i<n; i++)
+        active[i] = false;
+    for (i=0; i<np; i++) {
+        cp = BCpos_list[i];
+        tag = cp.tag;
+        active[tag] = true;
+        if (dbug) {
+            sprintf(msg,"i: %d tag: %d",i,tag);
+            LOG_MSG(msg);
+        }
+        if (tag >= na) {   // need to add actor, and possibly fill gaps
+            if (tag > na) {
+                for (int j=na; j<tag; j++)	//j in range(na,tag):
+                    B_Actor_list.append(0);
+            }
+            actor = vtkActor::New();
+            actor->SetMapper(BcellMapper);
+//			actor->GetProperty()->SetColor(BCColor);
+            ren->AddActor(actor);
+            B_Actor_list.append(actor);
+            na = tag + 1;
+        }
+        if (cp.state < 0) {
+            if (cp.state == -1) {	// non-cognate
+                r = 0.5; g = 0.5; b = 0.5;
+            } else if (cp.state == axis_centre) {
+                r = 1; g = 1; b = 1;
+            } else if (cp.state == axis_end) {
+                r = 0.5; g = 0; b = 0.5;
+            } else if (cp.state == axis_bottom) {
+                r = 1; g = 0.2; b = 1;
+            }
+        } else {
+            unpack(cp.state, &r, &g, &b);
+        }
+        actor = B_Actor_list[tag];
+        if (actor != 0) {
+            actor->GetProperty()->SetColor(r, g, b);
+            actor->SetPosition(cp.x, cp.y, cp.z);
+        } else {
             sprintf(msg,"B_actor = 0: %d",tag);
-			LOG_MSG(msg);
-			exit(1);
-		}
-	}
-	for (int k=0; k<na; k++) {	// k in range(0,na):
-		if (B_Actor_list[k] != 0 && !active[k]) {     // need to remove actor from list
-			actor = B_Actor_list[k];
+            LOG_MSG(msg);
+            exit(1);
+        }
+    }
+    for (int k=0; k<na; k++) {	// k in range(0,na):
+        if (B_Actor_list[k] != 0 && !active[k]) {     // need to remove actor from list
+            actor = B_Actor_list[k];
+            if (dbug) {
+                sprintf(msg,"removing actor: %d",k);
+                LOG_MSG(msg);
+            }
             ren->RemoveActor(actor);
-//			B_Actor_list[k] = 0;
+            B_Actor_list[k] = 0;
             B_Actor_list.removeAt(k);
-		}
-	}
+        }
+    }
 }
 
 //---------------------------------------------------------------------------------------------
@@ -571,7 +768,9 @@ void MyVTK::process_Dcells(bool redo)
 	vtkActor *actor;
 	double minlevel = 0.3;
 
+    LOG_QMSG("process_Dcells");
 	double FDCColor[] = {1.0,0.5,0.3};
+    double MRCColor[] = {1.0,0.3,0.5};
     int na = D_Actor_list.length();
     int np = DCpos_list.length();
     int n = na;
@@ -598,12 +797,16 @@ void MyVTK::process_Dcells(bool redo)
 			actor = vtkActor::New();
 //            actor->SetMapper(DcellMapper);
 			actor->SetMapper(FDcellMapper);
-            actor->GetProperty()->SetColor(FDCColor);
-
+            if (cp.state == 100)
+                actor->GetProperty()->SetColor(FDCColor);
+            else
+                actor->GetProperty()->SetColor(MRCColor);
             ren->AddActor(actor);
             D_Actor_list.append(actor);
             na = tag + 1;
             newDC = true;
+//            sprintf(msg,"DC: i: %d tag: %d state: %d",i,tag,cp.state);
+//            LOG_MSG(msg);
 		} else {
 			actor = D_Actor_list[tag];
 		}
@@ -671,7 +874,7 @@ void MyVTK::process_bonds()
 		actor = vtkActor::New();
         actor->SetMapper(bondMapper);
 		actor->GetProperty()->SetColor(bondColor);
-		B_actor = B_Actor_list[bp.BCtag];
+        B_actor = Bnd_Actor_list[bp.BCtag];
 		if (B_actor != 0)
 			bcpos = B_actor->GetPosition();
 		else {
@@ -710,7 +913,7 @@ void MyVTK::process_bonds()
 		Bnd_Actor_list.append(actor);
 	}
 }
-
+*/
 //-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
 bool MyVTK::startPlayer(QString posfile, QTimer *theTimer, bool save)

@@ -167,7 +167,9 @@ void SimpleView3D::resizeEvent(QResizeEvent *event)
 //------------------------------------------------------------------------------------------------
 void SimpleView3D::saveImage(void)
 {
+    QString fname = "";
     ImageSave *myImageSave = new ImageSave(GetRenderWindow());
+    myImageSave->save(fname);
 }
 
 //------------------------------------------------------------------------------------------------

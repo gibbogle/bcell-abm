@@ -57,11 +57,11 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 
 {"NX", 100, 100, 300,
 "Lattice size",
-"Dimension of the lattice (number of sites in X, Y and Z directions).  Typically 4*BLOB_RADIUS is OK."},
+"Dimension of the lattice (number of sites in X,Y and Z directions).  Typically 5*BLOB_RADIUS is OK."},
 
-{"BLOB_RADIUS", 18.1, 15.0, 50.0,
+{"BLOB_RADIUS", 18.5, 15.0, 50.0,
 "Initial blob size",
-"The radius of the initial ellipsoidal blob of B cells, as number of sites.  (18.38, 23.1, 29.1, 36.7 -> 25k, 50k, 100k, 200k sites)"},
+"The major radius of the initial ellipsoidal blob of B cells, as number of sites.  (18.5 -> 12k sites)"},
 
 {"BC_FRACTION", 0.6, 0.4, 0.8,
 "B cell fraction",
@@ -106,7 +106,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Use S1PR1?",
 "S1P chemotactic attraction is simulated"},
 
-{"USE_S1PR2", 0, 0, 1,
+{"USE_S1PR2", 1, 0, 1,
 "Use S1PR2?",
 "S1P chemotactic repulsion is simulated"},
 
@@ -144,11 +144,17 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"S1PR1_4", 0.0, 0, 0},
 {"S1PR1_5", 0.2, 0, 0},
 
+{"S1PR1_sat_threshold", 0.9, 0, 0},
+{"S1PR1_refractory_time", 5, 0, 0},
+
 {"S1PR2_1", 0.0, 0, 0},
 {"S1PR2_2", 0.0, 0, 0},
 {"S1PR2_3", 0.0, 0, 0},
 {"S1PR2_4", 2.0, 0, 0},
 {"S1PR2_5", 0.0, 0, 0},
+
+{"S1PR2_sat_threshold", 0.9, 0, 0},
+{"S1PR2_refractory_time", 5, 0, 0},
 
 {"USE_CCR7", 1, 0, 1,
 "Use CCR7?",
@@ -184,6 +190,9 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"CCR7_4", 0.5, 0, 0},
 {"CCR7_5", 0.5, 0, 0},
 
+{"CCR7_sat_threshold", 0.9, 0, 0},
+{"CCR7_refractory_time", 5, 0, 0},
+
 {"USE_EBI2", 1, 0, 1,
 "Use EBI2?",
 "Oxysterol chemotaxis is simulated"},
@@ -217,6 +226,9 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"EBI2_3", 2.0, 0, 0},
 {"EBI2_4", 0.2, 0, 0},
 {"EBI2_5", 1.0, 0, 0},
+
+{"EBI2_sat_threshold", 0.9, 0, 0},
+{"EBI2_refractory_time", 5, 0, 0},
 
 {"USE_CXCR5", 1, 0, 1,
 "Use CXCR5?",
@@ -252,14 +264,21 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 {"CXCR5_4", 1.5, 0, 0},
 {"CXCR5_5", 0.0, 0, 0},
 
+{"CXCR5_sat_threshold", 0.9, 0, 0},
+{"CXCR5_refractory_time", 5, 0, 0},
+
 {"NFDC", 100, 0, 0,
 "Number of FDCs",
-"Initial number of FDCs in the follicle.  Each FDC occupies 37 lattice sites."},
+"Initial number of FDCs in the follicle.  Each FDC occupies 7 lattice sites."},
 
-{"BASE_EXIT_PROB", 0.007, 0.0, 0.0,
+{"NMRC", 100, 0, 0,
+"Number of MRCs",
+"Initial number of MRCs in the follicle.  Each MRC occupies 7 lattice sites."},
+
+{"BASE_EXIT_PROB", 0.006, 0.0, 0.0,
 "Base B cell exit probability",
 "A cell located at a boundary site on the lower exit surface has a probability of egress in a time step.\n\
-The specified probability applies to residence time Tres = 12 hr, and will be scaled appropriately for a different Tres value."},
+The specified probability applies to residence time Tres = 15 hr, and will be scaled appropriately for a different Tres value."},
 
 {"NDAYS", 1.0, 0.0, 30.0,
 "Number of days",

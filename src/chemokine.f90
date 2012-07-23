@@ -13,6 +13,8 @@ type receptor_type
 	integer :: sign
 	real(REAL_KIND) :: strength
 	real(REAL_KIND) :: level(5)
+	real(REAL_KIND) :: saturation_threshold
+	real(REAL_KIND) :: refractory_time
 end type
 
 type chemokine_type

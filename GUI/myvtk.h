@@ -47,6 +47,12 @@ struct bond_pos {
 };
 typedef bond_pos BOND_POS;
 
+struct actor_str {
+    bool active;
+    vtkActor *actor;
+};
+typedef actor_str ACTOR_TYPE;
+
 class MyVTK
 {
 public:
@@ -62,8 +68,8 @@ public:
 	void unpack(int x, double *, double *, double *);
 	void renderCells(bool,bool);
 	void process_Bcells();
-    void process_Dcells(bool);
-    void process_bonds();
+    void process_Dcells();
+//    void process_bonds();
 	bool startPlayer(QString, QTimer *, bool);
 	bool nextFrame();
 	void pause();
@@ -74,9 +80,11 @@ public:
 	QList<CELL_POS > BCpos_list;
 	QList<CELL_POS > DCpos_list;
 	QList<BOND_POS > bondpos_list;
-	QList<vtkActor *> B_Actor_list;
-	QList<vtkActor *> D_Actor_list;
-	QList<vtkActor *> Bnd_Actor_list;
+//	QList<vtkActor *> B_Actor_list;
+    QList<ACTOR_TYPE> B_Actor_list;
+//  QList<vtkActor *> D_Actor_list;
+    QList<ACTOR_TYPE> D_Actor_list;
+    QList<vtkActor *> Bnd_Actor_list;
 
 	QVTKWidget* qvtkWidget;
 	vtkRenderWindow *renWin;	

@@ -39,17 +39,13 @@ SimpleView2D::SimpleView2D()
 {
     this->ui = new Ui_SimpleView2D;
     this->ui->setupUi(this);
-    chemo_select[0] = 1;
-    chemo_select[1] = 0;
-    chemo_select[2] = 0;
-    chemo_select[3] = 0;
-    chemo_displayed[0] = false;
-    chemo_displayed[1] = false;
-    chemo_displayed[2] = false;
-    chemo_displayed[3] = false;
-
     LOG_QMSG("SimpleView2D");
-    setSlice();
+}
+
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView2D::create()
+{
     sprintf(msg,"Slice axis: %d fraction: %f use_strength: %d",axis,fraction,use_strength);
     LOG_MSG(msg);
     int isgrid;
@@ -125,7 +121,6 @@ SimpleView2D::SimpleView2D()
 
   // Set up action signals and slots
   connect(this->ui->actionExit, SIGNAL(triggered()), this, SLOT(slotExit()));
-
 };
 
 //------------------------------------------------------------------------------------------------
@@ -153,18 +148,46 @@ void SimpleView2D::resizeEvent(QResizeEvent *event)
 //------------------------------------------------------------------------------------------------
 void SimpleView2D::saveImage(void)
 {
+    QString fname = "";
     ImageSave *myImageSave = new ImageSave(GetRenderWindow());
+    myImageSave->save(fname);
 }
 
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
-void SimpleView2D::setSlice()
+void SimpleView2D::setParameters()
 {
-    QStringList items;
-    items << tr("X-Y plane") << tr("X-Z plane") << tr("Y-Z plane");
+    chemo_select[0] = 1;
+    chemo_select[1] = 0;
+    chemo_select[2] = 0;
+    chemo_select[3] = 0;
+    chemo_displayed[0] = false;
+    chemo_displayed[1] = false;
+    chemo_displayed[2] = false;
+    chemo_displayed[3] = false;
+    axis = 3;
+    fraction = 0;
+    scale = 0;
+    use_strength = 0;
+}
+
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView2D::chooseParameters()
+{
+    chemo_select[0] = 1;
+    chemo_select[1] = 0;
+    chemo_select[2] = 0;
+    chemo_select[3] = 0;
+    chemo_displayed[0] = false;
+    chemo_displayed[1] = false;
+    chemo_displayed[2] = false;
+    chemo_displayed[3] = false;
 
     bool ok;
     QString text;
+    QStringList items;
+    items << tr("X-Y plane") << tr("X-Z plane") << tr("Y-Z plane");
 
     QString item = QInputDialog::getItem(this, tr("QInputDialog::getItem()"),
                                          tr("Slice plane:"), items, 0, false, &ok);
@@ -214,7 +237,7 @@ void SimpleView2D::setSlice()
 
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
-void SimpleView2D::AimCamera(void)
+void SimpleView2D::aimCamera(void)
 {
     double cp[3], fp[3], up[3];
     vtkSmartPointer<vtkCamera> camera;
@@ -329,6 +352,7 @@ void SimpleView2D::stateChanged_CheckBox_CCL21(void)
         chemo_select[1] = 0;
     else
         chemo_select[1] = 1;
+//    ui->checkBox_CCL21->setChecked((chemo_select[1] == 1));
     sprintf(msg,"CCL21 select is now: %d\n",chemo_select[1]);
     LOG_MSG(msg);
     displayFields();
@@ -458,3 +482,19 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
   free(gradient_array);
 }
 
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView2D::makeFrame(int i)
+{
+    setParameters();
+    create();
+    show();
+    aimCamera();
+    char fname_str[64];
+    sprintf(fname_str,"E:/bcell-abm/execution/image/frame%04d.png",i);
+    LOG_MSG(fname_str);
+    QString fname = QString(fname_str);
+    ImageSave *is = new ImageSave(GetRenderWindow());
+    is->save(fname);
+    delete is;
+}

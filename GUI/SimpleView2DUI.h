@@ -37,8 +37,11 @@ public:
   vtkSmartPointer<vtkRenderWindow> GetRenderWindow();
   void ShowSize(int *);
   void displayFields(void);
-  void AimCamera(void);
-  void setSlice();
+  void aimCamera(void);
+  void create();
+  void chooseParameters();
+  void setParameters();
+  void makeFrame(int i);
 
   char msg[1024];
   int axis;

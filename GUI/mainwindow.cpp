@@ -37,6 +37,7 @@ int DC_list[NINFO*MAX_DC];
 int nDC_list;
 int bond_list[2*MAX_BOND];
 int nbond_list;
+int istep;
 QMutex mutex1, mutex2;
 
 int summaryData[100];
@@ -1264,11 +1265,13 @@ void MainWindow::showGradient2D()
 {
     LOG_MSG("showGradient2D");
     SimpleView2D *mySimpleView2D = new SimpleView2D();
-    QSize size = mySimpleView2D->size();
-    sprintf(msg,"mySimpleView2D size: %d %d",size.height(),size.width());
-    LOG_MSG(msg);
+//    QSize size = mySimpleView2D->size();
+//    sprintf(msg,"mySimpleView2D size: %d %d",size.height(),size.width());
+//    LOG_MSG(msg);
+    mySimpleView2D->chooseParameters();
+    mySimpleView2D->create();
     mySimpleView2D->show();
-    mySimpleView2D->AimCamera();
+    mySimpleView2D->aimCamera();
 }
 
 //--------------------------------------------------------------------------------------------------------

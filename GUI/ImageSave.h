@@ -29,13 +29,10 @@ public:
   ImageSave(vtkSmartPointer<vtkRenderWindow> renWin);
   ~ImageSave() {};
 
-//  vtkSmartPointer<vtkRenderWindow> GetRenderWindow();
 
   char msg[1024];
-
-//  vtkSmartPointer<vtkRenderer> renderer;
-//  vtkSmartPointer<vtkRenderWindow> renWin;
-//  vtkSmartPointer<vtkRenderWindowInteractor> iren;
+  vtkSmartPointer<vtkRenderWindow> renWin;
+  void save(QString filename);
 
 public slots:
 

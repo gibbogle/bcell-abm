@@ -6,6 +6,9 @@ use global
 implicit none
 save
 
+integer, parameter :: FDC_TAG = 1
+integer, parameter :: MRC_TAG = 2
+
 contains
 
 !--------------------------------------------------------------------------------
@@ -23,8 +26,8 @@ logical :: ok
 integer :: NFDCrequired, site(3), nassigned, ifdc, ilim, dx, dy, dz, d2, x, y, z, k, kpar=0
 integer, parameter :: MAX_LIM = 30
 logical :: success, done, checked(-MAX_LIM:MAX_LIM,-MAX_LIM:MAX_LIM,-MAX_LIM:MAX_LIM)
-real :: R, separation_limit, GC_centre(3)
-real :: FDC_SEPARATION
+real :: R, separation_limit(2,2), GC_centre(3)
+real :: FDC_SEPARATION, FDC_MRC_SEPARATION
 type(vector3_type) :: eradius
 integer, parameter :: method = 3	! 1, 2 or 3
 
@@ -33,6 +36,7 @@ if (.not.use_FDCs) then
 	ok = .true.
 	return
 endif
+call logger('PlaceFDCs')
 k = 0
 DCoffset(:,1) = 0
 DCoffset(:,2) = (/-1,0,0/)
@@ -46,19 +50,23 @@ if (method <= 2) then
     ! Place the first FDC at a point midway between the blob centre and the T zone bdry
     GC_centre = Centre + (/0.,-Radius%y/2, 0./)
     FDC_SEPARATION = 1.8
+    FDC_MRC_SEPARATION = 1.8
 elseif (method == 3) then
+	! The FDCs are located in an ellisoidal region above the blob centre.  This region is more flattened
+	! than the blob ellipsoid (the factor 1.5 in x and z radii)
     GC_centre = Centre + (/0.,Radius%y/3, 0./)
     eradius%y = (2./3.)*Radius%y
     eradius%x = 1.5*ELLIPSE_RATIO*eradius%y
     eradius%z = eradius%x
     FDC_SEPARATION = 2.8
+    FDC_MRC_SEPARATION = 2.0
 endif
 write(logmsg,*) 'GC_centre: ',GC_centre
 call logger(logmsg)
 FDClist(1)%ID = 1
 FDClist(1)%site = GC_centre
 FDClist(1)%alive = .true.
-call AssignFDCsites(1,nassigned,ok)
+call AssignFDCsites(FDC_TAG,1,nassigned,ok)
 if (.not.ok) then
 	return
 endif
@@ -96,13 +104,14 @@ if (method == 1) then
 					checked(dx,dy,dz) = .true.
 					site = GC_centre + (/dx,dy,dz/)
 					R = par_uni(kpar)
-					separation_limit = FDC_SEPARATION*(0.8 + 0.3*R)
-					if (FDCSiteAllowed(site,separation_limit)) then
+					separation_limit(FDC_TAG,FDC_TAG) = FDC_SEPARATION*(0.8 + 0.3*R)
+					separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
+					if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 						NFDC = NFDC + 1
 						FDClist(NFDC)%ID = NFDC
 						FDClist(NFDC)%site = site
 						FDClist(NFDC)%alive = .true.
-						call AssignFDCsites(NFDC,nassigned,ok)
+						call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 						if (.not.ok) then
 							return
 						endif
@@ -137,13 +146,14 @@ elseif (method == 2) then
 			site = GC_centre + (/dx,dy,dz/)
 			if (.not.InsideEllipsoid(site,Centre,Radius)) cycle
 			R = par_uni(kpar)
-			separation_limit = FDC_SEPARATION*(0.8 + 0.3*R)
-			if (FDCSiteAllowed(site,separation_limit)) then
+			separation_limit(FDC_TAG,FDC_TAG) = FDC_SEPARATION*(0.8 + 0.3*R)
+			separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
+			if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 				NFDC = NFDC + 1
 				FDClist(NFDC)%ID = NFDC
 				FDClist(NFDC)%site = site
 				FDClist(NFDC)%alive = .true.
-				call AssignFDCsites(NFDC,nassigned,ok)
+				call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 				if (.not.ok) then
 					return
 				endif
@@ -184,21 +194,22 @@ elseif (method == 3) then
 			if (.not.InsideEllipsoid(site,Centre,Radius)) cycle
 			if (.not.InsideEllipsoid(site,GC_centre,eradius)) cycle
 			R = par_uni(kpar)
-			separation_limit = FDC_SEPARATION*(0.8 + 0.3*R)
-			if (FDCSiteAllowed(site,separation_limit)) then
+			separation_limit(FDC_TAG,FDC_TAG) = FDC_SEPARATION*(0.8 + 0.3*R)
+			separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
+			if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 				NFDC = NFDC + 1
 				FDClist(NFDC)%ID = NFDC
 				FDClist(NFDC)%site = site
 				FDClist(NFDC)%alive = .true.
-				call AssignFDCsites(NFDC,nassigned,ok)
+				call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 				if (.not.ok) then
 					return
 				endif
 				FDClist(NFDC)%nsites = nassigned
 				nlist = nlist - nassigned
 				checked(dx,dy,dz) = .true.
-				write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
-				call logger(logmsg)
+!				write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
+!				call logger(logmsg)
 				if (NFDC == NFDCrequired) then
 					done = .true.
 					exit
@@ -209,25 +220,118 @@ elseif (method == 3) then
 	enddo
 endif
 
-call AssignFDCBdrySites
+call AssignCellBdrySites(FDC_TAG)
 
 write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nlist
 call logger(logmsg)
 end subroutine
 
 !--------------------------------------------------------------------------------
-! Check that a proposed FDC site is far enough from all existing FDCs
+subroutine placeMRCs(ok)
+logical :: ok
+integer :: NMRCrequired, site(3), nassigned, dx, dy, dz, x, y, z, k, kpar=0
+integer, parameter :: MAX_LIM = 30
+real :: R, separation_limit(2,2)
+real :: MRC_SEPARATION, FDC_MRC_SEPARATION
+real :: MRC_LAYER_LIMIT, MRC_YFRAC_MIN
+type(vector3_type) :: eradius
+integer, parameter :: method = 1	
+integer, parameter :: kmax = 100000
+
+if (.not.use_MRCs) then
+	NMRC = 0
+	ok = .true.
+	return
+endif
+call logger('PlaceMRCs')
+DCoffset(:,1) = 0
+DCoffset(:,2) = (/-1,0,0/)
+DCoffset(:,3) = (/1,0,0/)
+DCoffset(:,4) = (/0,-1,0/)
+DCoffset(:,5) = (/0,1,0/)
+DCoffset(:,6) = (/0,0,-1/)
+DCoffset(:,7) = (/0,0,1/)
+NMRCrequired = BASE_NMRC
+if (method == 1) then
+	! The MRCs are located in a layer adjacent to the capsule boundary of the blob,
+	! defined by x^2/a^2 + y^2/b^2 + z^2/c^2 > d^2, where d < 1,
+	! and y > e
+	MRC_YFRAC_MIN = 0.4		! e
+	MRC_LAYER_LIMIT = 0.6	! d
+	eradius%x = MRC_LAYER_LIMIT*Radius%x
+	eradius%y = MRC_LAYER_LIMIT*Radius%y
+	eradius%z = MRC_LAYER_LIMIT*Radius%z
+    MRC_SEPARATION = 3.0
+    FDC_MRC_SEPARATION = 2.0
+endif
+NMRC = 0
+if (method == 1) then
+	k = 0
+	do
+		k = k+1
+		if (k > kmax) then
+			write(logmsg,*) 'Error: PlaceMRCs: max iterations exceeded: NMRC: ',NMRC
+			call logger(logmsg)
+			ok = .false.
+			return
+		endif
+		R = par_uni(kpar)
+		dx = (2*R-1)*Radius%x
+		R = par_uni(kpar)
+		dy = MRC_YFRAC_MIN*Radius%y + R*(1 - MRC_YFRAC_MIN)*Radius%y
+		R = par_uni(kpar)
+		dz = (2*R-1)*Radius%z
+		site = Centre + (/dx,dy,dz/)
+		if (.not.InsideEllipsoid(site,Centre,Radius)) cycle
+		if (InsideEllipsoid(site,Centre,eradius)) cycle
+		R = par_uni(kpar)
+		separation_limit(MRC_TAG,MRC_TAG) = MRC_SEPARATION*(0.8 + 0.3*R)
+		separation_limit(MRC_TAG,FDC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
+		if (FDCSiteAllowed(MRC_TAG,site,separation_limit)) then
+			NMRC = NMRC + 1
+			MRClist(NMRC)%ID = NMRC
+			MRClist(NMRC)%site = site
+			MRClist(NMRC)%alive = .true.
+			call AssignFDCsites(MRC_TAG,NMRC,nassigned,ok)
+			if (.not.ok) then
+				return
+			endif
+			MRClist(NMRC)%nsites = nassigned
+			nlist = nlist - nassigned
+			if (NMRC == NMRCrequired) exit
+		endif
+	enddo
+endif
+
+call AssignCellBdrySites(MRC_TAG)
+
+write(logmsg,'(a,3i6)') 'Number of MRCs, B cells, iterations: ',NMRC,nlist,k
+call logger(logmsg)
+end subroutine
+
 !--------------------------------------------------------------------------------
-logical function FDCSiteAllowed(site0,rlimit)
-integer :: site0(3)
-real :: rlimit
-integer :: ifdc, site(3), k
+! Check that a proposed FDC/MRC site is far enough from all existing FDCs and MRCs
+! rlimit(tag1,tag2) = limit separation for tag1 and tag2 cells,
+! where tag1,2 is FDC_TAG or MRC_TAG
+!--------------------------------------------------------------------------------
+logical function FDCSiteAllowed(tag,site0,rlimit)
+integer :: tag, site0(3)
+real :: rlimit(2,2)
+integer :: ifdc, imrc, site(3), k
 real :: r(3), d
 
 do ifdc = 1,NFDC
 	r = FDClist(ifdc)%site - site0
 	d = norm(r)
-	if (d < rlimit) then
+	if (d < rlimit(tag,FDC_TAG)) then
+		FDCSiteAllowed = .false.
+		return
+	endif
+enddo
+do imrc = 1,NMRC
+	r = MRClist(imrc)%site - site0
+	d = norm(r)
+	if (d < rlimit(tag,MRC_TAG)) then
 		FDCSiteAllowed = .false.
 		return
 	endif
@@ -243,39 +347,67 @@ FDCSiteAllowed = .true.
 end function
 
 !--------------------------------------------------------------------------------
-! Sites adjacent to an FDC are flagged - these become boundary sites with
+! Determine the FDC and MRC boundary sites that have
 ! specified chemokine concentration in SolveSteadystate_A(),
 ! or sites that receive FDC chemokine secretion at specified rates in
-! SolveSteadystate_B().  
-! occupancy(:,:,:)%FDC_nbdry records the number of adjacent FDCs
+! SolveSteadystate_B().
+! USE_CELL_SITES = true => actual FDC/MRC sites have specified conc.
+!                = false => sites adjacent to an FDC/MRC are flagged,
+!                  occupancy(:,:,:)%FDC_nbdry records the number of adjacent FDCs
 !--------------------------------------------------------------------------------
-subroutine AssignFDCBdrySites
-integer :: i, j, ifdc, site(3), fsite(3), bsite(3), dx, dy, dz
+subroutine AssignCellBdrySites(tag)
+integer :: tag
+integer :: i, j, ic, site(3), fsite(3), bsite(3), dx, dy, dz, NC
 logical :: bdry(-2:2,-2:2,-2:2)
 
-occupancy(:,:,:)%FDC_nbdry = 0
-
-do ifdc = 1,NFDC
-    bdry = .false.
-    do i = 2,7
-	    fsite = DCoffset(:,i)
-	    do j = 1,27
-		    if (j == 14) cycle
-		    bsite = fsite + jumpvec(:,j)
-		    bdry(bsite(1),bsite(2),bsite(3)) = .true.
-	    enddo
-    enddo
-    do dx = -2,2
-	    do dy = -2,2
-		    do dz = -2,2
-			    if (bdry(dx,dy,dz)) then
-				    site = FDClist(ifdc)%site + (/dx,dy,dz/)
-				    occupancy(site(1),site(2),site(3))%FDC_nbdry = occupancy(site(1),site(2),site(3))%FDC_nbdry + 1
-			    endif
-		    enddo
-	    enddo
-    enddo
-enddo
+if (tag == FDC_TAG) then
+	NC = NFDC
+	occupancy(:,:,:)%FDC_nbdry = 0
+elseif (tag == MRC_TAG) then
+	NC = NMRC
+	occupancy(:,:,:)%MRC_nbdry = 0
+endif
+if (USE_CELL_SITES) then
+	do ic = 1,NC
+		bdry = .false.
+		do i = 2,7
+			if (tag == FDC_TAG) then
+				fsite = FDClist(ic)%site + DCoffset(:,i)
+				occupancy(fsite(1),fsite(2),fsite(3))%FDC_nbdry = 1
+			elseif (tag == MRC_TAG) then
+				fsite = MRClist(ic)%site + DCoffset(:,i)
+				occupancy(fsite(1),fsite(2),fsite(3))%MRC_nbdry = 1
+			endif
+		enddo
+	enddo
+else
+	do ic = 1,NC
+		bdry = .false.
+		do i = 2,7
+			fsite = DCoffset(:,i)
+			do j = 1,27
+				if (j == 14) cycle
+				bsite = fsite + jumpvec(:,j)
+				bdry(bsite(1),bsite(2),bsite(3)) = .true.
+			enddo
+		enddo
+		do dx = -2,2
+			do dy = -2,2
+				do dz = -2,2
+					if (bdry(dx,dy,dz)) then
+						if (tag == FDC_TAG) then
+							site = FDClist(ic)%site + (/dx,dy,dz/)
+							occupancy(site(1),site(2),site(3))%FDC_nbdry = occupancy(site(1),site(2),site(3))%FDC_nbdry + 1
+						elseif (tag == MRC_TAG) then
+							site = MRClist(ic)%site + (/dx,dy,dz/)
+							occupancy(site(1),site(2),site(3))%MRC_nbdry = occupancy(site(1),site(2),site(3))%MRC_nbdry + 1
+						endif
+					endif
+				enddo
+			enddo
+		enddo
+	enddo
+endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -307,7 +439,7 @@ do k = 1,NDC
     idc = perm(k)
     if (.not.DClist(idc)%alive) cycle
 	if (DClist(idc)%nsites < NDCsites) then
-		call AssignFDCsites(idc,nassigned,ok)
+		call AssignFDCsites(0,idc,nassigned,ok)
 		if (.not.ok) return
 		DClist(idc)%nsites = nassigned
 	endif
@@ -481,19 +613,29 @@ enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! tag = FDC_TAG, MRC_TAG
+! ic = ifdc, imrc
 !-----------------------------------------------------------------------------------------
-subroutine AssignFDCsites(ifdc,nassigned,ok)
-integer :: ifdc, nassigned
+subroutine AssignFDCsites(tag,ic,nassigned,ok)
+integer :: tag, ic, nassigned
 logical :: ok
-integer :: k, site(3), site1(3)
+integer :: ifdc, imrc, k, site(3), site1(3), indx(2)
 
 ok = .false.
-site = FDClist(ifdc)%site
-occupancy(site(1),site(2),site(3))%indx = -ifdc     ! This site holds an FDC (centre)
+if (tag == FDC_TAG) then
+	ifdc = ic
+	site = FDClist(ifdc)%site
+	occupancy(site(1),site(2),site(3))%indx = -ifdc				! This site holds an FDC (centre)
+elseif (tag == MRC_TAG) then
+	imrc = ic
+	site = MRClist(imrc)%site
+	occupancy(site(1),site(2),site(3))%indx = -(1000 + imrc)	! This site holds an MRC (centre)
+endif
 nassigned = 1
 do k = 2,NDCsites
     site1 = site + DCoffset(:,k)
-    if (occupancy(site1(1),site1(2),site1(3))%indx(1) == -ifdc) then
+    indx = occupancy(site1(1),site1(2),site1(3))%indx
+    if ((tag == FDC_TAG .and. indx(1) == -ifdc) .or. (tag == MRC_TAG .and. indx(1) == -imrc)) then
 		nassigned = nassigned + 1
 		cycle
 	endif
@@ -503,14 +645,14 @@ do k = 2,NDCsites
 		call logger("Error: AssignFDCsites: site outside grid")
 		return
 	endif
-    if (occupancy(site1(1),site1(2),site1(3))%indx(1) == OUTSIDE_TAG) then
-		call logger('AssignFDCsites: FDC hits boundary')
+    if (indx(1) == OUTSIDE_TAG) then
+		call logger('AssignFDCsites: cell hits boundary')
 		return
 	endif
-	if (occupancy(site1(1),site1(2),site1(3))%indx(1) /= 0) cycle
-	if (occupancy(site1(1),site1(2),site1(3))%indx(2) /= 0) cycle
+	if (indx(1) /= 0) cycle
+	if (indx(2) /= 0) cycle
 	nassigned = nassigned + 1
-    occupancy(site1(1),site1(2),site1(3))%indx = -ifdc     ! This site holds a FDC (soma)
+    occupancy(site1(1),site1(2),site1(3))%indx = -ic     ! This site holds a FDC or MRC (soma)
 enddo
 ok = .true.
 end subroutine
