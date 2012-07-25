@@ -45,8 +45,6 @@ int NX, NY, NZ, NBY;
 int nt_vtk;
 bool leftb;
 
-#define NO_USE_PGRAPH false
-
 QMyLabel::QMyLabel(QWidget *parent) : QLabel(parent)
 {}
 
@@ -1004,22 +1002,10 @@ void MainWindow::loadResultFile()
 	in.seek(0);
 
 	R->tnow = new double[R->nsteps];
-	if (NO_USE_PGRAPH) {
-		R->nDC = new double[R->nsteps];
-		R->act = new double[R->nsteps];
-		R->ntot_LN = new double[R->nsteps];
-		R->ncog_PER = new double[R->nsteps];
-		R->ncogseed = new double[R->nsteps];
-		R->ncog_LN = new double[R->nsteps];
-		R->ndead = new double[R->nsteps];
-		R->teffgen = new double[R->nsteps];
-	} else {
-		for (int i=0; i<nGraphs; i++) {
-			if (!grph->isActive(i)) continue;
-			R->pData[i] = new double[R->nsteps];
-		}
-	}
-//	step = -1;
+    for (int i=0; i<nGraphs; i++) {
+        if (!grph->isActive(i)) continue;
+        R->pData[i] = new double[R->nsteps];
+    }
     indata = false;
 	do {
 		line = in.readLine();
@@ -1037,27 +1023,11 @@ void MainWindow::loadResultFile()
 				}
 				R->tnow[step] = step;		//data[1];step
 
-			if (NO_USE_PGRAPH) {
-
-				R->nDC[step] = data[1];
-				R->act[step] = data[2];
-				R->ntot_LN[step] = data[3];
-				R->ncogseed[step] = data[4];
-				R->ncog_LN[step] = data[5];
-				R->ncog_PER[step] = data[6];
-				R->ndead[step] = data[7];
-				R->teffgen[step] = data[8];
-				R->nbnd[step] = data[9];
-
-			} else {
-
 				for (int i=0; i<nGraphs; i++) {
 					if (!grph->isActive(i)) continue;
 					int k = grph->get_dataIndex(i);
 					R->pData[i][step] = data[k]*grph->get_scaling(i);
 				}
-			}
-
 			}
 			if (dataList[0].contains("========")) {
 				indata = true;
@@ -1066,21 +1036,12 @@ void MainWindow::loadResultFile()
 	} while (!line.isNull());
 
 	// Compute the maxima
-	if (NO_USE_PGRAPH) {
-		R->max_act = getMaximum(R,R->act);
-		R->max_ncog_LN = getMaximum(R,R->ncog_LN);
-		R->max_ncogseed = getMaximum(R,R->ncogseed);
-		R->max_nDC = getMaximum(R,R->nDC);
-		R->max_teffgen = getMaximum(R,R->teffgen);
-		R->max_ntot = getMaximum(R,R->ntot_LN);
-	} else {
-		for (int i=0; i<nGraphs; i++) {
-			if (!grph->isActive(i)) continue;
-			double maxval = getMaximum(R,R->pData[i]);
-			grph->set_maxValue(i,maxval);
-			R->maxValue[i] = maxval;
-		}
-	}
+    for (int i=0; i<nGraphs; i++) {
+        if (!grph->isActive(i)) continue;
+        double maxval = getMaximum(R,R->pData[i]);
+        grph->set_maxValue(i,maxval);
+        R->maxValue[i] = maxval;
+    }
 	// Now add the result set to the list
 	result_list.append(R);
 	if (nGraphCases == 0) {
@@ -1421,55 +1382,28 @@ void MainWindow::preConnection()
 	newR->nsteps = nsteps;
 	newR->tnow = new double[nsteps];
 
-if (NO_USE_PGRAPH) {
-	newR->nDC = new double[nsteps];
-	newR->act = new double[nsteps];
-	newR->ntot_LN = new double[nsteps];
-	newR->ncog_PER = new double[nsteps];
-	newR->ncogseed = new double[nsteps];
-	newR->ncog_LN = new double[nsteps];
-	newR->ndead = new double[nsteps];
-	newR->teffgen = new double[nsteps];
-	newR->nbnd = new double[nsteps];
-	newR->nDC[0] = 0;
-	newR->act[0] = 0;
-	newR->ntot_LN[0] = 0;
-	newR->ncog_PER[0] = 0;
-	newR->ncogseed[0] = 0;
-	newR->ncog_LN[0] = 0;
-	newR->ndead[0] = 0;
-	newR->teffgen[0] = 0;
-	newR->nbnd[0] = 0;
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		newR->pData[i] = new double[nsteps];
 		newR->pData[i][0] = 0;
 	}
-}
 	LOG_MSG("preconnection: Allocated result set arrays");
 
 	newR->tnow[0] = 0;	// These are not the right initial values
     step = -1;
-//    step = 0;
 
 	// Initialize graphs
 	initializeGraphs(newR);
     posdata = false;
 	if (cbox_savepos->isChecked()) {
-//		savepos_start = 0;
-//		setSavePosStart();
 		if (QFile::exists(vtkfile))
 			QFile::remove(vtkfile);
 	}
-//	action_stop->setChecked(false);
 	LOG_MSG("preconnection: done");
 }
 
 void MainWindow::errorPopup(QString errmsg)
 {
-//	QMessageBox::warning(this, tr("DLL error"), tr((errmsg.toStdString()).data()));
-//	QMessageBox::warning(this, tr("DLL error"), tr("Got an error message"));
 	LOG_QMSG(errmsg);
 	QMessageBox msgBox;
 	msgBox.setText(errmsg);
@@ -1484,44 +1418,6 @@ void MainWindow::initializeGraphs(RESULT_SET *R)
 	mdiArea->show();
 	clearAllGraphs();
 
-if (NO_USE_PGRAPH) {
-
-	graph_act = new Plot("act",R->casename);
-    graph_act->setTitle("Total DC Antigen Activity");
-	graph_act->setAxisTitle(QwtPlot::yLeft, "");
-
-	graph_ntot_LN = new Plot("ntot_LN",R->casename);
-	graph_ntot_LN->setTitle("Total T Cell Population in LN");
-	graph_ntot_LN->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-    
-	graph_ncog_LN = new Plot("ncog_LN",R->casename);
-	graph_ncog_LN->setTitle("Cognate T Cells in LN");
-	graph_ncog_LN->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-
-	graph_ncog_PER = new Plot("ncog_PER",R->casename);
-	graph_ncog_PER->setTitle("Cognate T Cells in Periphery");
-	graph_ncog_PER->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-
-	graph_ncogseed = new Plot("ncogseed",R->casename);
-	graph_ncogseed->setTitle("Seed Cognate Cells");
-	graph_ncogseed->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-
-	graph_nDC = new Plot("nDC",R->casename);
-    graph_nDC->setTitle("Antigen Presenting Cells");
-	graph_nDC->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-
-    graph_teffgen = new Plot("teffgen",R->casename);
-	graph_teffgen->setTitle("Efferent Activated Cognate Cells");
-	graph_teffgen->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-    
-	graph_nbnd = new Plot("nbnd",R->casename);
-	graph_nbnd->setTitle("Bound Cognate Cells");
-	graph_nbnd->setAxisTitle(QwtPlot::yLeft, "No. of Cells");
-
-	graph_dummy = new Plot("dummy",R->casename);
-	graph_dummy->setTitle("");
-	graph_dummy->setAxisTitle(QwtPlot::yLeft, "");
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		QString tag = grph->get_tag(i);
 		QString title = grph->get_title(i);
@@ -1530,61 +1426,25 @@ if (NO_USE_PGRAPH) {
 		pGraph[i]->setTitle(title);
 		pGraph[i]->setAxisTitle(QwtPlot::yLeft, yAxisTitle);
 	}
-}
 
 	nGraphCases = 1;
 	graphResultSet[0] = R;
 
-if (NO_USE_PGRAPH) {
-
-	mdiArea->addSubWindow(graph_dummy);
-	mdiArea->addSubWindow(graph_ncog_LN);
-    mdiArea->addSubWindow(graph_act);
-	mdiArea->addSubWindow(graph_ntot_LN);
-	mdiArea->addSubWindow(graph_ncog_PER);
-	mdiArea->addSubWindow(graph_nDC);
-    mdiArea->addSubWindow(graph_teffgen);
-	mdiArea->addSubWindow(graph_nbnd);
-	mdiArea->addSubWindow(graph_ncogseed);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		mdiArea->addSubWindow(pGraph[i]);
 		pGraph[i]->show();
 	}
-}
 
 	if (show_outputdata) {
 		mdiArea->addSubWindow(box_outputData);	// Need another way of creating this window - should be floating
 		box_outputData->show();
 	}
 
-if (NO_USE_PGRAPH) {
-	graph_dummy->show();
-	graph_nDC->show();
-    graph_act->show();
-	graph_ntot_LN->show();
-	graph_ncog_LN->show();
-	graph_ncog_PER->show();
-	graph_teffgen->show();
-	graph_nbnd->show();
-	graph_ncogseed->show();
-}
     mdiArea->tileSubWindows();
 
-if (NO_USE_PGRAPH) {
-	graph_act->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_ntot_LN->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_ncog_LN->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_ncog_PER->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_nDC->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-    graph_teffgen->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_nbnd->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-	graph_ncogseed->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		pGraph[i]->setAxisScale(QwtPlot::xBottom, 0, R->nsteps, 0);
 	}
-}
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1596,24 +1456,6 @@ void MainWindow::drawGraphs()
 	for (int kres=0; kres<Plot::ncmax; kres++) {
 		R = graphResultSet[kres];
 		if (R != 0) {
-		if (NO_USE_PGRAPH) {
-			graph_act->redraw(R->tnow, R->act, R->nsteps, R->casename);
-			graph_ntot_LN->redraw(R->tnow, R->ntot_LN, R->nsteps, R->casename);
-			graph_nDC->redraw(R->tnow, R->nDC, R->nsteps, R->casename);
-			graph_teffgen->redraw(R->tnow, R->teffgen, R->nsteps, R->casename);
-			graph_ncog_LN->redraw(R->tnow, R->ncog_LN, R->nsteps, R->casename);
-			graph_ncog_PER->redraw(R->tnow, R->ncog_PER, R->nsteps, R->casename);
-			graph_nbnd->redraw(R->tnow, R->nbnd, R->nsteps, R->casename);
-			graph_ncogseed->redraw(R->tnow, R->ncogseed, R->nsteps, R->casename);
-			act_max = max(act_max,R->max_act);
-			ntot_max = max(ntot_max,R->max_ntot);
-			nDC_max = max(nDC_max,R->max_nDC);
-			teffgen_max = max(teffgen_max,R->max_teffgen);
-			ncog_LN_max = max(ncog_LN_max,R->max_ncog_LN);
-			ncog_PER_max = max(ncog_PER_max,R->max_ncog_PER);
-			ncogseed_max = max(ncogseed_max,R->max_ncogseed);
-			nbnd_max = max(nbnd_max,R->max_nbnd);
-		} else {
 			for (int i=0; i<nGraphs; i++) {
 				if (!grph->isActive(i)) continue;
 				int k = grph->get_dataIndex(i);
@@ -1633,34 +1475,13 @@ void MainWindow::drawGraphs()
 //				LOG_MSG(msg);
 			}
 		}
-
-		}
 	}
-if (NO_USE_PGRAPH) {
-	graph_act->setYScale(act_max);
-	graph_ntot_LN->setYScale(ntot_max);
-	graph_ncog_PER->setYScale(ntot_max);
-	graph_ncog_LN->setYScale(ncog_LN_max);
-	graph_nDC->setYScale(nDC_max);
-	graph_teffgen->setYScale(teffgen_max);
-	graph_nbnd->setYScale(nbnd_max);
-	graph_ncogseed->setYScale(ncogseed_max);
-	graph_act->replot();
-	graph_ntot_LN->replot();
-	graph_ncog_PER->replot();
-	graph_ncog_LN->replot();
-	graph_nDC->replot();
-	graph_teffgen->replot();
-	graph_nbnd->replot();
-	graph_ncogseed->replot();
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		double maxval = grph->get_maxValue(i);
 		pGraph[i]->setYScale(maxval);
 		pGraph[i]->replot();
 	}
-}
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1698,44 +1519,21 @@ void MainWindow::showSummary()
 	QString hourstr = QString::number(int(hour));
 	hour_display->setText(hourstr);
 
-//    sprintf(msg,"showSummary: step: %d summaryData[0]: %d hour: %f",step,summaryData[0],hour);
+//    sprintf(msg,"showSummary: step: %d summaryData[1]: %d hour: %f",step,summaryData[1],hour);
 //    LOG_MSG(msg);
 	QString casename = newR->casename;
-	newR->tnow[step] = step;		//summaryData[0];
+    newR->tnow[step] = step;
 
-if (NO_USE_PGRAPH) {
-	newR->nDC[step]	= summaryData[1];
-	newR->act[step] = summaryData[2];		// was /100
-	newR->ntot_LN[step] = summaryData[3];
-	newR->ncogseed[step] = summaryData[4];
-	newR->ncog_LN[step] = summaryData[5];
-	newR->ncog_PER[step] = summaryData[6];
-	newR->ndead[step] = summaryData[7];
-	newR->teffgen[step] = summaryData[8];
-	newR->nbnd[step] = summaryData[9];
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		int k = grph->get_dataIndex(i);
 		newR->pData[i][step] = summaryData[k]*grph->get_scaling(i);
 	}
-}
 
-if (NO_USE_PGRAPH) {
-	graph_act->redraw(newR->tnow, newR->act, step+1, casename);
-	graph_ntot_LN->redraw(newR->tnow, newR->ntot_LN, step+1, casename);
-	graph_ncog_PER->redraw(newR->tnow, newR->ncog_PER, step+1, casename);
-	graph_nDC->redraw(newR->tnow, newR->nDC, step+1, casename);
-	graph_teffgen->redraw(newR->tnow, newR->teffgen, step+1, casename);
-	graph_ncog_LN->redraw(newR->tnow, newR->ncog_LN, step+1, casename);
-	graph_nbnd->redraw(newR->tnow, newR->nbnd, step+1, casename);
-	graph_ncogseed->redraw(newR->tnow, newR->ncogseed, step+1, casename);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		pGraph[i]->redraw(newR->tnow, newR->pData[i], step+1, casename);
 	}
-}
 
 	mutex1.unlock();
 }
@@ -1785,41 +1583,16 @@ void MainWindow::outputData(QString qdata)
 	}
 	QString casename = newR->casename;
     newR->tnow[step] = step;		//data[1];
-if (NO_USE_PGRAPH) {
-
-    newR->nDC[step] = data[2];
-    newR->act[step] = data[3];
-	newR->ntot_LN[step] = data[4];
-	newR->ncogseed[step] = data[5];
-	newR->ncog_LN[step] = data[6];
-	newR->ncog_PER[step] = data[7];
-	newR->ndead[step] = data[8];
-	newR->teffgen[step] = data[9];
-	newR->nbnd[step] = data[10];
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		int k = grph->get_dataIndex(i);
 		newR->pData[i][step] = data[k]*grph->get_scaling(i);
 	}
-}
 
-if (NO_USE_PGRAPH) {
-	graph_act->redraw(newR->tnow, newR->act, step+1, casename);
-	graph_ntot_LN->redraw(newR->tnow, newR->ntot_LN, step+1, casename);
-	graph_ncog_PER->redraw(newR->tnow, newR->ncog_PER, step+1, casename);
-	graph_nDC->redraw(newR->tnow, newR->nDC, step+1, casename);
-    graph_teffgen->redraw(newR->tnow, newR->teffgen, step+1, casename);
-	graph_ncog_LN->redraw(newR->tnow, newR->ncog_LN, step+1, casename);
-	graph_nbnd->redraw(newR->tnow, newR->nbnd, step+1, casename);
-	graph_ncogseed->redraw(newR->tnow, newR->ncogseed, step+1, casename);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		pGraph[i]->redraw(newR->tnow, newR->pData[i], step+1, casename);
 	}
-}
-
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1855,22 +1628,11 @@ void MainWindow::postConnection()
 		}
 	}
 	// Compute the maxima
-if (NO_USE_PGRAPH) {
-	newR->max_act = getMaximum(newR,newR->act);
-	newR->max_ncog_LN = getMaximum(newR,newR->ncog_LN);
-	newR->max_ncog_PER = getMaximum(newR,newR->ncog_PER);
-	newR->max_ncogseed = getMaximum(newR,newR->ncogseed);
-	newR->max_nDC = getMaximum(newR,newR->nDC);
-	newR->max_teffgen = getMaximum(newR,newR->teffgen);
-	newR->max_ntot = getMaximum(newR,newR->ntot_LN);
-	newR->max_nbnd = getMaximum(newR,newR->nbnd);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		double maxval = getMaximum(newR,newR->pData[i]);
 		newR->maxValue[i] = maxval;
 	}
-}
 
 	// Add the new result set to the list
 //	result_list.append(newR);
@@ -1942,22 +1704,10 @@ void MainWindow::stopServer()
 void MainWindow::clearAllGraphs()
 {
 	if (nGraphCases > 0) {
-	if (NO_USE_PGRAPH) {
-		graph_act->removeAllCurves();
-		graph_ntot_LN->removeAllCurves();
-		graph_ncog_PER->removeAllCurves();
-		graph_nDC->removeAllCurves();
-		graph_teffgen->removeAllCurves();
-		graph_ncog_LN->removeAllCurves();
-		graph_nbnd->removeAllCurves();
-		graph_ncogseed->removeAllCurves();
-	} else {
 		for (int i=0; i<nGraphs; i++) {
 			if (!grph->isActive(i)) continue;
 			pGraph[i]->removeAllCurves();
 		}
-	}
-
 		nGraphCases = 0;
 	}
 	for (int i=0; i<Plot::ncmax; i++) {
@@ -2026,31 +1776,11 @@ void MainWindow::addGraph()
 	graphResultSet[nGraphCases] = R;
 	nGraphCases++;
 	// First add the curves
-if (NO_USE_PGRAPH) {
-	graph_act->addCurve(R->casename);
-	graph_ntot_LN->addCurve(R->casename);
-	graph_ncog_PER->addCurve(R->casename);
-	graph_nDC->addCurve(R->casename);
-	graph_teffgen->addCurve(R->casename);
-	graph_ncog_LN->addCurve(R->casename);
-	graph_nbnd->addCurve(R->casename);
-	graph_ncogseed->addCurve(R->casename);
-	// Adjust the x axis scale
-	graph_act->setAxisAutoScale(QwtPlot::xBottom);
-	graph_ntot_LN->setAxisAutoScale(QwtPlot::xBottom);
-	graph_ncog_PER->setAxisAutoScale(QwtPlot::xBottom);
-	graph_ncog_LN->setAxisAutoScale(QwtPlot::xBottom);
-    graph_nDC->setAxisAutoScale(QwtPlot::xBottom);
-    graph_teffgen->setAxisAutoScale(QwtPlot::xBottom);
-	graph_nbnd->setAxisAutoScale(QwtPlot::xBottom);
-	graph_ncogseed->setAxisAutoScale(QwtPlot::xBottom);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		pGraph[i]->addCurve(R->casename);
 		pGraph[i]->setAxisAutoScale(QwtPlot::xBottom);
 	}
-}
 	// Now redraw with the data
 	drawGraphs();
 }
@@ -2092,21 +1822,10 @@ void MainWindow::removeGraph()
 	if (i == -1) return;
 	RESULT_SET *R = graphResultSet[i];
 	// First remove the curves
-if (NO_USE_PGRAPH) {
-	graph_act->removeCurve(R->casename);
-	graph_ntot_LN->removeCurve(R->casename);
-	graph_ncog_PER->removeCurve(R->casename);
-	graph_nDC->removeCurve(R->casename);
-	graph_teffgen->removeCurve(R->casename);
-	graph_ncog_LN->removeCurve(R->casename);
-	graph_nbnd->removeCurve(R->casename);
-	graph_ncogseed->removeCurve(R->casename);
-} else {
 	for (int i=0; i<nGraphs; i++) {
 		if (!grph->isActive(i)) continue;
 		pGraph[i]->removeCurve(R->casename);
 	}
-}
 	// Then remove the graph case
 	graphResultSet[i] = 0;
 	nGraphCases--;
