@@ -582,7 +582,7 @@ do i = 1,MAX_RECEPTOR
 		usage = 'NOT USED'
 	endif
 	write(nfout,'(a,i2,2x,a,a,a,4x,a)') 'Receptor: ',i,p%name,'  chemokine: ',chemo(p%chemokine)%name,usage
-	write(nfout,'(a,f8.2)') 'relative strength: ',p%sign*p%strength
+	write(nfout,'(a,i2,f8.2)') 'sign, relative strength: ',p%sign,p%strength
 	write(nfout,'(a,4f6.1)') 'stage levels: ',p%level
 enddo
 write(nfout,'(a)') 'Chemokines:'
@@ -599,7 +599,6 @@ do i = 1,MAX_CHEMO
 	write(nfout,'(a,f8.1)') 'Halflife: ',q%halflife
 	write(nfout,'(a,f8.4)') 'Decay rate: ',q%decay_rate
 enddo
-	
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1120,11 +1119,15 @@ if (t > t2) then
 else
 	alpha = (t-t1)/(t2-t1)
 endif
-do ireceptor = 1,MAX_CHEMO
+!write(*,*) 'ReceptorLevel: ',t,t1,t2,alpha
+do ireceptor = 1,MAX_RECEPTOR
 	if (receptor(ireceptor)%used) then
 		rfrom = receptor(ireceptor)%level(ifrom)
 		rto = receptor(ireceptor)%level(ito)
 		level(ireceptor) = (1-alpha)*rfrom + alpha*rto
+!		if (ito == ANTIGEN_TAG) then
+!			write(*,*) 'ReceptorLevel: ',ireceptor,rfrom,rto,alpha
+!		endif
 	endif
 enddo
 end subroutine
@@ -1195,8 +1198,8 @@ do k = 1,tmplastcogID
 	if (stage == ANTIGEN_MET) then
 		t2 = p%stagetime
 		t1 = t2 - T_CCR7_UP
-!		write(*,*) 'updater: tnow,t1,t2: ',kcell,tnow,t1,t2
-		call ReceptorLevel(kcell,NAIVE_TAG,ANTIGEN_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+!		write(*,*) 'updater: tnow,t1,t2: ',kcell,tnow,t1,t2,NAIVE_TAG,ANTIGEN_TAG
+		call ReceptorLevel(kcell,NAIVE_TAG,ANTIGEN_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)
 	elseif (stage == TCELL_MET) then
 		t2 = p%stagetime
 		t1 = t2 - T_EBI2_UP

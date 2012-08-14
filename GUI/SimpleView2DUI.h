@@ -43,6 +43,7 @@ public:
   void setParameters();
   void makeFrame(int i);
 
+  int max_chemo;
   char msg[1024];
   int axis;
   float fraction;
@@ -54,7 +55,6 @@ public:
   vtkSmartPointer<vtkRenderer> renderer;
   vtkSmartPointer<vtkRenderWindow> renWin;
   vtkRenderWindowInteractor * iren;
-  vtkSmartPointer<vtkArrowSource> arrowSource_array[4];
   vtkSmartPointer<vtkStructuredGrid> sgrid_array[4];
   vtkSmartPointer<vtkActor> sgridActor_array[4];
 

@@ -176,7 +176,7 @@ subroutine chemo_jumper(kcell,indx1,kslot1,go,kpar)
 integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
 type (cell_type), pointer :: cell
-integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype
+integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype,stage
 integer :: irel,dir1,lastdir1,indx2(2),k,kr,rv(3),id, ichemo, nfull, nrest, nout
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
@@ -210,12 +210,17 @@ do kr = 1,MAX_RECEPTOR
             cell%receptor_saturation_time(kr) = 0
         endif
     endif
+!    write(*,*) kr,receptor(kr)%used,cell%receptor_level(kr),cell%receptor_saturation_time(kr)
     if (receptor(kr)%used .and. (cell%receptor_level(kr) > 0) .and. (cell%receptor_saturation_time(kr) == 0)) then
         ischemo = .true.
         exit
     endif
 enddo
-
+if (associated(cell%cptr)) then
+	stage = get_stage(cell%cptr)
+else
+	stage = NAIVE
+endif
 vsum = 0
 if (ischemo) then
     do kr = 1,MAX_RECEPTOR

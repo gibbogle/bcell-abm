@@ -15,7 +15,7 @@
 extern "C" {
 #endif
     void get_gradient_info(int *, int *);
-    void get_gradients(int *, int *, float *);
+    void get_gradients(int *, int *, float *, int *);
 #ifdef __cplusplus
 }
 #endif
@@ -33,13 +33,20 @@ public:
   ~SimpleView3D() {};
 
   vtkSmartPointer<vtkRenderWindow> GetRenderWindow();
-  void setScale(void);
+//  void setScale(void);
   void ShowSize(int *);
   void displayFields(void);
+  void aimCamera(void);
+  void create();
+  void chooseParameters();
+  void setParameters();
+  void makeFrame(int i);
 
+  int max_chemo;
   char msg[1024];
+  int axis;
   double scale;
-  bool use_strength;
+  int use_strength;
   int chemo_select[4];  // Currently hard-coded for 4 chemokines
   bool chemo_displayed[4];
   bool chemo_used[4];

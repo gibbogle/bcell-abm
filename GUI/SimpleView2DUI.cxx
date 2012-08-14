@@ -56,14 +56,15 @@ void SimpleView2D::create()
     vtkSmartPointer<vtkPolyDataMapper> sgridMapper;
     vtkSmartPointer<vtkActor> sgridActor;
 
+    max_chemo = 4;
     // Create the structured grids.
-    for (isgrid=0; isgrid<4; isgrid++) {
+    for (isgrid=0; isgrid<max_chemo; isgrid++) {
         sgrid_array[isgrid] = vtkSmartPointer<vtkStructuredGrid>::New();
     }
     float gmaxx, gmax[4], scaling;
     CreateGradientData(sgrid_array, chemo_select, gmax);
     gmaxx = 0;
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<max_chemo; i++) {
         if (gmax[i] > gmaxx)
             gmaxx = gmax[i];
     }
@@ -74,7 +75,7 @@ void SimpleView2D::create()
     // Create the usual rendering stuff
     renderer = vtkSmartPointer<vtkRenderer>::New();
 
-    for (isgrid=0; isgrid<4; isgrid++) {
+    for (isgrid=0; isgrid<max_chemo; isgrid++) {
         sgrid = sgrid_array[isgrid];
         // We create a simple pipeline to display the data.
           // Setup the arrows
@@ -289,7 +290,7 @@ void SimpleView2D::displayFields(void)
 {
     int ichemo;
     LOG_QMSG("displayFields");
-    for (ichemo=0; ichemo<4; ichemo++) {
+    for (ichemo=0; ichemo<max_chemo; ichemo++) {
         if (chemo_select[ichemo] == 0) {
             if (chemo_displayed[ichemo]) {
                 renderer->RemoveActor(sgridActor_array[ichemo]);
@@ -416,7 +417,7 @@ void SimpleView2D::ShowSize(int *size)
 //------------------------------------------------------------------------------------------------
 void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_array[], int chemo_select[], float gmax[])
 {
-    int i, k, iga;
+    int k, iga;
     float x[3], v[3], g;
     static int dims[3]={50,50,50};
     int nchemo_used, ndata;
@@ -424,12 +425,12 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
     float *gradient_array;
     int ichemo;
 
-    for (ichemo=0; ichemo<4; ichemo++) {
+    for (ichemo=0; ichemo<max_chemo; ichemo++) {
         sgrid_array[ichemo]->SetDimensions(dims);
     }
   get_gradient2d_info(chemo_simulated, &nsites, &axis, &fraction);
   nchemo_used = 0;
-  for (ichemo=0; ichemo<4; ichemo++) {
+  for (ichemo=0; ichemo<max_chemo; ichemo++) {
       if (chemo_simulated[ichemo] == 1) {
           nchemo_used++;
           chemo_used[ichemo] = true;
@@ -438,7 +439,7 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
       }
   }
   if (nchemo_used == 0) return;
-  ndata = nsites*(3 + 4*3);
+  ndata = nsites*(3 + max_chemo*3);
   sprintf(msg,"nchem_used: %d nsites: %d ndata: %d",nchemo_used,nsites,ndata);
   LOG_MSG(msg);
   gradient_array = (float *)malloc(ndata*sizeof(float));
@@ -446,7 +447,7 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
 
   vtkSmartPointer<vtkFloatArray> vectors;
   vtkSmartPointer<vtkPoints> points;
-  for (ichemo=0; ichemo<4; ichemo++) {
+  for (ichemo=0; ichemo<max_chemo; ichemo++) {
       if (!chemo_used[ichemo]) continue;
 
       // We create the points and vectors.
@@ -458,7 +459,7 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
       points->Allocate(nsites);
       gmax[ichemo] = 0;
       for (k=0; k<nsites; k++) {
-          iga = k*(3 + 3*4);
+          iga = k*(3 + 3*max_chemo);
           x[0] = gradient_array[iga];
           x[1] = gradient_array[iga+1];
           x[2] = gradient_array[iga+2];

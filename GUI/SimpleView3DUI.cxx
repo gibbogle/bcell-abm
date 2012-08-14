@@ -40,46 +40,32 @@ SimpleView3D::SimpleView3D()
 {
     this->ui = new Ui_SimpleView3D;
     this->ui->setupUi(this);
-    chemo_select[0] = 1;
-    chemo_select[1] = 0;
-    chemo_select[2] = 0;
-    chemo_select[3] = 0;
-    chemo_displayed[0] = false;
-    chemo_displayed[1] = false;
-    chemo_displayed[2] = false;
-    chemo_displayed[3] = false;
+    LOG_QMSG("SimpleView3D");
+}
 
-    /*
-    QString name = "checkBox_S1P";
-    QCheckBox *cb = this->ui->centralwidget->findChild<QCheckBox *>(name);
-    if (cb) {
-        LOG_QMSG("Found a checkbox called: " + cb->objectName());
-    }
-    LOG_QMSG("All checkboxes");
-    QList<QCheckBox *> allCheckBoxes = this->ui->centralwidget->findChildren<QCheckBox *>();
-    for (int i=0; i<allCheckBoxes.size(); i++) {
-        name = allCheckBoxes[i]->objectName();
-        LOG_QMSG(name);
-    }
-    */
-
-    setScale();
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView3D::create()
+{
+//    sprintf(msg,"Slice axis: %d fraction: %f use_strength: %d",axis,fraction,use_strength);
+//    LOG_MSG(msg);
     int isgrid;
     vtkSmartPointer<vtkStructuredGrid> sgrid;
     vtkSmartPointer<vtkArrowSource> arrowSource;
+//    vtkSmartPointer<vtkGlyph2D> glyphFilter;
     vtkSmartPointer<vtkGlyph3D> glyphFilter;
     vtkSmartPointer<vtkPolyDataMapper> sgridMapper;
     vtkSmartPointer<vtkActor> sgridActor;
- 
+
+    max_chemo = 4;
     // Create the structured grids.
-    for (isgrid=0; isgrid<4; isgrid++) {
+    for (isgrid=0; isgrid<max_chemo; isgrid++) {
         sgrid_array[isgrid] = vtkSmartPointer<vtkStructuredGrid>::New();
     }
-//    CreateTestData(sgrid);
     float gmaxx, gmax[4], scaling;
     CreateGradientData(sgrid_array, chemo_select, gmax);
     gmaxx = 0;
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<max_chemo; i++) {
         if (gmax[i] > gmaxx)
             gmaxx = gmax[i];
     }
@@ -87,11 +73,10 @@ SimpleView3D::SimpleView3D()
         scaling = 2.0/gmaxx;
     else
         scaling = 0.2*scale;
-
     // Create the usual rendering stuff
     renderer = vtkSmartPointer<vtkRenderer>::New();
 
-    for (isgrid=0; isgrid<4; isgrid++) {
+    for (isgrid=0; isgrid<max_chemo; isgrid++) {
         sgrid = sgrid_array[isgrid];
         // We create a simple pipeline to display the data.
           // Setup the arrows
@@ -100,6 +85,7 @@ SimpleView3D::SimpleView3D()
         arrowSource->SetTipResolution(12);
         arrowSource->Update();
 
+//        glyphFilter = vtkSmartPointer<vtkGlyph2D>::New();
         glyphFilter = vtkSmartPointer<vtkGlyph3D>::New();
         glyphFilter->SetSourceConnection(arrowSource->GetOutputPort());
         glyphFilter->OrientOn();
@@ -134,16 +120,28 @@ SimpleView3D::SimpleView3D()
     renderer->GetActiveCamera()->Elevation(60.0);
     renderer->GetActiveCamera()->Azimuth(30.0);
     renderer->GetActiveCamera()->Zoom(1.25);
-
   // VTK/Qt wedded
     renWin = this->ui->qvtkWidget_gradient->GetRenderWindow();
     renWin->AddRenderer(renderer);
 
   // Set up action signals and slots
   connect(this->ui->actionExit, SIGNAL(triggered()), this, SLOT(slotExit()));
-
 };
- 
+
+/*
+QString name = "checkBox_S1P";
+QCheckBox *cb = this->ui->centralwidget->findChild<QCheckBox *>(name);
+if (cb) {
+    LOG_QMSG("Found a checkbox called: " + cb->objectName());
+}
+LOG_QMSG("All checkboxes");
+QList<QCheckBox *> allCheckBoxes = this->ui->centralwidget->findChildren<QCheckBox *>();
+for (int i=0; i<allCheckBoxes.size(); i++) {
+    name = allCheckBoxes[i]->objectName();
+    LOG_QMSG(name);
+}
+*/
+
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
 void SimpleView3D::slotExit()
@@ -174,8 +172,32 @@ void SimpleView3D::saveImage(void)
 
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
-void SimpleView3D::setScale(void)
+void SimpleView3D::setParameters()
 {
+    chemo_select[0] = 1;
+    chemo_select[1] = 0;
+    chemo_select[2] = 0;
+    chemo_select[3] = 0;
+    chemo_displayed[0] = false;
+    chemo_displayed[1] = false;
+    chemo_displayed[2] = false;
+    chemo_displayed[3] = false;
+    scale = 0;
+    use_strength = 0;
+}
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView3D::chooseParameters(void)
+{
+    chemo_select[0] = 1;
+    chemo_select[1] = 0;
+    chemo_select[2] = 0;
+    chemo_select[3] = 0;
+    chemo_displayed[0] = false;
+    chemo_displayed[1] = false;
+    chemo_displayed[2] = false;
+    chemo_displayed[3] = false;
+
     bool ok;
     QString text;
     scale = QInputDialog::getDouble(this, tr("QInputDialog::getDouble()"),
@@ -203,10 +225,61 @@ void SimpleView3D::setScale(void)
 
 //------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------
+void SimpleView3D::aimCamera(void)
+{
+    double cp[3], fp[3], up[3];
+    vtkSmartPointer<vtkCamera> camera;
+
+    axis = 3;
+//    return;     // perhaps not needed
+
+    camera = renderer->GetActiveCamera();
+    camera->GetFocalPoint(fp);
+    camera->GetPosition(cp);
+    camera->GetViewUp(up);
+    sprintf(msg,"AimCamera:\n  position: %f %f %f\n  focus: %f %f %f\n  up: %f %f %f",cp[0],cp[1],cp[2],fp[0],fp[1],fp[2],up[0],up[1],up[2]);
+    LOG_MSG(msg);
+    if (axis == 1) {
+        cp[0] = 2*fp[0];
+        cp[1] = fp[1];
+        cp[2] = fp[2];
+        camera->SetPosition(cp);
+        up[0] = 0;
+        up[1] = 1;
+        up[2] = 0;
+        camera->SetViewUp(up);
+    } else if (axis == 2) {
+        cp[0] = fp[0];
+        cp[1] = 3*fp[1];
+        cp[2] = fp[2];
+        camera->SetPosition(cp);
+        up[0] = 0;
+        up[1] = 0;
+        up[2] = -1;
+        camera->SetViewUp(up);
+    } else if (axis == 3) {
+        cp[0] = fp[0];
+        cp[1] = fp[1];
+        cp[2] = 2*fp[2];
+        camera->SetPosition(cp);
+        up[0] = 0;
+        up[1] = 1;
+        up[2] = 0;
+        camera->SetViewUp(up);
+    }
+// This suppresses rotation
+//    vtkSmartPointer<vtkInteractorStyleImage> imageStyle = vtkSmartPointer<vtkInteractorStyleImage>::New();
+//    renWin->GetInteractor()->SetInteractorStyle(imageStyle);
+    renderer->ResetCamera();
+    renderer->Render();
+}
+
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
 void SimpleView3D::displayFields(void)
 {
     int ichemo;
-    for (ichemo=0; ichemo<4; ichemo++) {
+    for (ichemo=0; ichemo<max_chemo; ichemo++) {
         if (chemo_select[ichemo] == 0) {
             if (chemo_displayed[ichemo]) {
                 renderer->RemoveActor(sgridActor_array[ichemo]);
@@ -338,12 +411,12 @@ void SimpleView3D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
     float *gradient_array;
     int ichemo;
 
-    for (ichemo=0; ichemo<4; ichemo++) {
-            sgrid_array[ichemo]->SetDimensions(dims);
+    for (ichemo=0; ichemo<max_chemo; ichemo++) {
+        sgrid_array[ichemo]->SetDimensions(dims);
     }
   get_gradient_info(chemo_simulated, &nsites);
   nchemo_used = 0;
-  for (ichemo=0; ichemo<4; ichemo++) {
+  for (ichemo=0; ichemo<max_chemo; ichemo++) {
       if (chemo_simulated[ichemo] == 1) {
           nchemo_used++;
           chemo_used[ichemo] = true;
@@ -352,15 +425,15 @@ void SimpleView3D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
       }
   }
   if (nchemo_used == 0) return;
-  ndata = nsites*(3 + 4*3);
+  ndata = nsites*(3 + max_chemo*3);
   sprintf(msg,"nchem_used: %d nsites: %d ndata: %d",nchemo_used,nsites,ndata);
   LOG_MSG(msg);
   gradient_array = (float *)malloc(ndata*sizeof(float));
-  get_gradients(chemo_simulated, &nsites, gradient_array);
+  get_gradients(chemo_simulated, &nsites, gradient_array, &use_strength);
 
   vtkSmartPointer<vtkFloatArray> vectors;
   vtkSmartPointer<vtkPoints> points;
-  for (ichemo=0; ichemo<4; ichemo++) {
+  for (ichemo=0; ichemo<max_chemo; ichemo++) {
       if (!chemo_used[ichemo]) continue;
 
       // We create the points and vectors.
@@ -372,7 +445,7 @@ void SimpleView3D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
       points->Allocate(nsites);
       gmax[ichemo] = 0;
       for (k=0; k<nsites; k++) {
-          iga = k*(3 + 3*4);
+          iga = k*(3 + 3*max_chemo);
           x[0] = gradient_array[iga];
           x[1] = gradient_array[iga+1];
           x[2] = gradient_array[iga+2];
@@ -444,4 +517,21 @@ void SimpleView3D::CreateTestData(vtkStructuredGrid* sgrid)
   sgrid->SetPoints(points);
 
   sgrid->GetPointData()->SetVectors(vectors);
+}
+
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+void SimpleView3D::makeFrame(int i)
+{
+    setParameters();
+    create();
+    show();
+    aimCamera();
+    char fname_str[64];
+    sprintf(fname_str,"E:/bcell-abm/execution/image/frame%04d.png",i);
+    LOG_MSG(fname_str);
+    QString fname = QString(fname_str);
+    ImageSave *is = new ImageSave(GetRenderWindow());
+    is->save(fname);
+    delete is;
 }

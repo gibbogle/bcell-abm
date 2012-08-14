@@ -1402,12 +1402,13 @@ end subroutine
 ! The gradients are stored in a 1-D array of size = ntsites*(3 + nchem_used*3).
 ! Here we can check the ntsites value.
 !----------------------------------------------------------------------------------------
-subroutine get_gradients(chem_used, ntsites, gradient_array) BIND(C)
+subroutine get_gradients(chem_used, ntsites, gradient_array, use_strength) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_gradients
 use, intrinsic :: iso_c_binding
-integer(c_int) :: chem_used(*), ntsites, ns
+integer(c_int) :: chem_used(*), ntsites, use_strength
 real(c_float) :: gradient_array(*)
-integer :: x, y, z, i, j, k, ic
+integer :: x, y, z, i, j, k, ic, ns
+real :: strength
 logical :: halve = .true.
 
 ns = 0
@@ -1428,10 +1429,15 @@ do z = blobrange(3,1),blobrange(3,2)
 			k = k+1
 			gradient_array(k) = z
 			do ic = 1,4
+		        if (use_strength == 1) then
+		            strength = receptor(ic)%strength
+		        else
+		            strength = 1
+		        endif
 		        do j = 1,3
 		            k = k+1
     			    if (chemo(ic)%used) then
-                        gradient_array(k) = chemo(ic)%grad(j,x,y,z)
+                        gradient_array(k) = strength*chemo(ic)%grad(j,x,y,z)
                     else
                         gradient_array(k) = 0
                     endif

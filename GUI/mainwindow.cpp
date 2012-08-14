@@ -1241,11 +1241,14 @@ void MainWindow::showGradient3D()
 {
     LOG_MSG("showGradient3D");
     SimpleView3D *mySimpleView3D = new SimpleView3D();
-    QSize size = mySimpleView3D->size();
-    sprintf(msg,"mySimpleView3D size: %d %d",size.height(),size.width());
-    LOG_MSG(msg);
+//    QSize size = mySimpleView3D->size();
+//    sprintf(msg,"mySimpleView3D size: %d %d",size.height(),size.width());
+//    LOG_MSG(msg);
+    mySimpleView3D->chooseParameters();
+    mySimpleView3D->create();
     mySimpleView3D->show();
-    mySimpleView3D->GetRenderWindow()->SetSize(768,768);
+    mySimpleView3D->aimCamera();
+//    mySimpleView3D->GetRenderWindow()->SetSize(768,768);
 }
 
 //--------------------------------------------------------------------------------------------------------
