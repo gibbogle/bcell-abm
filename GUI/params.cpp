@@ -275,7 +275,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Number of MRCs",
 "Initial number of MRCs in the follicle.  Each MRC occupies 7 lattice sites."},
 
-{"BASE_EXIT_PROB", 0.006, 0.0, 0.0,
+{"BASE_EXIT_PROB", 0.007, 0.0, 0.0,
 "Base B cell exit probability",
 "A cell located at a boundary site on the lower exit surface has a probability of egress in a time step.\n\
 The specified probability applies to residence time Tres = 15 hr, and will be scaled appropriately for a different Tres value."},

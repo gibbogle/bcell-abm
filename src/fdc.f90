@@ -63,17 +63,17 @@ elseif (method == 3) then
 endif
 write(logmsg,*) 'GC_centre: ',GC_centre
 call logger(logmsg)
-FDClist(1)%ID = 1
-FDClist(1)%site = GC_centre
-FDClist(1)%alive = .true.
+FDC_list(1)%ID = 1
+FDC_list(1)%site = GC_centre
+FDC_list(1)%alive = .true.
 call AssignFDCsites(FDC_TAG,1,nassigned,ok)
 if (.not.ok) then
 	return
 endif
-FDClist(1)%nsites = nassigned
+FDC_list(1)%nsites = nassigned
 NFDC = 1
-nlist = nlist - nassigned
-write(logmsg,*) 'FDC site: ',1,FDClist(1)%site,nassigned
+nBlist = nBlist - nassigned
+write(logmsg,*) 'FDC site: ',1,FDC_list(1)%site,nassigned
 call logger(logmsg)
 ! Now place the rest of the FDCs.
 ! The criteria of FDC location are:
@@ -108,15 +108,15 @@ if (method == 1) then
 					separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
 					if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 						NFDC = NFDC + 1
-						FDClist(NFDC)%ID = NFDC
-						FDClist(NFDC)%site = site
-						FDClist(NFDC)%alive = .true.
+						FDC_list(NFDC)%ID = NFDC
+						FDC_list(NFDC)%site = site
+						FDC_list(NFDC)%alive = .true.
 						call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 						if (.not.ok) then
 							return
 						endif
-						FDClist(NFDC)%nsites = nassigned
-						nlist = nlist - nassigned
+						FDC_list(NFDC)%nsites = nassigned
+						nBlist = nBlist - nassigned
 						if (NFDC == NFDCrequired) exit outer_loop
 					endif
 				enddo
@@ -150,17 +150,17 @@ elseif (method == 2) then
 			separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
 			if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 				NFDC = NFDC + 1
-				FDClist(NFDC)%ID = NFDC
-				FDClist(NFDC)%site = site
-				FDClist(NFDC)%alive = .true.
+				FDC_list(NFDC)%ID = NFDC
+				FDC_list(NFDC)%site = site
+				FDC_list(NFDC)%alive = .true.
 				call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 				if (.not.ok) then
 					return
 				endif
-				FDClist(NFDC)%nsites = nassigned
-				nlist = nlist - nassigned
+				FDC_list(NFDC)%nsites = nassigned
+				nBlist = nBlist - nassigned
 				checked(dx,dy,dz) = .true.
-				write(logmsg,'(a,10i4)') 'FDC site: ilim: ',NFDC,ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
+				write(logmsg,'(a,10i4)') 'FDC site: ilim: ',NFDC,ilim,dx,dy,dz,NFDC,FDC_list(NFDC)%site,nassigned
 				call logger(logmsg)
 				if (NFDC == NFDCrequired) then
 					done = .true.
@@ -198,17 +198,17 @@ elseif (method == 3) then
 			separation_limit(FDC_TAG,MRC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
 			if (FDCSiteAllowed(FDC_TAG,site,separation_limit)) then
 				NFDC = NFDC + 1
-				FDClist(NFDC)%ID = NFDC
-				FDClist(NFDC)%site = site
-				FDClist(NFDC)%alive = .true.
+				FDC_list(NFDC)%ID = NFDC
+				FDC_list(NFDC)%site = site
+				FDC_list(NFDC)%alive = .true.
 				call AssignFDCsites(FDC_TAG,NFDC,nassigned,ok)
 				if (.not.ok) then
 					return
 				endif
-				FDClist(NFDC)%nsites = nassigned
-				nlist = nlist - nassigned
+				FDC_list(NFDC)%nsites = nassigned
+				nBlist = nBlist - nassigned
 				checked(dx,dy,dz) = .true.
-!				write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDClist(NFDC)%site,nassigned
+!				write(logmsg,'(a,9i4)') 'FDC site: ilim: ',ilim,dx,dy,dz,NFDC,FDC_list(NFDC)%site,nassigned
 !				call logger(logmsg)
 				if (NFDC == NFDCrequired) then
 					done = .true.
@@ -222,7 +222,7 @@ endif
 
 call AssignCellBdrySites(FDC_TAG)
 
-write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nlist
+write(logmsg,'(a,2i6)') 'Number of FDCs, B cells: ',NFDC,nBlist
 call logger(logmsg)
 end subroutine
 
@@ -289,15 +289,15 @@ if (method == 1) then
 		separation_limit(MRC_TAG,FDC_TAG) = FDC_MRC_SEPARATION*(0.8 + 0.3*R)
 		if (FDCSiteAllowed(MRC_TAG,site,separation_limit)) then
 			NMRC = NMRC + 1
-			MRClist(NMRC)%ID = NMRC
-			MRClist(NMRC)%site = site
-			MRClist(NMRC)%alive = .true.
+			MRC_list(NMRC)%ID = NMRC
+			MRC_list(NMRC)%site = site
+			MRC_list(NMRC)%alive = .true.
 			call AssignFDCsites(MRC_TAG,NMRC,nassigned,ok)
 			if (.not.ok) then
 				return
 			endif
-			MRClist(NMRC)%nsites = nassigned
-			nlist = nlist - nassigned
+			MRC_list(NMRC)%nsites = nassigned
+			nBlist = nBlist - nassigned
 			if (NMRC == NMRCrequired) exit
 		endif
 	enddo
@@ -305,7 +305,7 @@ endif
 
 call AssignCellBdrySites(MRC_TAG)
 
-write(logmsg,'(a,3i6)') 'Number of MRCs, B cells, iterations: ',NMRC,nlist,k
+write(logmsg,'(a,3i6)') 'Number of MRCs, B cells, iterations: ',NMRC,nBlist,k
 call logger(logmsg)
 end subroutine
 
@@ -321,7 +321,7 @@ integer :: ifdc, imrc, site(3), k
 real :: r(3), d
 
 do ifdc = 1,NFDC
-	r = FDClist(ifdc)%site - site0
+	r = FDC_list(ifdc)%site - site0
 	d = norm(r)
 	if (d < rlimit(tag,FDC_TAG)) then
 		FDCSiteAllowed = .false.
@@ -329,7 +329,7 @@ do ifdc = 1,NFDC
 	endif
 enddo
 do imrc = 1,NMRC
-	r = MRClist(imrc)%site - site0
+	r = MRC_list(imrc)%site - site0
 	d = norm(r)
 	if (d < rlimit(tag,MRC_TAG)) then
 		FDCSiteAllowed = .false.
@@ -372,10 +372,10 @@ if (USE_CELL_SITES) then
 		bdry = .false.
 		do i = 2,7
 			if (tag == FDC_TAG) then
-				fsite = FDClist(ic)%site + DCoffset(:,i)
+				fsite = FDC_list(ic)%site + DCoffset(:,i)
 				occupancy(fsite(1),fsite(2),fsite(3))%FDC_nbdry = 1
 			elseif (tag == MRC_TAG) then
-				fsite = MRClist(ic)%site + DCoffset(:,i)
+				fsite = MRC_list(ic)%site + DCoffset(:,i)
 				occupancy(fsite(1),fsite(2),fsite(3))%MRC_nbdry = 1
 			endif
 		enddo
@@ -396,10 +396,10 @@ else
 				do dz = -2,2
 					if (bdry(dx,dy,dz)) then
 						if (tag == FDC_TAG) then
-							site = FDClist(ic)%site + (/dx,dy,dz/)
+							site = FDC_list(ic)%site + (/dx,dy,dz/)
 							occupancy(site(1),site(2),site(3))%FDC_nbdry = occupancy(site(1),site(2),site(3))%FDC_nbdry + 1
 						elseif (tag == MRC_TAG) then
-							site = MRClist(ic)%site + (/dx,dy,dz/)
+							site = MRC_list(ic)%site + (/dx,dy,dz/)
 							occupancy(site(1),site(2),site(3))%MRC_nbdry = occupancy(site(1),site(2),site(3))%MRC_nbdry + 1
 						endif
 					endif
@@ -415,7 +415,7 @@ end subroutine
 ! That is for every site (x,y,z), create the list of DC that are near this site:
 ! occupancy(x,y,z)%DC(1:3), where occupancy(x,y,z)%DC(0) = number of nearby DC (if >= 0)
 ! To avoid having to explicitly select the closest DC (when there are more than DCDIM-1 near
-! a site), the order of scanning the DClist is randomized.
+! a site), the order of scanning the DC_list is randomized.
 ! NOT USED
 !-----------------------------------------------------------------------------------------
 subroutine reassign_DC(kpar,ok)
@@ -437,14 +437,14 @@ call permute(perm,NDC,kpar)
 NDCalive = 0
 do k = 1,NDC
     idc = perm(k)
-    if (.not.DClist(idc)%alive) cycle
-	if (DClist(idc)%nsites < NDCsites) then
+    if (.not.DC_list(idc)%alive) cycle
+	if (DC_list(idc)%nsites < NDCsites) then
 		call AssignFDCsites(0,idc,nassigned,ok)
 		if (.not.ok) return
-		DClist(idc)%nsites = nassigned
+		DC_list(idc)%nsites = nassigned
 	endif
     NDCalive = NDCalive + 1
-    site = DClist(idc)%site
+    site = DC_list(idc)%site
     xdc = site(1)
     ydc = site(2)
     zdc = site(3)
@@ -499,7 +499,7 @@ if (NDCsites /= 7) then
 endif
 do
     idc = random_int(1,NDC,kpar)
-    if (DClist(idc)%alive) exit
+    if (DC_list(idc)%alive) exit
 enddo
 dir = random_int(1,6,kpar)
 call moveDC(idc,dir)
@@ -507,7 +507,7 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! A DC is allowed to move only if it has grown to its full extent,
-! i.e. if DClist()%nsites = NDCsites
+! i.e. if DC_list()%nsites = NDCsites
 ! For now allow only moves in the 6 principal directions (Neumann).
 ! Currently valid only for NDCsites = 7.
 ! Cells in the 5 sites in the path of the DC step are moved.
@@ -519,9 +519,9 @@ subroutine moveDC(idc,dir)
 integer :: idc, dir
 integer :: k, i, kcell, indx(2), site0(3), site1(3), site2(3), step(3)
 
-if (DClist(idc)%nsites /= NDCsites) return
+if (DC_list(idc)%nsites /= NDCsites) return
 step = neumann(:,dir)
-site0 = DClist(idc)%site
+site0 = DC_list(idc)%site
 do k = 2,NDCsites
     if (all(DCoffset(:,k) == step)) then       ! this is in the direction of step
         ! move site contents by 3 sites in opposite direction to step
@@ -537,7 +537,7 @@ do k = 2,NDCsites
         do i = 1,2
             kcell = indx(i)
             if (kcell /= 0) then
-                cellist(kcell)%site = site1
+                Bcell_list(kcell)%site = site1
             endif
         enddo
         occupancy(site2(1),site2(2),site2(3))%indx = -idc
@@ -560,13 +560,13 @@ do k = 2,NDCsites
         do i = 1,2
             kcell = indx(i)
             if (kcell /= 0) then
-                cellist(kcell)%site = site1
+                Bcell_list(kcell)%site = site1
             endif
         enddo
         occupancy(site2(1),site2(2),site2(3))%indx = -idc
     endif
 enddo
-DClist(idc)%site = site0 + step
+DC_list(idc)%site = site0 + step
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -624,11 +624,11 @@ integer :: ifdc, imrc, k, site(3), site1(3), indx(2)
 ok = .false.
 if (tag == FDC_TAG) then
 	ifdc = ic
-	site = FDClist(ifdc)%site
+	site = FDC_list(ifdc)%site
 	occupancy(site(1),site(2),site(3))%indx = -ifdc				! This site holds an FDC (centre)
 elseif (tag == MRC_TAG) then
 	imrc = ic
-	site = MRClist(imrc)%site
+	site = MRC_list(imrc)%site
 	occupancy(site(1),site(2),site(3))%indx = -(1000 + imrc)	! This site holds an MRC (centre)
 endif
 nassigned = 1

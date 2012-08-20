@@ -114,6 +114,7 @@ MyVTK::MyVTK(QWidget *page, QWidget *key_page)
     DCfade = false;
 	playing = false;
 	paused = false;
+    record = false;
 
 	ren->GetActiveCamera()->Zoom(zoomlevel);		// try zooming OUT
 }
@@ -282,6 +283,37 @@ void MyVTK::createMappers()
 	sphere2->Delete();
 	append1->Delete();
 	append2->Delete();
+}
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::startRecorder(QString basefile, int nframes)
+{
+    if (w2i == 0) {
+        w2i = vtkWindowToImageFilter::New();
+        w2i->SetInput(renWin);	//the render window
+        jpgwriter = vtkSmartPointer<vtkJPEGWriter>::New();
+        jpgwriter->SetInputConnection(w2i->GetOutputPort());
+}
+    framenum = 0;
+    LOG_MSG("set up writer");
+    record = true;
+    record_basename = basefile;
+    record_nframes = nframes;
+    record_it = 0;
+    LOG_MSG("Started recording");
+}
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::stopRecorder()
+{
+    record = false;
+//    jpgwriter->RemoveAllInputs();
+//    jpgwriter->Delete();
+//    w2i->RemoveAllInputs();
+//    w2i->Delete();
+    LOG_MSG("Stopped recording");
 }
 
 //-----------------------------------------------------------------------------------------
@@ -455,7 +487,10 @@ void MyVTK::renderCells(bool redo, bool zzz)
 		ren->ResetCamera();
 	}
 	iren->Render();
-	first_VTK = false;	
+    first_VTK = false;
+    if (record) {
+        recorder();
+    }
 }
 
 //---------------------------------------------------------------------------------------------
@@ -1007,12 +1042,39 @@ bool MyVTK::nextFrame()
 	char numstr[5];
 	sprintf(numstr,"%04d",framenum);
 	if (save_image) {
-		w2i->Modified();	//importante 
+        w2i->Modified();	//important
         jpgwriter->SetFileName((casename + numstr + ".jpg").toStdString().c_str());
         jpgwriter->Write();
 	}
 	framenum++;
 	return true;
+}
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+void MyVTK::recorder()
+{
+    char numstr[5];
+    char filename[512];
+
+    sprintf(msg,"recorder: record_it: %d",record_it);
+    LOG_MSG(msg);
+    if (record_it > record_nframes) {
+        record = false;
+        return;
+    }
+    sprintf(numstr,"%05d",framenum);
+    w2i->Modified();	//important
+//    strcpy(filename,record_basename);
+//    strcat(filename,numstr);
+//    strcat(filename,".jpg");
+    strcpy(filename ,(record_basename + numstr + ".jpg").toStdString().c_str());
+    jpgwriter->SetFileName(filename);
+    jpgwriter->Write();
+    sprintf(msg,"recorder: it: %d frame: %d filename: %s",record_it,framenum,filename);
+    LOG_MSG(msg);
+    record_it++;
+    framenum++;
 }
 
 //-----------------------------------------------------------------------------------------

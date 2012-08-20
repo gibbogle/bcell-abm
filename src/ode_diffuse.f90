@@ -244,7 +244,7 @@ enddo
 
 ! Secretion by FDCs
 !do ifdc = 1,NFDC
-!	site = FDClist(ifdc)%site
+!	site = FDC_list(ifdc)%site
 !	do dx = -2,2
 !		x = site(1)+dx
 !		do dy = -2,2
@@ -254,7 +254,7 @@ enddo
 !				if (dx*dx+dy*dy+dz*dz > 4.1) cycle
 !				if (occupancy(x,y,z)%indx(1) >= 0) then
 !					i = ODEdiff%ivar(x,y,z)
-!					dv(i) = dv(i) + FDClist(ifdc)%secretion
+!					dv(i) = dv(i) + FDC_list(ifdc)%secretion
 !				endif
 !			enddo
 !		enddo

@@ -6,7 +6,7 @@
 #include <QtCore>
 #include <QIODevice>
 #include <QVTKWidget.h>
-#include <vtkRenderer.h> 
+#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include "vtkSphereSource.h"
 #include "vtkCylinderSource.h"
@@ -75,7 +75,10 @@ public:
 	void pause();
 	void playon();
 	void saveSnapshot(QString, QString);
-	void stop();
+    void startRecorder(QString basename, int nframes);
+    void stopRecorder();
+    void recorder();
+    void stop();
 
 	QList<CELL_POS > BCpos_list;
 	QList<CELL_POS > DCpos_list;
@@ -114,12 +117,20 @@ public:
 	bool playing;
 	bool paused;
 	bool save_image;
-	QString casename;
+    QString casename;
 	int framenum;
 	QTimer *timer;
 	QString infile;
 	QFile *playerData;
 	QTextStream *playerStream;
+
+    // Image recorder
+    bool record;
+    QString record_basename;
+    int record_nframes;
+    int record_it;
+
+public slots:
 
 };
 

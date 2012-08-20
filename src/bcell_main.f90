@@ -68,7 +68,6 @@ write(*,*) 'call execute'
 write(nfrun,*) 'infile: ',infile
 write(nfrun,*) 'outfile: ',outfile
 call execute(ncpu,infile,inbuflen,outfile,outbuflen)
-!call get_dimensions(NX,NY,NZ,Nsteps)
 call cpu_time(t1)
 
 do jstep = 1,Nsteps

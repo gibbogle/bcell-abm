@@ -12,8 +12,9 @@ use winsock
 
 implicit none
 
-INTEGER,  PARAMETER  ::  DP=SELECTED_REAL_KIND( 12, 60 )
-integer, parameter :: REAL_KIND = 4
+!INTEGER,  PARAMETER  ::  DP=SELECTED_REAL_KIND( 12, 60 )
+INTEGER,  PARAMETER  ::  SP = kind(1.0), DP = kind(1.0d0)
+integer, parameter :: REAL_KIND = SP
 
 ! General parameters
 integer, parameter :: BIG_INT = 2**30
@@ -25,6 +26,7 @@ integer, parameter :: MAXRELDIR = 26
 
 ! B cell activation stage
 integer, parameter :: NAIVE		  = 1
+integer, parameter :: CD4_HELP	  = 1
 integer, parameter :: ANTIGEN_MET = 2
 integer, parameter :: CCR7_UP     = 3
 integer, parameter :: TCELL_MET   = 4
@@ -43,7 +45,8 @@ integer, parameter :: TESTCELL2 = 21
 
 
 integer, parameter :: BCL6_LO = 1
-integer, parameter :: BCL6_HI = GCC_COMMIT
+integer, parameter :: BCL6_HI = GCC_COMMIT	! = 7
+integer, parameter :: TETHERED = 4
 
 real, parameter :: T_CCR7_UP   = 2*60
 real, parameter :: T_EBI2_UP = 2*60
@@ -83,8 +86,7 @@ integer, parameter :: S1PR2    = 5		! S1P (negative)
 integer, parameter :: NCTYPES = 4
 integer, parameter :: NONCOG_TYPE_TAG  = 1
 integer, parameter :: COG_TYPE_TAG  = 2
-integer, parameter :: COG_CD4_TAG  = 2
-integer, parameter :: COG_CD8_TAG  = 3
+integer, parameter :: COG_CD4_CELL  = 3
 integer, parameter :: TAGGED_CELL = 100
 integer, parameter :: RES_TAGGED_CELL = 101
 integer, parameter :: OUTSIDE_TAG = -9999
@@ -102,7 +104,7 @@ integer, parameter :: nfcell = 10, nfout = 11, nfvec = 12, nfpath = 13, nfres = 
 real, parameter :: BIG_TIME = 100000
 real, parameter :: BALANCER_INTERVAL = 10
 real, parameter :: DELTA_T = 0.25       ! minutes
-logical, parameter :: use_gaplist = .true.
+logical, parameter :: use_gaplist = .false.		! Do not use gaplist until there is a way to preserve B cell - CD4 cell association
 logical, parameter :: use_add_count = .true.    ! keep count of sites to add/remove, do the adjustment at regular intervals 
 logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
@@ -176,6 +178,8 @@ end type
 ! Ex-globalvar definitions
 integer :: NBcells0
 integer :: NBcells
+integer :: NTcells0
+integer :: NTcells
 integer :: Nsites
 integer :: NDC
 integer :: NDCalive
@@ -200,8 +204,7 @@ type result_type
     integer :: N_Dead
 end type
 
-type cog_type
-    sequence
+type Bcog_type
 	integer :: ID			! ID of the originating naive cell
 	real :: dietime			! time that the cell dies
 	real :: dividetime		! time that the cell divides
@@ -211,24 +214,33 @@ type cog_type
 	integer(2) :: region
 	integer(2) :: status	! BCL6_LO, BCL6_HI, PLASMA
 	integer :: cogID		! index in the list of cognate cells
+	integer :: CD4index		! index of tethered CD4 T helper cell
 end type
 
-type cell_type
-    sequence
+type Bcell_type
     integer :: ID
     logical :: exists
     integer :: site(3)
     integer :: step
     integer(2) :: ctype
 	integer(2) :: lastdir
+	integer :: BCindex		! for a tethered CD4 cell, index of the associated B cell
     real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
     real :: receptor_level(MAX_RECEPTOR)  ! level of receptor (susceptibility to the chemokine signal)
     real :: receptor_saturation_time(MAX_RECEPTOR)  ! when receptor was saturated (lost susceptibility to the chemokine signal)
-    type(cog_type),pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
+    type(Bcog_type),pointer :: cptr    ! because NULL is used by winsock (from ifwinty).  NULLIFY() instead.
+end type
+
+type Tcell_type
+    integer :: ID
+    logical :: exists
+    integer :: site(3)
+    integer(2) :: ctype
+	integer(2) :: lastdir
+    real :: entrytime       ! time that the cell entered the paracortex (by HEV or cell division)
 end type
 
 type DC_type
-    sequence
     integer :: ID               ! unique ID number
     integer :: site(3)          ! DC location
     integer :: nsites
@@ -243,7 +255,6 @@ type DC_type
 end type
 
 type FDC_type					! (Also used for MRCs)
-    sequence
     integer :: ID               ! unique ID number
     integer :: site(3)          ! FDC/MRC location
     integer :: nsites
@@ -418,21 +429,24 @@ real, allocatable :: chemo_p(:,:,:,:)
 
 ! Cell data
 type(occupancy_type), allocatable :: occupancy(:,:,:)
-type(cell_type), allocatable, target :: cellist(:)
+type(Bcell_type), allocatable, target :: Bcell_list(:)
+!type(Tcell_type), allocatable, target :: Tcell_list(:)
 integer, allocatable :: cognate_list(:)
 integer, allocatable :: gaplist(:)
-type(DC_type), allocatable :: DClist(:)
-type(FDC_type), allocatable :: FDClist(:)
-type(FDC_type), allocatable :: MRClist(:)
-integer :: lastID, MAX_COG, lastcogID, nlist, n2Dsites, ngaps, ntagged=0, ID_offset, ncogseed, nbdry
-integer :: lastNBcells, k_nonrandom
-integer :: max_nlist, max_ngaps
-integer :: nadd_sites, ndivisions
+type(DC_type), allocatable :: DC_list(:)
+type(FDC_type), allocatable :: FDC_list(:)
+type(FDC_type), allocatable :: MRC_list(:)
+integer :: MAX_COG, lastcogID, ncogseed
+integer :: max_nBlist, nBlist, lastBCID, lastNBcells, k_nonrandom
+!integer :: max_nTlist, nTlist, lastTCID
+integer :: max_ngaps, ngaps
+integer :: nadd_sites, ndivisions, nbdry, ntagged=0
 real :: Kdeath_lo(MMAX_GEN), Kdeath_hi(MMAX_GEN)
 real :: lastbalancetime
 real :: scale_factor	! scaling from model to one (or more) whole LNs
-real :: Fcognate		! fraction of T cells in circulation that are cognate
+real :: Fcognate		! fraction of B cells in circulation that are cognate
 logical :: use_cognate
+logical, parameter :: use_Tcells = .false.
 
 ! Result data
 type(result_type) :: localres, totalres
@@ -628,26 +642,8 @@ endif
 end function
 
 !-----------------------------------------------------------------------------------------
-! Returns the user-defined structure type to be used with a cell of type ctype.
-!-----------------------------------------------------------------------------------------
-integer function struct_type(ctype)
-integer :: ctype
-
-select case(ctype)
-case(NONCOG_TYPE_TAG,TAGGED_CELL,RES_TAGGED_CELL)
-    struct_type = NONCOG_TYPE_TAG
-case(COG_CD4_TAG,COG_CD8_TAG)
-    struct_type = COG_TYPE_TAG
-case default
-    write(logmsg,*) 'ERROR: struct_type: unrecognised cell type: ',ctype
-    call logger(logmsg)
-    stop
-end select
-end function
-
-!-----------------------------------------------------------------------------------------
-! Squeeze gaps out of cellist array, adjusting occupancy array.
-! A gap is indicated by cellist(k)%ID = 0.  Note that a gap should never correspond
+! Squeeze gaps out of Bcell_list array, adjusting occupancy array.
+! A gap is indicated by Bcell_list(k)%ID = 0.  Note that a gap should never correspond
 ! to a cognate cell, since we keep info for cognate cells after they leave or die.
 ! If use_gaplist = false, ngaps is always = 0, and there is no squeezing.
 !-----------------------------------------------------------------------------------------
@@ -659,13 +655,13 @@ logical :: ok
 !write(*,*) 'squeezer'
 if (ngaps == 0) return
 if (.not.force .and. (ngaps < max_ngaps/10)) return
-write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nlist
+write(nflog,*) 'squeezer: ',ngaps,max_ngaps,nBlist
 
 n = 0
-do k = 1,nlist
-    if (cellist(k)%ID == 0) then    ! a gap
-		if (associated(cellist(k)%cptr)) then
-			write(*,*) 'Error: squeezer: gap cell is cognate: ',k,cellist(k)%cptr%cogID
+do k = 1,nBlist
+    if (Bcell_list(k)%ID == 0) then    ! a gap
+		if (associated(Bcell_list(k)%cptr)) then
+			write(*,*) 'Error: squeezer: gap cell is cognate: ',k,Bcell_list(k)%cptr%cogID
 			stop
 		endif
         n = n+1
@@ -675,19 +671,19 @@ if (n /= ngaps) then
 	write(*,*) 'Error: squeezer: inconsistent gap counts: ',n,ngaps
 	stop
 endif
-last = nlist
+last = nBlist
 k = 0
 n = 0
 do
     k = k+1
-    if (cellist(k)%ID == 0) then    ! a gap
+    if (Bcell_list(k)%ID == 0) then    ! a gap
         if (k == last) exit
         do
             if (last == 0) then
                 write(nflog,*) 'last = 0: k: ',k
                 stop
             endif
-            if (cellist(last)%ID == 0) then
+            if (Bcell_list(last)%ID == 0) then
                 last = last-1
                 n = n+1
                 if (n == ngaps) exit
@@ -696,11 +692,11 @@ do
             endif
         enddo
         if (n == ngaps) exit
-        call copycell2cell(cellist(last),cellist(k),k)
-		if (associated(cellist(last)%cptr)) then
-			region = get_region(cellist(last)%cptr)
-			deallocate(cellist(last)%cptr)
-			if (.not.associated(cellist(k)%cptr)) then
+        call copycell2cell(Bcell_list(last),Bcell_list(k),k)
+		if (associated(Bcell_list(last)%cptr)) then
+			region = get_region(Bcell_list(last)%cptr)
+			deallocate(Bcell_list(last)%cptr)
+			if (.not.associated(Bcell_list(k)%cptr)) then
 				write(*,*) 'Error: squeezer: cell copy target cptr npt associated: ',last,k
 				stop
 			endif
@@ -708,11 +704,11 @@ do
 			region = FOLLICLE
 		endif
 		
-		cellist(last)%ID = 0
-		cellist(last)%exists = .false.
+		Bcell_list(last)%ID = 0
+		Bcell_list(last)%exists = .false.
 		
 		if (region == FOLLICLE) then
-	        site = cellist(last)%site
+	        site = Bcell_list(last)%site
 	        indx = occupancy(site(1),site(2),site(3))%indx
 	        do i = 1,2
 	            if (indx(i) == last) indx(i) = k
@@ -724,7 +720,7 @@ do
     endif
     if (n == ngaps) exit
 enddo
-nlist = nlist - ngaps
+nBlist = nBlist - ngaps
 ngaps = 0
 end subroutine
 
@@ -735,11 +731,11 @@ integer :: k, kcell
 
 do k = 1,lastcogID
     kcell = cognate_list(k)
-    if (kcell > nlist) then
-        write(*,*) 'check_cognate_list: bad cognate_list entry > nlist: ',lastcogID,k,kcell,nlist
+    if (kcell > nBlist) then
+        write(*,*) 'check_cognate_list: bad cognate_list entry > nBlist: ',lastcogID,k,kcell,nBlist
         stop
     endif
-    if (.not.associated(cellist(kcell)%cptr)) then
+    if (.not.associated(Bcell_list(kcell)%cptr)) then
 		write(*,*) 'check_cognate_list: cptr not associated: istep: ',istep,lastcogID,k,kcell
 		stop
 	endif
@@ -747,44 +743,43 @@ enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! Copy the contents of cellist(kfrom) to the entry cellist(kto)
+! Copy the contents of Bcell_list(kfrom) to the entry Bcell_list(kto)
 ! Need to fix up the corresponding cognate_list() entry as well.
 ! Note that:
-!   cell = cellist(kcell)
+!   cell = Bcell_list(kcell)
 !   kcog = cell%cptr%cogID
 !   k = cognate_list(kcog)
 ! =>
 !   k = kcell
 ! The new version is safer since it protects against failing to change this subroutine
-! when the components of cell_type are changed (as long as there is only one pointer, %cptr)
+! when the components of Bcell_type are changed (as long as there is only one pointer, %cptr)
 !-----------------------------------------------------------------------------------------
 subroutine copycell2cell(cell_from,cell_to,kcell)
 integer :: kcell
-type(cell_type) :: cell_from, cell_to
-integer :: ctype, stype, kcog
+type(Bcell_type) :: cell_from, cell_to
+integer :: ctype, kcog
 integer :: region_to, region_from
 logical :: new_version = .true.
 logical :: check = .false.
 
 ctype = cell_from%ctype
-stype = struct_type(ctype)
 
 if (new_version) then
 	cell_to = cell_from
 	nullify(cell_to%cptr)
 endif
-if (stype == NONCOG_TYPE_TAG .and. associated(cell_to%cptr)) then
+if (ctype /= COG_TYPE_TAG .and. associated(cell_to%cptr)) then
     deallocate(cell_to%cptr)
 endif
-if (stype == COG_TYPE_TAG) then
+if (ctype == COG_TYPE_TAG) then
     if (.not.associated(cell_to%cptr)) then
         allocate(cell_to%cptr)
     endif
     cell_to%cptr = cell_from%cptr
     kcog = cell_to%cptr%cogID
     cognate_list(kcog) = kcell
-elseif (stype /= NONCOG_TYPE_TAG) then
-    write(logmsg,*) 'ERROR: copycell2cell: istep, ID, ctype, stype: ',istep,cell_from%ID,ctype,stype
+elseif (ctype /= NONCOG_TYPE_TAG .and. ctype /= COG_CD4_CELL) then
+    write(logmsg,*) 'ERROR: copycell2cell: istep, ID, ctype: ',istep,cell_from%ID,ctype
     call logger(logmsg)
     stop
 endif
@@ -797,6 +792,7 @@ if (.not.new_version) then
 	cell_to%lastdir = cell_from%lastdir
 	cell_to%entrytime = cell_from%entrytime
 	cell_to%receptor_level = cell_from%receptor_level
+	cell_to%BCindex = cell_from%BCindex
 endif
 if (check) then
 	if (cell_to%ID /= cell_from%ID) then
@@ -809,7 +805,7 @@ if (check) then
 	    call logger(logmsg)
 	    stop
     endif
-    if (stype == COG_TYPE_TAG) then
+    if (ctype == COG_TYPE_TAG) then
         region_to = get_region(cell_to%cptr)
         region_from = get_region(cell_from%cptr)
         if (region_to /= region_from) then
@@ -884,8 +880,8 @@ if (kdc == 0) then
     return
 endif
 do idc = 1,kdc
-    if (.not.FDClist(idc)%alive) cycle
-    r = site - FDClist(idc)%site
+    if (.not.FDC_list(idc)%alive) cycle
+    r = site - FDC_list(idc)%site
     d = norm(r)     ! units sites
     if (d < prox) then
         tooNearFDC = .true.
@@ -1013,22 +1009,22 @@ end function
 integer function cell_count()
 integer :: kcell, ntot
 ntot = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
     ntot = ntot + 1
 enddo
 cell_count = ntot
 end function
 
 !-----------------------------------------------------------------------------------------
-! The type (cognate or non-cognate) of a T cell can be random or strictly determined.
+! The type (cognate or non-cognate) of a B cell can be random or strictly determined.
 !-----------------------------------------------------------------------------------------
-integer function select_cell_type(kpar)
+integer function select_Bcell_type(kpar)
 integer :: kpar
 integer :: nratio
 
 if (random_cognate) then
-    select_cell_type = random_cell_type(kpar)
+    select_Bcell_type = random_Bcell_type(kpar)
 else
 	if (mod(istep,6*4*60) == 1) then	! update Fcognate every 6 hours - otherwise mod(k_nonrandom,nratio) messed up
 		Fcognate = BC_COGNATE_FRACTION - (scale_factor*Ncogseed)/NBC_BODY
@@ -1036,24 +1032,24 @@ else
     nratio = 1./Fcognate
     k_nonrandom = k_nonrandom + 1
     if (mod(k_nonrandom,nratio) == 0) then
-        select_cell_type = COG_TYPE_TAG
+        select_Bcell_type = COG_TYPE_TAG
     else
-        select_cell_type = NONCOG_TYPE_TAG
+        select_Bcell_type = NONCOG_TYPE_TAG
     endif
 endif
 end function
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
-integer function random_cell_type(kpar)
+integer function random_Bcell_type(kpar)
 integer :: kpar
 real(DP) :: R
 
 R = par_uni(kpar)
 if (R > Fcognate) then
-    random_cell_type = NONCOG_TYPE_TAG
+    random_Bcell_type = NONCOG_TYPE_TAG
 else
-    random_cell_type = COG_TYPE_TAG
+    random_Bcell_type = COG_TYPE_TAG
 endif
 end function
 
@@ -1113,7 +1109,7 @@ end function
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
 subroutine set_stage(p,stage)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: stage
 
 p%stage = stage
@@ -1122,7 +1118,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 integer function get_stage(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 get_stage = p%stage
 end function
@@ -1130,7 +1126,7 @@ end function
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
 subroutine set_status(p,status)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: status
 
 p%status = status
@@ -1139,7 +1135,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 integer function get_status(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 get_status = p%status
 end function
@@ -1147,7 +1143,7 @@ end function
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine set_region(p,region)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: region
 
 p%region = region
@@ -1156,7 +1152,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 integer function get_region(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 get_region = p%region
 end function
@@ -1164,7 +1160,7 @@ end function
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
 subroutine set_generation(p,gen)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: gen
 
 p%generation = gen
@@ -1173,7 +1169,7 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 integer function get_generation(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 get_generation = p%generation
 end function
@@ -1187,7 +1183,7 @@ end function
 subroutine show_lineage(id)
 integer :: id
 integer :: k, kcell, gen, stage, status
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 logical, save :: first = .true.
 
 if (first) then
@@ -1202,7 +1198,7 @@ do k = 1,lastcogID
 		call logger(logmsg)
 		stop
 	endif
-	p => cellist(kcell)%cptr
+	p => Bcell_list(kcell)%cptr
 	if (.not.associated(p)) then
 		write(logmsg,*) 'Error: show_lineage: p not associated: ',kcell,k
 		call logger(logmsg)
@@ -1222,18 +1218,18 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine show_cognate_cell(kcell)
 integer :: kcell
-type(cog_type), pointer :: p
-type(cell_type) :: bcell
+type(Bcog_type), pointer :: p
+type(Bcell_type) :: bcell
 integer :: gen, stage, region
 
-bcell = cellist(kcell)
+bcell = Bcell_list(kcell)
 if (.not.associated(bcell%cptr)) then
     write(logmsg,*) 'ERROR: show_cognate_cell: cptr not associated: ',kcell
     call logger(logmsg)
     stop
 endif
 p => bcell%cptr
-write(logmsg,*) 'Cognate cell: ',p%cogID,kcell,cellist(kcell)%ID
+write(logmsg,*) 'Cognate cell: ',p%cogID,kcell,Bcell_list(kcell)%ID
 call logger(logmsg)
 write(logmsg,'(a,i10,a,3i4,a,i2)') '  ID: ',bcell%ID,' site: ',bcell%site,' ctype: ',bcell%ctype
 call logger(logmsg)
@@ -1255,17 +1251,16 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine make_cognate_list(ok)
 logical :: ok
-integer :: kcell, ctype, stype, cogID
-type(cog_type), pointer :: p
+integer :: kcell, ctype, cogID
+type(Bcog_type), pointer :: p
 
 ok = .true.
 cognate_list(1:lastcogID) = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    ctype = cellist(kcell)%ctype
-    stype = struct_type(ctype)
-    if (stype == COG_TYPE_TAG) then
-        p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    ctype = Bcell_list(kcell)%ctype
+    if (ctype == COG_TYPE_TAG) then
+        p => Bcell_list(kcell)%cptr
         cogID = p%cogID
         if (cogID == 0) then
             lastcogID = lastcogID + 1
@@ -1304,7 +1299,7 @@ end subroutine
 !--------------------------------------------------------------------------------
 subroutine save_cell_positions
 integer :: k, kcell, site(3), j
-integer :: ibcstate, stype, ctype, stage, region
+integer :: ibcstate, ctype, stage, region
 real :: bcell_diam = 0.9
 integer :: gen, bnd(2)
 logical :: ex
@@ -1344,10 +1339,10 @@ endif
 do k = 1,lastcogID
 	kcell = cognate_list(k)
 	if (kcell > 0) then
-		region = get_region(cellist(kcell)%cptr)
+		region = get_region(Bcell_list(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
-		site = cellist(kcell)%site
-		gen = cellist(kcell)%cptr%generation
+		site = Bcell_list(kcell)%site
+		gen = Bcell_list(kcell)%cptr%generation
 		ibcstate = gen
 		write(nfpos,'(a2,i6,3i4,f4.1,i3)') 'T ',k-1, site, bcell_diam, ibcstate
 	endif
@@ -1388,12 +1383,12 @@ write(nfcmgui,*) '    value.'
 do k = 1,lastcogID
     kcell = cognate_list(k)
     if (kcell > 0) then
-		stage = get_stage(cellist(kcell)%cptr)
-		region = get_region(cellist(kcell)%cptr)
+		stage = get_stage(Bcell_list(kcell)%cptr)
+		region = get_region(Bcell_list(kcell)%cptr)
 		if (region /= FOLLICLE) cycle
         nd = nd+1
-        site = cellist(kcell)%site
-		gen = cellist(kcell)%cptr%generation
+        site = Bcell_list(kcell)%site
+		gen = Bcell_list(kcell)%cptr%generation
         bcstate = (gen-1.0)/(BC_MAX_GEN-1.0)*spectrum_max*spectrum_freefraction
         write(nfcmgui,'(a,i8,3i4,f4.1,f6.2)') 'Node: ',nd, site, bcell_diam, bcstate
     endif
@@ -1739,9 +1734,9 @@ integer :: k
 integer :: kcell, xyzsum(3)
 
 xyzsum = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    xyzsum = xyzsum + cellist(kcell)%site
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    xyzsum = xyzsum + Bcell_list(kcell)%site
 enddo
 write(nfres,'(2i6,3i12)') istep,k,xyzsum
 end subroutine
@@ -1782,18 +1777,18 @@ real :: tot(NZ)
 integer :: kcell, site(3)
 
 tot = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    site = cellist(kcell)%site
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    site = Bcell_list(kcell)%site
     tot(site(3)) = tot(site(3)) + 1
 enddo
-tot = tot/nlist
+tot = tot/nBlist
 end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! For a location xyz, check that the occupancy() info is consistent with the info in
-! the cellist() entries corresponding to occupancy()%indx (if any).  There could be
-! 0, 1, or 2 cellist() entries.
+! the Bcell_list() entries corresponding to occupancy()%indx (if any).  There could be
+! 0, 1, or 2 Bcell_list() entries.
 !-----------------------------------------------------------------------------------------
 subroutine checkslots(msg,xyz)
 character*(*) :: msg
@@ -1809,7 +1804,7 @@ do k = 1,2
     if (indx(k) > 0) then
         cells = cells + k
         occ(k) = .true.
-        site = cellist(indx(k))%site
+        site = Bcell_list(indx(k))%site
         if (xyz(1) /= site(1) .or. xyz(2) /= site(2) .or. xyz(3) /= site(3)) then
             write(*,'(a,a,8i6)') msg,' checkslots: site error: ',k,xyz,site
             stop
@@ -1830,10 +1825,10 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine check_tagged
 integer :: k,d2,n,site(3)
-type(cell_type) :: cell
+type(Bcell_type) :: cell
 
-do k = 1,nlist
-    cell = cellist(k)
+do k = 1,nBlist
+    cell = Bcell_list(k)
     if (cell%ctype == TAGGED_CELL) then
         n = n+1
         site = cell%site
@@ -1857,7 +1852,7 @@ slots = getslots(site)
 occ = .false.
 indx = occupancy(x,y,z)%indx
 do k = 1,2
-    if (cellist(indx(k))%ctype > 0) occ(k) = .true.
+    if (Bcell_list(indx(k))%ctype > 0) occ(k) = .true.
 enddo
 if (slots == 1 .and. (.not.occ(1) .or. occ(2))) then
     write(*,*) 'Bad check: ',msg,x,y,z,slots,occ
@@ -1895,9 +1890,9 @@ do x = 1,NX
                     tot(x) = tot(x) + 1
                     cells = cells + k
                     occ(k) = .true.
-                    site = cellist(indx(k))%site
+                    site = Bcell_list(indx(k))%site
                     if (x /= site(1) .or. y /= site(2) .or. z /= site(3)) then
-                        write(*,'(a,2i2,2i7,6i4)') 'checker: site error: ',k,indx(k),cellist(indx(k))%ID,x,y,z,site
+                        write(*,'(a,2i2,2i7,6i4)') 'checker: site error: ',k,indx(k),Bcell_list(indx(k))%ID,x,y,z,site
                         stop
                     endif
                 endif
@@ -1910,9 +1905,9 @@ do x = 1,NX
     enddo
 enddo
 
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    site = cellist(kcell)%site
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    site = Bcell_list(kcell)%site
     indx = occupancy(site(1),site(2),site(3))%indx
     if (kcell == indx(1)) then
         slot = 1
@@ -1924,7 +1919,7 @@ do kcell = 1,nlist
     endif
 enddo
 deallocate(tot)
-write(*,*) 'checked OK: ',' nlist: ',nlist
+write(*,*) 'checked OK: ',' nBlist: ',nBlist
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1935,16 +1930,17 @@ integer :: kcell, ntot
 
 ok = .true.
 ntot = 0
-do kcell = 1,nlist
-	if (cellist(kcell)%exists /= (cellist(kcell)%ID /= 0)) then
-		if (.not.associated(cellist(kcell)%cptr)) then
-			write(logmsg,*) 'Error: checkcellcount: inconsistent %exists, %ID: ',kcell,cellist(kcell)%exists,cellist(kcell)%ID
+do kcell = 1,nBlist
+!	write(*,'(3i6,L2)') kcell,Bcell_list(kcell)%ID,Bcell_list(kcell)%ctype,Bcell_list(kcell)%exists
+	if (Bcell_list(kcell)%exists /= (Bcell_list(kcell)%ID /= 0)) then
+		if (.not.associated(Bcell_list(kcell)%cptr)) then
+			write(logmsg,*) 'Error: checkcellcount: inconsistent %exists, %ID: ',kcell,Bcell_list(kcell)%exists,Bcell_list(kcell)%ID
 			call logger(logmsg)
 			ok = .false.
 			return
 		endif
 	endif
-    if (.not.cellist(kcell)%exists) cycle
+    if (.not.Bcell_list(kcell)%exists) cycle
 	ntot = ntot + 1
 enddo
 if (ntot /= NBcells) then
@@ -1960,11 +1956,11 @@ subroutine checkcellsite(kcell)
 integer :: kcell
 integer :: id,site(3)
 
-site = cellist(kcell)%site
-id = cellist(kcell)%ID
+site = Bcell_list(kcell)%site
+id = Bcell_list(kcell)%ID
 write(*,'(a,2i8,3i4,4i8)') 'cell: site,indx: ',kcell,id,site,occupancy(site(1),site(2),site(3))%indx
-site = cellist(kcell)%site
-id = cellist(kcell)%ID
+site = Bcell_list(kcell)%site
+id = Bcell_list(kcell)%ID
 write(*,'(a,2i8,3i4,4i8)') 'big_: site,indx: ',kcell,id,site,occupancy(site(1),site(2),site(3))%indx
 end subroutine
 
@@ -1996,12 +1992,29 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
+subroutine checkreceptor
+integer :: kcell, stage, status
+real :: rec(MAX_RECEPTOR)
+type(Bcog_type), pointer :: p
+
+do kcell = 1,nBlist
+	p => Bcell_list(kcell)%cptr
+	if (.not.associated(p)) cycle
+	stage = get_stage(p)
+	status = get_status(p)
+	rec = Bcell_list(kcell)%receptor_level
+	write(*,'(3i6,2f6.3)') kcell,stage,status,rec(S1PR1),rec(S1PR2)
+enddo
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine checkcell(str)
 character*(*) :: str
 integer :: ictest = 12
 
 write(*,*) 'checkcell: ',str,'  ',ictest
-!write(*,*) cellist(ictest)%ID,cellist(ictest)%PTR1%entrytime
+!write(*,*) Bcell_list(ictest)%ID,Bcell_list(ictest)%PTR1%entrytime
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2021,18 +2034,18 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine check_cells
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: kcell, ctype, n1, n2
 
 n1 = 0
 n2 = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    p => Bcell_list(kcell)%cptr
     if (associated(p)) then
 		n1 = n1 + 1
 	endif
-    ctype = cellist(kcell)%ctype
+    ctype = Bcell_list(kcell)%ctype
     if (ctype == COG_TYPE_TAG) then
 		n2 = n2 + 1
 	endif

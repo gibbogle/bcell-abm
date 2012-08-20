@@ -38,14 +38,14 @@ contains
 subroutine jumper(kcell,indx1,kslot1,go,kpar)
 integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
-type (cell_type), pointer :: cell
-integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype
+type (Bcell_type), pointer :: cell
+integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2
 integer :: irel,dir1,lastdir1,indx2(2),k,z
 integer :: savesite2(3,MAXRELDIR), saveslots2(MAXRELDIR)
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: psum, p(MAXRELDIR+1), R, pR, psumm 
 
-cell => cellist(kcell)
+cell => Bcell_list(kcell)
 site1 = cell%site
 if (site1(1) < 1) then
     write(logmsg,*) 'jumper: bad site1: ',site1
@@ -66,8 +66,6 @@ if (fullslots1 /= BOTH) then
     endif
 endif
 ! Now we must jump (if possible)
-
-stype = struct_type(int(cell%ctype))     ! COG_TYPE_TAG or NONCOG_TYPE_TAG
 
 z = site1(3)
 lastdir1 = cell%lastdir
@@ -171,12 +169,13 @@ end subroutine
 ! A cell may have chemotactic susceptibility to: S1P, CCL21, OXY, CXCL13.
 ! How to handle multiple chemokines?
 ! In the limit of all CHEMO_K = 0, this should be the same as jumper().
+! Now need to account for motion of CD4 T cell tethered to a cognate B cell
 !-----------------------------------------------------------------------------------------
 subroutine chemo_jumper(kcell,indx1,kslot1,go,kpar)
 integer :: kpar,kcell,indx1(2),kslot1
 logical :: go
-type (cell_type), pointer :: cell
-integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stype,stage
+type (Bcell_type), pointer :: cell
+integer :: fullslots1,fullslots2,site1(3),site2(3),kslot2,stage, CD4index
 integer :: irel,dir1,lastdir1,indx2(2),k,kr,rv(3),id, ichemo, nfull, nrest, nout
 integer :: savesite2a(3,MAXRELDIR+1), saveslots2a(MAXRELDIR+1)
 real(DP) :: p(MAXRELDIR+1),psum, R, pR, psumm, stay_prob,  psave(MAXRELDIR+1)
@@ -184,7 +183,7 @@ real :: tnow, v(3), vsum(3), f
 logical :: ischemo, cognate
 
 tnow = istep*DELTA_T
-cell => cellist(kcell)
+cell => Bcell_list(kcell)
 cognate = associated(cell%cptr)
 	
 id = cell%id
@@ -263,8 +262,6 @@ if (fullslots1 /= BOTH) then
     endif
 endif
 ! Now we must jump (if possible)
-
-stype = struct_type(int(cell%ctype))     ! COG_TYPE_TAG or NONCOG_TYPE_TAG
 
 ! Compute jump probabilities in the absence of chemotaxis
 site1 = cell%site
@@ -370,8 +367,29 @@ else
 endif
 cell%site = site2
 cell%lastdir = dir1
+if (cognate) then 
+	CD4index = cell%cptr%CD4index
+else
+	CD4index = 0
+endif
 occupancy(site2(1),site2(2),site2(3))%indx(kslot2) = kcell
-occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = 0
+if (CD4index > 0) then	! the CD4 T cell moves into the site vacated by the B cell
+	occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = CD4index
+	site2 = Bcell_list(CD4index)%site
+	indx2 = occupancy(site2(1),site2(2),site2(3))%indx
+	if (indx2(1) == CD4index) then
+		occupancy(site2(1),site2(2),site2(3))%indx(1) = 0
+	elseif (indx2(2) == CD4index) then
+		occupancy(site2(1),site2(2),site2(3))%indx(2) = 0
+	else
+		write(logmsg,*) 'Error: chemo_jumper: bad CD4 cell site/indx: ',CD4index,site2,indx2
+		call logger(logmsg)
+		return
+	endif
+	Bcell_list(CD4index)%site = site1
+else
+	occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = 0
+endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -445,11 +463,11 @@ integer :: sweep
 integer :: kpar
 integer :: site1(3), kcell, indx(2), slot, z, slice, site(3), stage, region
 logical :: go
-type(cell_type), pointer :: cell
+type(Bcell_type), pointer :: cell
 integer :: z_lo,z_hi
 
 slice = sweep + 2*kpar
-do kcell = 1,nlist
+do kcell = 1,nBlist
 	if (Mnodes == 1) then
 	    z_lo = 1
 	    z_hi = NZ
@@ -457,8 +475,9 @@ do kcell = 1,nlist
 	    z_lo = zoffset(slice) + 1
 	    z_hi = zoffset(slice+1)
 	endif
-    cell => cellist(kcell)
-	if (.not.cell%exists) cycle		! skip gaps in the list
+    cell => Bcell_list(kcell)
+	if (.not.cell%exists) cycle				! skip gaps in the list
+	if (cell%ctype == COG_CD4_CELL) cycle	! skip CD4 cells (for now)
     if (associated(cell%cptr)) then
 		stage = get_stage(cell%cptr)
 		region = get_region(cell%cptr)
@@ -498,7 +517,7 @@ subroutine mover2
 integer :: kpar
 integer :: site1(3), kcell, indx(2), slot, x, xlocal
 logical :: go
-type(cell_type),pointer :: cell
+type(Bcell_type),pointer :: cell
 integer :: x_lo,x_hi,sweep
 integer :: i, nslice, sum, sump, nsweeps, cnt
 integer, save :: xlim(0:8)
@@ -508,10 +527,10 @@ integer, allocatable :: xcount(:)
 if (istep == 1) then    ! must be executed when the blob size changes
     allocate(xcount(NX))
     xcount = 0
-    do kcell = 1,nlist
-        cell => cellist(kcell)
+    do kcell = 1,nBlist
+        cell => Bcell_list(kcell)
 		if (.not.cell%exists) cycle
-        i = cellist(kcell)%site(1)
+        i = Bcell_list(kcell)%site(1)
         xcount(i) = xcount(i) + 1
     enddo
     nslice = NBcells/(2*Mnodes)
@@ -550,7 +569,7 @@ do sweep = 0,nsweeps-1
 
 !$omp parallel PRIVATE(kcell,kpar,cell,x_lo,x_hi,site1,xlocal,indx,slot,go,cnt)
 kpar = omp_get_thread_num()
-do kcell = 1,nlist
+do kcell = 1,nBlist
 	if (Mnodes == 1) then
 	    x_lo = 1
 	    x_hi = NX
@@ -558,7 +577,7 @@ do kcell = 1,nlist
 	    x_lo = xlim(sweep+2*kpar) + 1
 	    x_hi = xlim(sweep+2*kpar+1)
 	endif
-    cell => cellist(kcell)
+    cell => Bcell_list(kcell)
 	if (.not.cell%exists) cycle
     if (cell%step == istep) cycle
     site1 = cell%site

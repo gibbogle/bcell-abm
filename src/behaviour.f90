@@ -64,7 +64,7 @@ end subroutine
 ! NOTE: This is not used.  For Bcells we are using death rates (see DeathProbability())
 !--------------------------------------------------------------------------------------
 real function BClifetime(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: gen, stage
 real :: p1, p2
 integer :: kpar = 0
@@ -614,16 +614,16 @@ integer :: kcell
 integer :: k, idc, site(3), indx(2)
 logical :: cognate
 
-cognate = (associated(cellist(kcell)%cptr))
-cellist(kcell)%exists = .false.
+cognate = (associated(Bcell_list(kcell)%cptr))
+Bcell_list(kcell)%exists = .false.
 totalres%dN_Dead = totalres%dN_Dead + 1
 totalres%N_Dead = totalres%N_Dead + 1
 if (cognate) then
-	call set_stage(cellist(kcell)%cptr,DEAD)
-	call set_region(cellist(kcell)%cptr,GONE)
+	call set_stage(Bcell_list(kcell)%cptr,DEAD)
+	call set_region(Bcell_list(kcell)%cptr,GONE)
 endif
 if (use_gaplist .and. .not.cognate) then
-	cellist(kcell)%ID = 0
+	Bcell_list(kcell)%ID = 0
 	ngaps = ngaps + 1
 	if (ngaps > max_ngaps) then
 		write(logmsg,*) 'BcellDeath: ngaps > max_ngaps'
@@ -634,7 +634,7 @@ if (use_gaplist .and. .not.cognate) then
 endif
 
 NBcells = NBcells - 1
-site = cellist(kcell)%site
+site = Bcell_list(kcell)%site
 indx = occupancy(site(1),site(2),site(3))%indx
 if (indx(1) == kcell) then
     occupancy(site(1),site(2),site(3))%indx(1) = indx(2)
@@ -674,16 +674,16 @@ end subroutine
 subroutine cell_division(kcell,site2,freeslot,ok)
 integer :: kcell, site2(3), freeslot
 logical :: ok
-integer :: icnew, ctype, gen, region, status, site(3), indx(2)
+integer :: icnew, ctype, gen, region, status, status2, site(3), indx(2)
 integer :: iseq, tag, kfrom, kto
 real :: tnow, prob_gcc, prob_plasma
-type(cog_type), pointer :: p1, p2
+type(Bcog_type), pointer :: p1, p2
 integer :: kpar = 0
 real(DP) :: R
 
 ok = .true.
 tnow = istep*DELTA_T
-p1 => cellist(kcell)%cptr
+p1 => Bcell_list(kcell)%cptr
 gen = get_generation(p1)
 region = get_region(p1)
 if (gen == BC_MAX_GEN) then
@@ -703,16 +703,16 @@ if (ngaps > 0) then
     icnew = gaplist(ngaps)
     ngaps = ngaps - 1
 else
-    nlist = nlist + 1
-    if (nlist > max_nlist) then
-		write(logmsg,*) 'Error: cell_division: cell list full: ',nlist
+    nBlist = nBlist + 1
+    if (nBlist > max_nBlist) then
+		write(logmsg,*) 'Error: cell_division: cell list full: ',nBlist
 		call logger(logmsg)
 		ok = .false.
 		return
 	endif
-    icnew = nlist
+    icnew = nBlist
 endif
-cellist(kcell)%lastdir = random_int(1,6,kpar)
+Bcell_list(kcell)%lastdir = random_int(1,6,kpar)
 gen = gen + 1
 call set_generation(p1,gen)
 status = get_status(p1)
@@ -729,27 +729,34 @@ if (status == BCL6_LO) then
 		p1%stagetime = tnow
 	else
 		call set_stage(p1,PLASMA)
-		call ReceptorLevel(kcell,ACTIVATED_TAG,ANTIGEN_TAG,1.0,0.0,1.0,cellist(kcell)%receptor_level)	! instantaneous change
+		call ReceptorLevel(kcell,ACTIVATED_TAG,ANTIGEN_TAG,1.0,0.0,1.0,Bcell_list(kcell)%receptor_level)	! instantaneous change
 		p1%stagetime = tnow
 	endif
 else
 	call set_stage(p1,DIVIDING)
 	p1%stagetime = tnow + DivisionTime(2)
 endif
-ctype = cellist(kcell)%ctype
-site = cellist(kcell)%site
+ctype = Bcell_list(kcell)%ctype
+site = Bcell_list(kcell)%site
 indx = occupancy(site(1),site(2),site(3))%indx
 
-call CreateBcell(icnew,cellist(icnew),site2,ctype,gen,DIVIDING,status,region,ok)
+call CreateBcell(icnew,Bcell_list(icnew),site2,ctype,gen,DIVIDING,status,region,ok)
 if (.not.ok) return
 
-p2 => cellist(icnew)%cptr
+p2 => Bcell_list(icnew)%cptr
 
+status2 = get_status(p2)
+if (status2 /= status) then
+	write(logmsg,*) 'Error: cell_division: status2 /= status: ',kcell,icnew,status,status2
+	call logger(logmsg)
+	ok = .false.
+	return
+endif
 p2%generation = p1%generation
 p2%region = p1%region
-p2%ID = cellist(kcell)%ID	! progeny cells keep the cog_type ID - this enables lineage to be tracked
-cellist(icnew)%receptor_level = cellist(kcell)%receptor_level
-cellist(icnew)%entrytime = tnow
+p2%ID = Bcell_list(kcell)%ID	! progeny cells keep the cog_type ID - this enables lineage to be tracked
+Bcell_list(icnew)%receptor_level = Bcell_list(kcell)%receptor_level
+Bcell_list(icnew)%entrytime = tnow
 if (status == BCL6_LO) then
 	prob_gcc = get_GccProb(gen)
 	prob_plasma = get_PlasmaProb(gen) 
@@ -762,7 +769,7 @@ if (status == BCL6_LO) then
 		p2%stagetime = tnow + T_BCL6_UP
 	else
 		call set_stage(p2,PLASMA)
-		call ReceptorLevel(icnew,ACTIVATED_TAG,PLASMA_TAG,1.0,0.0,1.0,cellist(icnew)%receptor_level)		
+		call ReceptorLevel(icnew,ACTIVATED_TAG,PLASMA_TAG,1.0,0.0,1.0,Bcell_list(icnew)%receptor_level)		
 		p2%stagetime = tnow
 	endif
 else
@@ -788,24 +795,23 @@ end subroutine
 ! Currently status just has two values: BCL6_LO, BCL6_HI
 !-----------------------------------------------------------------------------------------
 subroutine CreateBcell(kcell,cell,site,ctype,gen,stage,status,region,ok)
-type(cell_type) :: cell
+type(Bcell_type) :: cell
 integer :: kcell, site(3), ctype, gen, stage, status, region
 logical :: ok
-integer :: stype, cogID, i
+integer :: cogID, i
 real :: tnow, param1, param2
 integer :: kpar = 0
 
 ok = .true.
 tnow = istep*DELTA_T
-stype = struct_type(ctype)
 cell%exists = .true.
 cell%entrytime = tnow
-if (stype == NONCOG_TYPE_TAG) then
+if (ctype /= COG_TYPE_TAG) then
     if (associated(cell%cptr)) then
-		write(*,*) 'Error: CreateBcell: cptr already associated for non-cognate cell: ',kcell
+		write(*,*) 'Error: CreateBcell: cptr already associated for cell not a cognate B cell: ',kcell
 		stop
     endif
-elseif (stype == COG_TYPE_TAG) then
+else
     if (associated(cell%cptr)) then
         deallocate(cell%cptr)
     endif
@@ -816,7 +822,7 @@ elseif (stype == COG_TYPE_TAG) then
 	call set_stage(cell%cptr,stage)
 	call set_status(cell%cptr,status)
 	call set_region(cell%cptr,region)
-    cell%cptr%status = BCL6_LO	! default
+!    cell%cptr%status = BCL6_LO	! default
     cell%cptr%dietime = BIG_TIME
     cell%cptr%dividetime = BIG_TIME
     cell%cptr%stagetime = 0
@@ -833,16 +839,13 @@ elseif (stype == COG_TYPE_TAG) then
     cogID = lastcogID
     cell%cptr%cogID = cogID
     cognate_list(cogID) = kcell
-else
-    write(logmsg,*) 'ERROR: CreateBcell: bad ctype: ',ctype
-    call logger(logmsg)
-    stop
+    cell%cptr%CD4index = 0
 endif
 cell%receptor_level = receptor%level(NAIVE_TAG)
 cell%receptor_saturation_time = 0
-lastID = lastID + 1     ! Each node makes its own numbers, with staggered offset
-cell%ID = lastID
-if (stype == COG_TYPE_TAG) then		! by default the cog_type ID is the same as naive cell ID
+lastBCID = lastBCID + 1     ! Each node makes its own numbers, with staggered offset
+cell%ID = lastBCID
+if (ctype == COG_TYPE_TAG) then		! by default the cog_type ID is the same as naive cell ID
 	cell%cptr%ID = cell%ID			! this is overridden when a cell is created by cell division
 	if (logID == 0) then
 		logID = cell%ID
@@ -852,12 +855,13 @@ cell%site = site
 cell%ctype = ctype
 cell%step = 0
 cell%lastdir = random_int(1,6,kpar)
+cell%BCindex = 0
 end subroutine
 
 !--------------------------------------------------------------------------------
 ! Add a cell (kcell) with characteristics (ctype, gen, stage) at site.
 !--------------------------------------------------------------------------------
-subroutine AddBcell(site,ctype,gen,stage,status,region,kcell,ok)
+subroutine addBTcell(site,ctype,gen,stage,status,region,kcell,ok)
 integer :: site(3), ctype, gen, stage, status, region, kcell
 logical :: ok
 integer :: indx(2)
@@ -867,16 +871,16 @@ if (ngaps > 0) then
     kcell = gaplist(ngaps)
     ngaps = ngaps - 1
 else
-    nlist = nlist + 1
-    if (nlist > max_nlist) then
-		write(logmsg,*) 'Error: add_Bcell: cell list full: ',nlist
+    nBlist = nBlist + 1
+    if (nBlist > max_nBlist) then
+		write(logmsg,*) 'Error: add_Bcell: cell list full: ',nBlist
 		call logger(logmsg)
 		ok = .false.
 		return
 	endif
-    kcell = nlist
+    kcell = nBlist
 endif
-call CreateBcell(kcell,cellist(kcell),site,ctype,gen,stage,status,region,ok)
+call CreateBcell(kcell,Bcell_list(kcell),site,ctype,gen,stage,status,region,ok)
 if (.not.ok) return
 
 indx = occupancy(site(1),site(2),site(3))%indx
@@ -947,7 +951,7 @@ write(*,*) 'mean = ',sum/N
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! Initial cell position data is loaded into occupancy() and cellist().
+! Initial cell position data is loaded into occupancy() and Bcell_list().
 !-----------------------------------------------------------------------------------------
 subroutine PlaceCells(ok)
 logical :: ok
@@ -968,7 +972,7 @@ NBcells = 0
 IDTEST = 0
 logID = 0
 tnow = 0
-nlist = 0
+nBlist = 0
 do x = 1,NX
     do y = 1,NY
 	    do z = 1,NZ
@@ -980,7 +984,7 @@ do x = 1,NX
 			if (.not.InsideEllipsoid(site,Centre,Radius)) then
 				occupancy(x,y,z)%indx = OUTSIDE_TAG
 			else
-			    nlist = nlist+1
+			    nBlist = nBlist+1
 			endif
         enddo
     enddo
@@ -990,11 +994,11 @@ call placeMRCs(ok)
 call placeFDCs(ok)
 if (.not.ok) stop
 
-allocate(permc(nlist))
-do k = 1,nlist
+allocate(permc(nBlist))
+do k = 1,nBlist
     permc(k) = k
 enddo
-call permute(permc,nlist,kpar)
+call permute(permc,nBlist,kpar)
 istep = 0
 ntagged  = 0
 id = 0
@@ -1006,7 +1010,7 @@ do x = 1,NX
 	    do z = 1,NZ
 	        if (occupancy(x,y,z)%indx(1) == 0) then ! vacant site, not OUTSIDE_TAG or DC
                 id = id+1
-                lastID = id
+                lastBCID = id
                 k = permc(id)
                 site = (/x,y,z/)
                 gen = 1
@@ -1021,20 +1025,20 @@ do x = 1,NX
 						ctype = TAGGED_CELL
 					endif
 			    else
-                    ctype = select_cell_type(kpar)
+                    ctype = select_Bcell_type(kpar)
                     if (ctype /= NONCOG_TYPE_TAG) then
                         ncogseed = ncogseed + 1
                     endif
                 endif
-                call CreateBcell(k,cellist(k),site,ctype,gen,stage,status,region,ok)
+                call CreateBcell(k,Bcell_list(k),site,ctype,gen,stage,status,region,ok)
                 if (.not.ok) return
                 occupancy(x,y,z)%indx(1) = k
                 NBcells = NBcells + 1
                 if (calibrate_motility .and. taggable(site)) then
                     ntagged = ntagged + 1
-                    cellist(k)%ctype = TAGGED_CELL
+                    Bcell_list(k)%ctype = TAGGED_CELL
                 endif
-                if (id == nlist) then
+                if (id == nBlist) then
 					done = .true.
 					exit
 				endif
@@ -1050,10 +1054,10 @@ deallocate(permc)
 !call make_cognate_list(ok)		! do not use this now - all cognate cells are kept in the lists (for fate tracking)
 if (.not.ok) return
 
-write(nfout,*) 'nlist,RESIDENCE_TIME: ',nlist,RESIDENCE_TIME
-nlist = id	! this is already the case for 3D blob
-if (NBcells /= nlist) then
-    write(logmsg,*) 'Error: inconsistent B cell and nlist counts: ', NBcells, nlist
+write(nfout,*) 'nBlist,RESIDENCE_TIME: ',nBlist,RESIDENCE_TIME
+nBlist = id	! this is already the case for 3D blob
+if (NBcells /= nBlist) then
+    write(logmsg,*) 'Error: inconsistent B cell and nBlist counts: ', NBcells, nBlist
     call logger(logmsg)
     stop
 endif
@@ -1061,7 +1065,8 @@ Nsites = NBcells
 NBcells0 = NBcells
 call SetRadius(Nsites)
 scale_factor = real(NBC_LN)*NLN_RESPONSE/NBcells0
-
+nTcells = 0
+nTcells0 = 0
 end subroutine
 
 !---------------------------------------------------------------------
@@ -1153,7 +1158,7 @@ real :: t1, t2, die_prob
 logical :: divide_flag, producing, first, dbg, unbound, flag, flag1
 real(DP) :: R
 integer :: kpar = 0
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 ok = .true.
 dbg = .false.
@@ -1171,7 +1176,7 @@ do k = 1,tmplastcogID
 		write(*,*) 'This can never happen'
         cycle
     endif
-    p => cellist(kcell)%cptr
+    p => Bcell_list(kcell)%cptr
     if (.not.associated(p)) then
         write(logmsg,*) 'ERROR: updater: p not associated: ',k,kcell
 	    call logger(logmsg)
@@ -1199,15 +1204,15 @@ do k = 1,tmplastcogID
 		t2 = p%stagetime
 		t1 = t2 - T_CCR7_UP
 !		write(*,*) 'updater: tnow,t1,t2: ',kcell,tnow,t1,t2,NAIVE_TAG,ANTIGEN_TAG
-		call ReceptorLevel(kcell,NAIVE_TAG,ANTIGEN_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)
+		call ReceptorLevel(kcell,NAIVE_TAG,ANTIGEN_TAG,tnow,t1,t2,Bcell_list(kcell)%receptor_level)
 	elseif (stage == TCELL_MET) then
 		t2 = p%stagetime
 		t1 = t2 - T_EBI2_UP
-		call ReceptorLevel(kcell,ANTIGEN_TAG,ACTIVATED_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+		call ReceptorLevel(kcell,ANTIGEN_TAG,ACTIVATED_TAG,tnow,t1,t2,Bcell_list(kcell)%receptor_level)		
 	elseif (stage == GCC_COMMIT) then
 		t2 = p%stagetime
 		t1 = t2 - T_BCL6_UP
-		call ReceptorLevel(kcell,ACTIVATED_TAG,GCC_TAG,tnow,t1,t2,cellist(kcell)%receptor_level)		
+		call ReceptorLevel(kcell,ACTIVATED_TAG,GCC_TAG,tnow,t1,t2,Bcell_list(kcell)%receptor_level)		
 	endif
 	
 ! Stage transition
@@ -1215,7 +1220,7 @@ do k = 1,tmplastcogID
 
 ! Cell division
     if (divide_flag) then
-		site = cellist(kcell)%site
+		site = Bcell_list(kcell)%site
 		indx = occupancy(site(1),site(2),site(3))%indx
 		freeslot = 0
 		if (indx(1) == 0) then
@@ -1259,14 +1264,15 @@ logical :: divide_flag
 real :: tnow
 integer :: stage, gen, ctype, site(3)
 real :: nextstagetime
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
+logical :: ok
 
 divide_flag = .false.
-site = cellist(kcell)%site
-p => cellist(kcell)%cptr
+site = Bcell_list(kcell)%site
+p => Bcell_list(kcell)%cptr
 stage = get_stage(p)
 if (stage == FINISHED) return
-ctype = cellist(kcell)%ctype
+ctype = Bcell_list(kcell)%ctype
 nextstagetime = p%stagetime
 if (tnow > nextstagetime) then		! time constraint to move to next stage is met
 	! May be possible to make the transition from stage
@@ -1282,7 +1288,7 @@ if (tnow > nextstagetime) then		! time constraint to move to next stage is met
         call set_stage(p,CCR7_UP)
 		p%stagetime = tnow
 	case (CCR7_UP)     ! possible transition from CCR7_UP to TCELL_MET
-		if (TCellEncounter(kcell,site)) then
+		if (TCellEncounter(kcell,site,ok)) then
 	        call set_stage(p,TCELL_MET)
 	        p%stagetime = tnow + T_EBI2_UP		! time of execution of case (TCELL_MET), which sets the stage to EBI2_UP
 		endif
@@ -1338,16 +1344,21 @@ endif
 end function
 
 !--------------------------------------------------------------------------------------
-! Check for (probabilistic) encounter of a B cell with a T helper cell, near the lower surface.
+! Check for (probabilistic) encounter of a B cell with a T helper cell, near the 
+! lower surface.  If T cells are simulated there must be an adjacent vacant site,
+! which becomes occupied by a T cell.
 !--------------------------------------------------------------------------------------
-logical function TCellEncounter(kcell,site)
-integer :: kcell,site(3)
+logical function TCellEncounter(kbcell,site,ok)
+integer :: kbcell,site(3)
+logical :: ok
 integer :: kpar = 0
-integer :: v(3), x, y, z
+integer :: v(3), x, y, z, tcsite(3)
+integer :: ktcell, ctype, gen, stage, status, region
 real :: r2
-real :: encounter_prob = 0.1
+real :: encounter_prob = 1.0	!0.1
 
 TCellEncounter = .false.
+ok = .true.
 v = site - Centre
 x = v(1)
 y = v(2)
@@ -1355,10 +1366,44 @@ z = v(3)
 if (y > 0) return
 r2 = (x/Radius%x)**2 + (y/Radius%y)**2+ (z/Radius%z)**2
 if (r2 > 0.9 .and. par_uni(kpar) < encounter_prob) then
+	if (use_Tcells) then
+		if (.not.isVacantNeighbour(site,tcsite)) then
+			return
+		endif
+		ctype = COG_CD4_CELL
+		gen = 1
+		stage = CD4_HELP
+		status = TETHERED
+		region = FOLLICLE
+		call addBTcell(tcsite,ctype,gen,stage,status,region,ktcell,ok)
+		if (.not.ok) return
+		nadd_sites = nadd_sites + 1
+		Bcell_list(kbcell)%cptr%CD4index = ktcell
+		Bcell_list(ktcell)%BCindex = kbcell
+	endif
 	TCellEncounter = .true.
-	write(logmsg,*) 'TCellEncounter: ',kcell,site
+	write(logmsg,*) 'TCellEncounter: ',kbcell,site
 	call logger(logmsg)
 endif
+end function
+
+!--------------------------------------------------------------------------------------
+! Is there a vacant site adjacent to bsite(:)?
+!--------------------------------------------------------------------------------------
+logical function isVacantNeighbour(bsite,site)
+integer :: bsite(3), site(3)
+integer :: k
+
+do k = 1,27
+	if (k == 14) cycle
+	site = bsite + jumpvec(:,k)
+	if (.not.inside_xyz(site)) cycle
+	if (occupancy(site(1),site(2),site(3))%indx(1) == 0 .or. occupancy(site(1),site(2),site(3))%indx(2) == 0) then
+		isVacantNeighbour = .true.
+		return
+	endif
+enddo
+isVacantNeighbour = .false.
 end function
 
 !--------------------------------------------------------------------------------------
@@ -1366,7 +1411,7 @@ end function
 ! and generation.
 !--------------------------------------------------------------------------------------
 real function DeathProbability(p)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: status, gen
 
 status = get_status(p)

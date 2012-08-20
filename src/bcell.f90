@@ -110,10 +110,10 @@ end subroutine
 subroutine array_initialisation(ok)
 logical :: ok
 integer :: x,y,z,k, ichemo
-integer :: MAXX, z1, z2
+integer :: MAXX, z1, z2, nbc0, inflow
 integer :: cog_size
 real :: d, rr(3), aRadius
-type(cog_type) :: cog
+type(Bcog_type) :: cog
 
 ok = .false.
 call logger("call rng_initialisation")
@@ -136,8 +136,7 @@ NY = NX
 NZ = NX
 ngaps = 0
 max_ngaps = NY*NZ
-ID_offset = BIG_INT/Mnodes
-nlist = 0
+nBlist = 0
 MAX_COG = 0.5*NX*NY*NZ
 
 allocate(zoffset(0:2*Mnodes))
@@ -157,18 +156,25 @@ Radius%x = aRadius
 Radius%y = aRadius/ELLIPSE_RATIO
 Radius%z = aRadius
 
-max_nlist = 1.5*NX*NY*NZ
-
-allocate(DClist(MAX_DC))
-allocate(FDClist(MAX_FDC))
-allocate(MRClist(MAX_MRC))
+!max_nBlist = 1.5*NX*NY*NZ	! This should be computed from aRadius, Tres and ndays
+! First guess NBcells0
+nbc0 = (4./3.)*PI*Radius%x*Radius%y*Radius%z
+! Use NBcells0 + 10*(initial influx/hour)*24*ntdays
+inflow = nbc0/RESIDENCE_TIME		! cells per hour
+max_nBlist = nbc0 + 10*inflow*24*days
+!write(nflog,*) 'max_nBlist: ',max_nBlist
+!max_nTlist = 1000	! guess
+allocate(DC_list(MAX_DC))
+allocate(FDC_list(MAX_FDC))
+allocate(MRC_list(MAX_MRC))
 allocate(occupancy(NX,NY,NZ))
-allocate(cellist(max_nlist))
+allocate(Bcell_list(max_nBlist))
+!allocate(Tcell_list(max_nTlist))
 allocate(gaplist(max_ngaps))
 allocate(cognate_list(MAX_COG))
 
-do k = 1,max_nlist
-	nullify(cellist(k)%cptr)
+do k = 1,max_nBlist
+	nullify(Bcell_list(k)%cptr)
 enddo
 
 call make_reldir
@@ -176,7 +182,8 @@ call make_reldir
 Centre = (/x0,y0,z0/)   ! now, actually the global centre (units = grids)
 ncogseed = 0
 lastcogID = 0
-lastID = 0
+lastBCID = 0
+!lastTCID = 0
 k_nonrandom = 0
 lastNBcells = 0
 nadd_sites = 0
@@ -362,7 +369,7 @@ real :: Cm,speed,ssum,d
 integer, allocatable :: tagid(:), tagseq(:), tagsite(:,:,:), pathcell(:)
 integer, allocatable :: prevsite(:,:)   ! for mean speed computation
 real, allocatable :: Cm_array(:,:), S_array(:,:)
-type(cell_type) :: cell
+type(Bcell_type) :: cell
 logical :: ok
 
 write(*,*) 'motility_calibration'
@@ -415,8 +422,8 @@ do ibeta = 1,nbeta
 	    call placeCells(ok)
 	    if (.not.ok) stop
         call make_split(.true.)
-        if (nlist > 0) then
-	        write(*,*) 'make tag list: NBcells,nlist,ntagged: ',NBcells,nlist,ntagged
+        if (nBlist > 0) then
+	        write(*,*) 'make tag list: NBcells,nBlist,ntagged: ',NBcells,nBlist,ntagged
 
             allocate(tagseq(NBcells))
             allocate(tagid(ntagged))
@@ -424,13 +431,13 @@ do ibeta = 1,nbeta
             tagseq = 0
             k = 0
 	        kpath = 0
-            do ic = 1,nlist
-                if (cellist(ic)%ctype == TAGGED_CELL) then
-                    id = cellist(ic)%ID
+            do ic = 1,nBlist
+                if (Bcell_list(ic)%ctype == TAGGED_CELL) then
+                    id = Bcell_list(ic)%ID
                     k = k+1
                     tagid(k) = id
                     tagseq(id) = k
-                    tagsite(:,k,0) = cellist(ic)%site
+                    tagsite(:,k,0) = Bcell_list(ic)%site
 					if (motility_save_paths) then
 						if (kpath < npaths) then
 							kpath = kpath + 1
@@ -441,10 +448,10 @@ do ibeta = 1,nbeta
             enddo
         endif
 
-        ns = min(ns,nlist)
+        ns = min(ns,nBlist)
         allocate(prevsite(3,ns))
         do ic = 1,ns
-            prevsite(:,ic) = cellist(ic)%site
+            prevsite(:,ic) = Bcell_list(ic)%site
         enddo
         ssum = 0
 
@@ -464,24 +471,24 @@ do ibeta = 1,nbeta
                 call mover(ok)
                 if (.not.ok) stop
                 call squeezer(.false.)
-!                write(*,*) 'Cell 1: ',cellist(1)%site
+!                write(*,*) 'Cell 1: ',Bcell_list(1)%site
                 do ic = 1,ns
-                    ds = cellist(ic)%site - prevsite(:,ic)
-                    prevsite(:,ic) = cellist(ic)%site
+                    ds = Bcell_list(ic)%site - prevsite(:,ic)
+                    prevsite(:,ic) = Bcell_list(ic)%site
                     d = sqrt(real(ds(1)*ds(1) + ds(2)*ds(2) + ds(3)*ds(3)))
                     ssum = ssum + d*DELTA_X/DELTA_T
                 enddo
                 if (motility_save_paths) then
                     k = (imin-1)*nsteps_per_min + isub
                     if (k >= nvar0*nsteps_per_min .and. k < nvar0*nsteps_per_min + npos) then
-                        write(nfpath,'(160i4)') (cellist(pathcell(kpath))%site(1:2),kpath=1,npaths)
+                        write(nfpath,'(160i4)') (Bcell_list(pathcell(kpath))%site(1:2),kpath=1,npaths)
                     endif
                 endif
             enddo
             write(*,*) 'speed: ',ssum/(ns*nsteps_per_min*imin)
 
-            do ic = 1,nlist
-                cell = cellist(ic)
+            do ic = 1,nBlist
+                cell = Bcell_list(ic)
                 if (cell%ctype == TAGGED_CELL) then
                     id = cell%ID
                     k = tagseq(id)
@@ -545,7 +552,7 @@ stop
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! To test AddBcell()
+! To test addBTcell()
 !-----------------------------------------------------------------------------------------
 subroutine add_random_cells(n, ctype, gen, stage, status, region)
 integer :: n, ctype, gen, stage, status, region
@@ -562,7 +569,7 @@ do while (k < n)
     slots = getslots(site)
     if (occupancy(x,y,z)%indx(1) >= 0 .and. slots < BOTH) then
         if (dbug) write(*,'(a,7i6)') 'add_random_cells: ',site,occupancy(x,y,z)%indx,slots
-        call AddBcell(site,ctype,gen,stage,status,region,kcell,ok)
+        call addBTcell(site,ctype,gen,stage,status,region,kcell,ok)
         if (dbug) write(*,'(a,7i6)') 'after add_random_cells: ',site,occupancy(x,y,z)%indx,slots
         call checkslots('add_random_cells: ',site)
         k = k+1
@@ -602,13 +609,13 @@ do while (k < ninflow)
                 ctype = 1
             endif
         else
-            ctype = select_cell_type(kpar)
+            ctype = select_Bcell_type(kpar)
         endif
         if (ctype /= NONCOG_TYPE_TAG) then
             ncogseed = ncogseed + 1
         endif
         status = BCL6_LO
-        call AddBcell(site,ctype,gen,NAIVE,status,region,kcell,ok)
+        call addBTcell(site,ctype,gen,NAIVE,status,region,kcell,ok)
         if (.not.ok) then
 			call logger('Error: CellInflux: failed to add B cell')
 			return
@@ -635,7 +642,7 @@ logical :: can_leave, left
 integer :: kpar=0
 integer :: nb, nc, nx
 type(boundary_type), pointer :: bdry
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 ok = .true.
 !write(*,*) 'traffic'
@@ -654,7 +661,10 @@ endif
 
 ! Inflow
 call cellInflux(node_inflow,ok)
-if (.not.ok) return
+if (.not.ok) then
+	write(*,*) 'cellInflux error'
+	return
+endif
 nadd_sites = nadd_sites + node_inflow
 
 ! Outflow
@@ -674,13 +684,13 @@ do while ( associated ( bdry ))
 			kcell = indx(slot)
 			if (kcell > 0) then
 				can_leave = .false.
-				p => cellist(kcell)%cptr
+				p => Bcell_list(kcell)%cptr
 				if (associated(p)) then
 					stage = get_stage(p)
 					if (stage == PLASMA) then
 						can_leave = .true.
 					endif
-				else
+				elseif (Bcell_list(kcell)%ctype /= COG_CD4_CELL) then	! do not allow CD4 T cells to leave (for now)
 					R = par_uni(kpar)
 					if (R < noncog_exit_prob) then    ! this cell can leave
 						can_leave = .true.
@@ -691,10 +701,10 @@ do while ( associated ( bdry ))
 					nx = nx + 1
 					node_outflow = node_outflow + 1
 					if (evaluate_residence_time) then
-						if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
+						if (Bcell_list(kcell)%ctype == RES_TAGGED_CELL) then
 							noutflow_tag = noutflow_tag + 1
-							restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
-							ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
+							restime_tot = restime_tot + tnow - Bcell_list(kcell)%entrytime
+							ihr = (tnow - Bcell_list(kcell)%entrytime)/60. + 1
 							Tres_dist(ihr) = Tres_dist(ihr) + 1
 						endif
 					endif
@@ -738,10 +748,10 @@ do while (k < node_outflow)
     k = k+1
 
     if (evaluate_residence_time) then
-        if (cellist(kcell)%ctype == RES_TAGGED_CELL) then
+        if (Bcell_list(kcell)%ctype == RES_TAGGED_CELL) then
             noutflow_tag = noutflow_tag + 1
-            restime_tot = restime_tot + tnow - cellist(kcell)%entrytime
-            ihr = (tnow - cellist(kcell)%entrytime)/60. + 1
+            restime_tot = restime_tot + tnow - Bcell_list(kcell)%entrytime
+            ihr = (tnow - Bcell_list(kcell)%entrytime)/60. + 1
             Tres_dist(ihr) = Tres_dist(ihr) + 1
         endif
     endif
@@ -754,7 +764,7 @@ end subroutine
 ! Determine whether a cognate T cell is licensed to exit the DCU.
 !-----------------------------------------------------------------------------------------
 logical function exitOK(p,ctype)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: ctype
 
 exitOK = .true.
@@ -774,18 +784,18 @@ integer :: kcell, slot, esite(3)
 integer :: x, y, z, ctype, gen, stage, region, status
 real :: tnow
 logical :: cognate, activated
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 tnow = istep*DELTA_T
 if (evaluate_residence_time) then
     cognate = .false.
-elseif (associated(cellist(kcell)%cptr)) then
+elseif (associated(Bcell_list(kcell)%cptr)) then
     cognate = .true.
-    p => cellist(kcell)%cptr
+    p => Bcell_list(kcell)%cptr
 	stage = get_stage(p)
 	status = get_status(p)
     gen = get_generation(p)
-    ctype = cellist(kcell)%ctype
+    ctype = Bcell_list(kcell)%ctype
 else
     cognate = .false.
 endif
@@ -807,12 +817,14 @@ NBcells = NBcells - 1
 if (cognate) then
     call set_stage(p,LEFT)
 	call set_region(p,GONE)
-	write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID,stage
+	write(nflog,*) 'cell left: ',kcell,Bcell_list(kcell)%ID,stage
 endif
-cellist(kcell)%exists = .false.
-!write(nflog,*) 'cell left: ',kcell,cellist(kcell)%ID
-if (use_gaplist .and. .not.cognate) then
-	cellist(kcell)%ID = 0
+Bcell_list(kcell)%exists = .false.
+!write(nflog,*) 'cell left: ',kcell,Bcell_list(kcell)%ID
+if (.not.cognate) then
+	Bcell_list(kcell)%ID = 0
+endif
+if (use_gaplist) then
 	ngaps = ngaps + 1
 	if (ngaps > max_ngaps) then
 		call logger('Error: gaplist dimension exceeded')
@@ -985,7 +997,7 @@ end subroutine
 ! Only activated cells (stage >= CLUSTERS) are counted
 !--------------------------------------------------------------------------------
 subroutine efferent(p,ctype)
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: ctype, gen, i
 
 gen = get_generation(p)
@@ -1000,16 +1012,16 @@ totalres%N_EffCogBCGen(gen)  = totalres%N_EffCogBCGen(gen) + 1
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! Using the complete list of cells, cellist(), extract info about the current state of the
+! Using the complete list of cells, Bcell_list(), extract info about the current state of the
 ! paracortex.  This info must be supplemented by counts of cells that have died and cells that
 ! have returned to the circulation.
 !-----------------------------------------------------------------------------------------
 subroutine show_snapshot(ok)
 logical :: ok
-integer :: kcell, ctype, stype, ncog, noncog, ntot, stage, region, i, iseq, error
+integer :: kcell, ctype, ncog, noncog, ncd4, ntot, stage, region, i, iseq, error
 integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead
 real :: stim(FINISHED), tgen, tnow, fac, act, cyt_conc, mols_pM
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: nst(FINISHED)
 integer, allocatable :: gendist(:)
 integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
@@ -1024,18 +1036,18 @@ allocate(div_gendist(BC_MAX_GEN))
 tnow = istep*DELTA_T
 noncog = 0
 ncog = 0
+ncd4 = 0
 ntot = 0
 nst = 0
 stim = 0
 gendist = 0
 div_gendist = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    p => Bcell_list(kcell)%cptr
     ntot = ntot + 1
-    ctype = cellist(kcell)%ctype
-    stype = struct_type(ctype)
-    if (stype == COG_TYPE_TAG) then
+    ctype = Bcell_list(kcell)%ctype
+    if (ctype == COG_TYPE_TAG) then
         ncog = ncog + 1
         stage = get_stage(p)
         nst(stage) = nst(stage) + 1
@@ -1047,10 +1059,12 @@ do kcell = 1,nlist
             return
         endif
         gendist(gen) = gendist(gen) + 1
-    elseif (stype == NONCOG_TYPE_TAG) then
+    elseif (ctype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
+	elseif (ctype == COG_CD4_CELL) then
+		ncd4 = ncd4 + 1
     else
-        write(*,*) 'ERROR: show_snapshot: bad stype: ',ctype,stype
+        write(*,*) 'ERROR: show_snapshot: bad ctype: ',ctype
         stop
     endif
 enddo
@@ -1120,23 +1134,25 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine compute_stim_dist
-integer :: kcell, ctype, stype, ncog, noncog
+integer :: kcell, ctype, ncog, noncog, ncd4
 real :: s
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 
 ncog = 0
 noncog = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    p => cellist(kcell)%cptr
-    ctype = cellist(kcell)%ctype
-    stype = struct_type(ctype)
-    if (stype == COG_TYPE_TAG) then
+ncd4 = 0
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    p => Bcell_list(kcell)%cptr
+    ctype = Bcell_list(kcell)%ctype
+    if (ctype == COG_TYPE_TAG) then
         ncog = ncog + 1
-    elseif (stype == NONCOG_TYPE_TAG) then
+    elseif (ctype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
+    elseif (ctype == COG_CD4_CELL) then
+		ncd4 = ncd4 + 1
     else
-        write(*,*) 'ERROR: compute_stim_dist: bad stype: ',ctype,stype
+        write(*,*) 'ERROR: compute_stim_dist: bad ctype: ',ctype
         stop
     endif
 enddo
@@ -1155,10 +1171,10 @@ ntot1 = 0
 ntot2 = 0
 ncog1 = 0
 ncog2 = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    z = cellist(kcell)%site(3)
-    cognate = (associated(cellist(kcell)%cptr))
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    z = Bcell_list(kcell)%site(3)
+    cognate = (associated(Bcell_list(kcell)%cptr))
     if (z < z0) then
         ntot1 = ntot1 + 1
         if (cognate) ncog1 = ncog1 + 1
@@ -1255,8 +1271,8 @@ integer :: kpar = 0
 
 ncog = 0
 do k = 1,n
-    j = select_cell_type(kpar)
-    if (j == COG_CD4_TAG) ncog = ncog + 1
+    j = select_Bcell_type(kpar)
+    if (j == COG_CD4_CELL) ncog = ncog + 1
     if (mod(k,1000) == 0) then
         write(*,*) ncog,real(ncog)/k
     endif
@@ -1295,10 +1311,10 @@ end subroutine
 ! The distributions gendist and tcrdist are all for the current DCU population.
 !-----------------------------------------------------------------------------------------
 subroutine write_results
-integer :: kcell, ctype, stype, ncog, ntot, i
+integer :: kcell, ctype, ncog, ntot, i
 integer :: gen
 real :: hour
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: gendist(BC_MAX_GEN)
 character*(60) :: fmtstr = '(f6.2,2i8,4x,15f7.4,4x,10f7.4,4x,10f7.4,4x,10i7)'
 
@@ -1307,13 +1323,12 @@ hour = istep*DELTA_T/60
 gendist = 0
 ntot = 0
 ncog = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    p => Bcell_list(kcell)%cptr
     ntot = ntot + 1
-    ctype = cellist(kcell)%ctype
-    stype = struct_type(ctype)
-    if (stype == COG_TYPE_TAG) then
+    ctype = Bcell_list(kcell)%ctype
+    if (ctype == COG_TYPE_TAG) then
         ncog = ncog + 1
         gen = get_generation(p)
         gendist(gen) = gendist(gen) + 1
@@ -1327,10 +1342,10 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine tag_cells
 integer :: kcell
-type(cell_type),pointer :: cell
+type(Bcell_type),pointer :: cell
 
-do kcell = 1,nlist
-    cell => cellist(kcell)
+do kcell = 1,nBlist
+    cell => Bcell_list(kcell)
 	if (.not.cell%exists) cycle
     cell%ctype = RES_TAGGED_CELL
 enddo
@@ -1373,7 +1388,7 @@ maxg = 0
 do k = 1,lastcogID
 	kcell = cognate_list(k)
 	if (kcell > 0) then
-		gen = get_generation(cellist(kcell)%cptr)
+		gen = get_generation(Bcell_list(kcell)%cptr)
 		maxg = max(maxg,gen)
 		gendist(gen) = gendist(gen) + 1
 	endif
@@ -1398,7 +1413,7 @@ end subroutine
 
 
 !-----------------------------------------------------------------------------------------
-! Using the complete list of cells, cellist(), extract info about the current state of the
+! Using the complete list of cells, Bcell_list(), extract info about the current state of the
 ! paracortex.  This info must be supplemented by counts of cells that have died and cells that
 ! have returned to the circulation.
 !-----------------------------------------------------------------------------------------
@@ -1407,10 +1422,10 @@ subroutine get_summary(summaryData) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: summaryData(*)
 logical :: ok
-integer :: kcell, ctype, stype, ncog, noncog, ntot, nbnd, stage, region, i, iseq, error
+integer :: kcell, ctype, ncog, noncog, ncd4, ntot, nbnd, stage, region, i, iseq, error
 integer :: gen, ngens, neffgens, teffgen, dNdead, Ndead, nvasc
 real :: stim(2*STAGELIMIT), tgen, tnow, fac, act, cyt_conc, mols_pM
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer :: nst(FINISHED)
 integer, allocatable :: gendist(:)
 integer, allocatable :: div_gendist(:)  ! cells that are capable of dividing
@@ -1428,15 +1443,16 @@ allocate(div_gendist(BC_MAX_GEN))
 tnow = istep*DELTA_T
 noncog = 0
 ncog = 0
+ncd4 = 0
 ntot = 0
 nbnd = 0
 nst = 0
 stim = 0
 gendist = 0
 div_gendist = 0
-do kcell = 1,nlist
-    if (.not.cellist(kcell)%exists) cycle
-    p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    if (.not.Bcell_list(kcell)%exists) cycle
+    p => Bcell_list(kcell)%cptr
     if (associated(p)) then
 		stage = get_stage(p)
 		region = get_region(p)
@@ -1451,7 +1467,7 @@ do kcell = 1,nlist
 		call logger(logmsg)
 		stop
 	endif
-    ctype = cellist(kcell)%ctype
+    ctype = Bcell_list(kcell)%ctype
     if (ctype == COG_TYPE_TAG) then
         ncog = ncog + 1
         gen = get_generation(p)
@@ -1464,8 +1480,10 @@ do kcell = 1,nlist
         gendist(gen) = gendist(gen) + 1
     elseif (ctype == NONCOG_TYPE_TAG) then
         noncog = noncog + 1
+    elseif (ctype == COG_CD4_CELL) then
+		ncd4 = ncd4 + 1
     else
-        write(logmsg,*) 'ERROR: get_summary: bad stype: ',ctype,stype
+        write(logmsg,*) 'ERROR: get_summary: bad ctype: ',ctype
         call logger(logmsg)
         stop
     endif
@@ -1525,25 +1543,27 @@ end subroutine
 ! As a quick-and-dirty measure, the first 7 B cells in the list are actually 
 ! markers to provide a visual indication of the extent of the follicular blob.
 !--------------------------------------------------------------------------------
-subroutine get_scene(nBC_list,BC_list,nFDC_list,FDC_list,nbond_list,bond_list) BIND(C)
+subroutine get_scene(nBC_list,BC_list,nFDCMRC_list,FDCMRC_list,nbond_list,bond_list) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_scene
 use, intrinsic :: iso_c_binding
-integer(c_int) :: nFDC_list, nBC_list, nbond_list, FDC_list(*), BC_list(*), bond_list(*)
+integer(c_int) :: nFDCMRC_list, nBC_list, nbond_list, FDCMRC_list(*), BC_list(*), bond_list(*)
 integer :: k, kc, kcell, site(3), j, jb, idc, fdcsite(3)
 integer :: col(3)
 integer :: x, y, z
 real :: dcstate
-integer :: ifdcstate, ibcstate, stype, ctype, stage, region
+integer :: ifdcstate, ibcstate, ctype, stage, region
 real :: bcell_diam = 0.9
 real :: FDC_diam = 1.8
 integer :: gen, bnd(2), noncnt, last_id1, last_id2
+logical :: show_Tcells = .true.
+logical :: ok
 integer, parameter :: axis_centre = -2	! identifies the ellipsoid centre
 integer, parameter :: axis_end    = -3	! identifies the ellipsoid extent in 5 directions
 integer, parameter :: axis_bottom = -4	! identifies the ellipsoid extent in the -Y direction, i.e. bottom surface
 integer, parameter :: ninfo = 5			! the size of the info package for a cell (number of integers)
 integer, parameter :: nax = 6			! number of points used to delineate the follicle
 
-nFDC_list = 0
+nFDCMRC_list = 0
 ! Need some markers to delineate the follicle extent.  These nax "cells" are used to convey (the follicle centre
 ! and) the approximate ellipsoidal blob limits in the 3 axis directions.
 do k = 1,nax
@@ -1605,35 +1625,59 @@ k = last_id1 + 1
 ! Cognate cells
 do kc = 1,lastcogID
 	kcell = cognate_list(kc)
-	if (cellist(kcell)%exists) then
+	if (Bcell_list(kcell)%exists) then
 		k = k+1
 		j = ninfo*(k-1)
-		site = cellist(kcell)%site
+		site = Bcell_list(kcell)%site
 		call BcellColour(kcell,col)
 		BC_list(j+1) = kc + last_id1
 		BC_list(j+2:j+4) = site
 		BC_list(j+5) = rgb(col)
 		last_id2 = kc + last_id1
-!		write(nflog,'(a,8i7)') 'cog: ',k,BC_list(j+1),kcell,get_stage(cellist(kcell)%cptr),kc,last_id1
+!		write(nflog,'(a,8i7)') 'cog: ',k,BC_list(j+1),kcell,get_stage(Bcell_list(kcell)%cptr),kc,last_id1
 !		if (istep > 14000) then
-!			write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,get_stage(cellist(kcell)%cptr)
+!			write(logmsg,'(a,7i8)') 'cog: ',k,kcell,col,get_stage(Bcell_list(kcell)%cptr)
 !			call logger(logmsg)
 !		endif
 	endif
 enddo
 noncnt = 0
-if (show_noncognate) then
-    ! Non-cognate cells, a specified fraction noncogfraction are displayed
-    do kcell = 1,noncog_display_fraction*nlist
-        if (associated(cellist(kcell)%cptr)) then
-            write(nflog,*) 'cell associated: ',kcell
-            cycle
-        endif
-	    if (cellist(kcell)%exists) then
+if (show_Tcells) then
+    ! CD4 T cells are displayed
+    do kcell = 1,nBlist
+        if (associated(Bcell_list(kcell)%cptr)) cycle
+        if (Bcell_list(kcell)%ctype /= COG_CD4_CELL) cycle
+	    if (Bcell_list(kcell)%exists) then
 	        noncnt = noncnt + 1
 		    k = k+1
 		    j = ninfo*(k-1)
-		    site = cellist(kcell)%site
+		    site = Bcell_list(kcell)%site
+		    call BcellColour(kcell,col)
+		    BC_list(j+1) = noncnt + last_id2
+		    BC_list(j+2:j+4) = site
+		    BC_list(j+5) = rgb(col)
+!    		write(nflog,*) 'CD4: ',k,kcell,BC_list(j+1)
+!		    write(logmsg,'(a,7i8)') 'CD4: ',noncnt,k,kcell,col,rgb(col)
+!		    call logger(logmsg)
+        else
+            write(nflog,*) 'cell nonexistent: ',kcell
+	    endif
+    enddo
+endif
+noncnt = 0
+if (show_noncognate) then
+    ! Non-cognate cells, a specified fraction noncogfraction are displayed
+    do kcell = 1,noncog_display_fraction*nBlist
+        if (associated(Bcell_list(kcell)%cptr)) then
+            write(nflog,*) 'cell associated: ',kcell
+            cycle
+        endif
+        if (Bcell_list(kcell)%ctype == COG_CD4_CELL) cycle
+	    if (Bcell_list(kcell)%exists) then
+	        noncnt = noncnt + 1
+		    k = k+1
+		    j = ninfo*(k-1)
+		    site = Bcell_list(kcell)%site
 		    call BcellColour(kcell,col)
 !		    BC_list(j+1) = kcell + last_id2
 		    BC_list(j+1) = noncnt + last_id2
@@ -1654,34 +1698,34 @@ nBC_list = k
 k = 0
 if (NFDC > 0) then
     do kcell = 1,NFDC
-        if (FDClist(kcell)%alive) then
+        if (FDC_list(kcell)%alive) then
 			k = k+1
 			j = ninfo*(k-1)
-            site = FDClist(kcell)%site
+            site = FDC_list(kcell)%site
 !            write(logmsg,*) 'FDC site: ',kcell,site
 !            call logger(logmsg)
-			FDC_list(j+1) = kcell-1
-			FDC_list(j+2:j+4) = site
-			FDC_list(j+5) = 100
+			FDCMRC_list(j+1) = kcell-1
+			FDCMRC_list(j+2:j+4) = site
+			FDCMRC_list(j+5) = 100
         endif
     enddo
 endif
 if (NMRC > 0) then
     do kcell = 1,NMRC
-        if (MRClist(kcell)%alive) then
+        if (MRC_list(kcell)%alive) then
 			k = k+1
 			j = ninfo*(k-1)
-            site = MRClist(kcell)%site
+            site = MRC_list(kcell)%site
 !            write(logmsg,*) 'MRC site: ',kcell,site
 !            call logger(logmsg)
-			FDC_list(j+1) = NFDC + kcell-1
-			FDC_list(j+2:j+4) = site
-			FDC_list(j+5) = 200
+			FDCMRC_list(j+1) = NFDC + kcell-1
+			FDCMRC_list(j+2:j+4) = site
+			FDCMRC_list(j+5) = 200
         endif
     enddo
 endif
-nFDC_list = k
-!write(logmsg,*) 'istep, nFDC_list: ',istep,nFDC_list
+nFDCMRC_list = k
+!write(logmsg,*) 'istep, nFDC_list: ',istep,nFDCMRC_list
 !call logger(logmsg)
 end subroutine
 
@@ -1692,7 +1736,7 @@ end subroutine
 subroutine BcellColour(kcell,col)
 integer :: kcell, col(3)
 integer :: stage, status
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 integer, parameter :: WHITE(3) = (/255,255,255/)
 integer, parameter :: RED(3) = (/255,0,0/)
 integer, parameter :: GREEN(3) = (/0,255,0/)
@@ -1730,7 +1774,7 @@ integer, parameter :: Qt_gray = 5
 integer, parameter :: Qt_darkGray = 4
 integer, parameter :: Qt_lightGray = 6
 
-p => cellist(kcell)%cptr
+p => Bcell_list(kcell)%cptr
 if (associated(p)) then
     stage = get_stage(p)
     status = get_status(p)
@@ -1756,6 +1800,8 @@ if (associated(p)) then
     case default
 	    col = WHITE				! 8
     end select
+elseif (Bcell_list(kcell)%ctype == COG_CD4_CELL) then
+	col = WHITE
 else
 	col = WHITE				    ! non-cognate
 endif
@@ -1774,18 +1820,18 @@ end function
 !-----------------------------------------------------------------------------------------
 subroutine squeezer_test
 integer :: i, j, kcell, site(3), indx(2), slot, region, nb0, n, kpar=0
-type(cog_type), pointer :: p
+type(Bcog_type), pointer :: p
 logical :: ok, flag
 
 write(*,*) 'doing squeezer_test'
 flag = .false.
 nb0 = nbcells
 do j = 1,5
-write(*,*) 'nlist: ',nlist, NBcells
+write(*,*) 'nBlist: ',nBlist, NBcells
 do i = 1,200
-	kcell = random_int(1,nlist,kpar)
-	if (.not.cellist(kcell)%exists) cycle
-	site = cellist(kcell)%site
+	kcell = random_int(1,nBlist,kpar)
+	if (.not.Bcell_list(kcell)%exists) cycle
+	site = Bcell_list(kcell)%site
 	indx = occupancy(site(1),site(2),site(3))%indx
 	if (indx(1) == kcell) then
 		slot = 1
@@ -1794,7 +1840,7 @@ do i = 1,200
 	endif
 !	call CellExit(kcell,slot,site)
 	call BcellDeath(kcell)
-	if (cellist(kcell)%ID == 12391) then
+	if (Bcell_list(kcell)%ID == 12391) then
 		write(*,*) 'Dead cell ID=12391: ',kcell
 	endif
 enddo
@@ -1805,18 +1851,18 @@ write(*,*)
 n = nb0-nbcells
 call cellInflux(n,ok)
 write(*,*) 'did cellInflux'
-do kcell = 1,nlist
-    p => cellist(kcell)%cptr
+do kcell = 1,nBlist
+    p => Bcell_list(kcell)%cptr
 	if (associated(p)) then
         region = get_region(p)
-        if (cellist(kcell)%exists) then
+        if (Bcell_list(kcell)%exists) then
 			if (region /= FOLLICLE) then
-				write(*,*) 'Cell exists, bad region: ',kcell,cellist(kcell)%ID,region
+				write(*,*) 'Cell exists, bad region: ',kcell,Bcell_list(kcell)%ID,region
 				stop
 			endif
 		else
 			if (region == FOLLICLE) then
-				write(*,*) 'Cell does not exist, bad region: ',kcell,cellist(kcell)%ID,region
+				write(*,*) 'Cell does not exist, bad region: ',kcell,Bcell_list(kcell)%ID,region
 				stop
 			endif
 		endif
@@ -1863,11 +1909,13 @@ endif
 if (sim_dbug) then
 	write(logmsg,*) 'simulate_step: ',istep
 	call logger(logmsg)
+	call checkcellcount(ok)
+	if (.not.ok) stop
 endif
 
 if (sim_dbug) then
 	kcell = cognate_list(1)
-!	write(*,*) cellist(kcell)%site
+!	write(*,*) Bcell_list(kcell)%site
 	call check_cognate_list
 endif
 
@@ -1876,15 +1924,15 @@ if (test_chemotaxis) then
 		do k = 1,lastcogID
 			kcell = cognate_list(k)
 			if (kcell > 0) then
-				call set_stage(cellist(kcell)%cptr,PLASMA)
-				call set_status(cellist(kcell)%cptr,BCL6_LO)
-				call ReceptorLevel(kcell,NAIVE_TAG,ACTIVATED_TAG,1.,0.,1.,cellist(kcell)%receptor_level)
+				call set_stage(Bcell_list(kcell)%cptr,PLASMA)
+				call set_status(Bcell_list(kcell)%cptr,BCL6_LO)
+				call ReceptorLevel(kcell,NAIVE_TAG,ACTIVATED_TAG,1.,0.,1.,Bcell_list(kcell)%receptor_level)
 			endif
 		enddo
 	endif
 !	do k = 1,lastcogID
 !		kcell = cognate_list(k)
-!		stage = get_stage(cellist(kcell)%cptr)
+!		stage = get_stage(Bcell_list(kcell)%cptr)
 !		write(nfout,'(i4,i6,2x,3i4)') k,kcell,stage
 !	enddo
 	call mover(ok)
@@ -1896,10 +1944,10 @@ if (test_case(1)) then    ! cognate cells are made insensitive to all chemokines
 		do k = 1,lastcogID
 			kcell = cognate_list(k)
 			if (kcell > 0) then
-!				cellist(kcell)%ctype = TESTCELL2
-				cellist(kcell)%receptor_level = 0
+!				Bcell_list(kcell)%ctype = TESTCELL2
+				Bcell_list(kcell)%receptor_level = 0
 !				if (k <= 5) then
-!    				call set_stage(cellist(kcell)%cptr,PLASMA)
+!    				call set_stage(Bcell_list(kcell)%cptr,PLASMA)
 !    		    endif
             endif
         enddo
@@ -1928,6 +1976,7 @@ if (mod(istep,240) == 0) then
     tmover = 0
 !    call CheckBdryList
 !	call show_lineage(logID)
+!	call checkreceptor()
 	call checkcellcount(ok)
 	if (.not.ok) then
 		res = 1
@@ -1940,12 +1989,18 @@ if (.not.use_SS_fields) then
 	call UpdateFields(DELTA_T)
 	if (sim_dbug) write(nflog,*) 'did UpdateFields'
 endif
-if (sim_dbug) write(nflog,*) 'call mover'
+if (sim_dbug) then
+	write(nflog,*) 'call mover'
+	call checkcellcount(ok)
+endif
 call cpu_time(t1)
 call mover(ok)
 call cpu_time(t2)
 tmover = tmover + t2 - t1
-if (sim_dbug) write(nflog,*) 'did mover'
+if (sim_dbug) then
+	write(nflog,*) 'did mover'
+	call checkcellcount(ok)
+endif
 if (.not.ok) then
 	call logger("mover returned error")
 	res = 1
@@ -1981,7 +2036,6 @@ if (sim_dbug) call check_xyz(3)
 call balancer(ok)
 if (sim_dbug) then
 	write(nflog,*) 'did balancer' 
-	call checkcellcount(ok)
 	if (.not.ok) then
 		res = 1
 		return
@@ -2152,6 +2206,7 @@ call ChemoSteadystate
 firstSummary = .true.
 initialized = .true.
 
+call checkcellcount(ok)
 write(logmsg,'(a,i6)') 'Startup procedures have been executed: initial T cell count: ',NBcells0
 call logger(logmsg)
 
@@ -2169,10 +2224,11 @@ if (allocated(zoffset)) deallocate(zoffset)
 if (allocated(zdomain)) deallocate(zdomain)
 !if (allocated(occupancy)) deallocate(occupancy)
 if (allocated(Tres_dist)) deallocate(Tres_dist)
-if (allocated(cellist)) deallocate(cellist,stat=ierr)
-if (allocated(DClist)) deallocate(DClist,stat=ierr)
-if (allocated(FDClist)) deallocate(FDClist,stat=ierr)
-if (allocated(MRClist)) deallocate(MRClist,stat=ierr)
+if (allocated(Bcell_list)) deallocate(Bcell_list,stat=ierr)
+!if (allocated(Tcell_list)) deallocate(Tcell_list,stat=ierr)
+if (allocated(DC_list)) deallocate(DC_list,stat=ierr)
+if (allocated(FDC_list)) deallocate(FDC_list,stat=ierr)
+if (allocated(MRC_list)) deallocate(MRC_list,stat=ierr)
 if (ierr /= 0) then
     write(logmsg,*) 'deallocate error: ',ierr
     call logger(logmsg)
@@ -2352,7 +2408,6 @@ if (test_squeezer) then
 	call squeezer_test
 	stop
 endif
-return
 end subroutine
 
 end module

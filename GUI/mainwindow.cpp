@@ -117,7 +117,6 @@ MainWindow::MainWindow(QWidget *parent)
     LOG_QMSG("Did loadparams");
 	writeout();
     timer = new QTimer(this);
-//	vtk = new MyVTK(page_3D);
     vtk = new MyVTK(mdiArea_VTK, widget_key);
 	vtk->init();
 	tabs->setCurrentIndex(0);
@@ -135,6 +134,8 @@ void MainWindow::createActions()
 	action_save_snapshot->setEnabled(false);
     action_show_gradient3D->setEnabled(false);
     action_show_gradient2D->setEnabled(false);
+    action_start_recording->setEnabled(true);
+    action_stop_recording->setEnabled(false);
     text_more->setEnabled(false);
     connect(action_open_input, SIGNAL(triggered()), this, SLOT(readInputFile()));
     connect(action_load_results, SIGNAL(triggered()), this, SLOT(loadResultFile()));
@@ -162,6 +163,8 @@ void MainWindow::createActions()
     connect(action_remove_graph, SIGNAL(triggered()), this, SLOT(removeGraph()));
     connect(action_remove_all, SIGNAL(triggered()), this, SLOT(removeAllGraphs()));
     connect(action_save_snapshot, SIGNAL(triggered()), this, SLOT(saveSnapshot()));
+    connect(action_start_recording, SIGNAL(triggered()), this, SLOT(startRecorder()));
+    connect(action_stop_recording, SIGNAL(triggered()), this, SLOT(stopRecorder()));
 //    connect(action_show_gradient3D, SIGNAL(triggered()), this, SLOT(showGradient3D()));
 //    connect(action_show_gradient2D, SIGNAL(triggered()), this, SLOT(showGradient2D()));
 }
@@ -234,6 +237,40 @@ void MainWindow::createLists()
 	distplot_list[3] = qp;
 	qp = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_DC_LIFETIME");
 	distplot_list[4] = qp;
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow:: startRecorder()
+{
+    bool ok;
+    int nframes=0;
+    QString basefile = "movie/frame";
+//    const QString title = "Set nframes";
+//    const QString text = "Number of frames to capture: ";
+    int i = QInputDialog::getInteger(this, tr("Set nframes"),tr("Number of frames to capture: "), nframes, 0, 10000, 1, &ok);
+//    int i = QInputDialog::getInt(this, title, text, nframes, 0, 0, 0, &ok);
+
+//    static int i = QInputDialog::getInt(this, QObject::tr("QInputDialog::getInteger()"),
+//                                  QObject::tr("Percentage:"), 25, 0, 100, 1, &ok);
+
+    if (ok) {
+        nframes = i;
+    }
+    if (!ok || nframes == 0) return;
+    vtk->startRecorder(basefile,nframes);
+    action_start_recording->setEnabled(false);
+    action_stop_recording->setEnabled(true);
+    goToVTK();
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow:: stopRecorder()
+{
+    vtk->stopRecorder();
+    action_start_recording->setEnabled(true);
+    action_stop_recording->setEnabled(false);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1117,13 +1154,13 @@ void MainWindow::goToOutputs()
 //-------------------------------------------------------------
 void MainWindow::goToVTK()
 {
-	if (started) {
+//	if (started) {
 		stackedWidget->setCurrentIndex(2);
 		action_outputs->setEnabled(true);
 		action_inputs->setEnabled(true);
 		action_VTK->setEnabled(false);
 		showingVTK = 1;
-	}
+//	}
 }
 
 //-------------------------------------------------------------

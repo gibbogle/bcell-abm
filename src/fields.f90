@@ -585,12 +585,12 @@ do i = 2,1,-1
             if (indx(1) < 0) cycle  ! outside or DC
             if (indx(1) == 0) then  ! use this slot
                 occupancy(site(1),site(2),site(3))%indx(1) = kcell
-                cellist(kcell)%site = site
+                Bcell_list(kcell)%site = site
                 done = .true.
                 exit
             elseif (indx(2) == 0) then  ! use this slot
                 occupancy(site(1),site(2),site(3))%indx(2) = kcell
-                cellist(kcell)%site = site
+                Bcell_list(kcell)%site = site
                 occupancy(csite(1),csite(2),csite(3))%indx(i) = 0
                 done = .true.
                 exit
@@ -776,11 +776,11 @@ do ichemo = 1,MAX_CHEMO
 		else	! special treatment needed for CXCL13, which is secreted by FDCs and MRCs
 			if (USE_CELL_SITES) then
 				do i = 1,NFDC
-					site = FDClist(i)%site
+					site = FDC_list(i)%site
 					chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
 				enddo
 				do i = 1,NMRC
-					site = MRClist(i)%site
+					site = MRC_list(i)%site
 					chemo(ichemo)%conc(site(1),site(2),site(3)) = chemo(ichemo)%bdry_conc
 				enddo
 			else

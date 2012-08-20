@@ -111,6 +111,8 @@ public slots:
 	void errorPopup(QString);
 	void displayScene();
 	void showSummary();
+    void startRecorder();
+    void stopRecorder();
 
 private:
     void createActions();
