@@ -1542,6 +1542,11 @@ end subroutine
 ! and one for cell-cell bonds (not used).
 ! As a quick-and-dirty measure, the first 7 B cells in the list are actually 
 ! markers to provide a visual indication of the extent of the follicular blob.
+! Improving this:
+! blobrange(:,:) holds the info about the ranges of x, y and z that the blob occupies.
+! blobrange(1,1) <= x <= blobrange(1,2)
+! blobrange(2,1) <= y <= blobrange(2,2)
+! blobrange(3,1) <= z <= blobrange(3,2)
 !--------------------------------------------------------------------------------
 subroutine get_scene(nBC_list,BC_list,nFDCMRC_list,FDCMRC_list,nbond_list,bond_list) BIND(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_scene
@@ -1575,39 +1580,45 @@ do k = 1,nax
 !		site = (/x, y, z/)
 !		ibcstate = axis_centre
 	case (1)
-		x = Centre(1) - Radius%x - 2
+!		x = Centre(1) - Radius%x - 2
+		x = blobrange(1,1) - 1
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (2)
-		x = Centre(1) + Radius%x + 2
+!		x = Centre(1) + Radius%x + 2
+		x = blobrange(1,2) + 1
 		y = Centre(2) + 0.5
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (3)
 		x = Centre(1) + 0.5
-		y = Centre(2) - Radius%y - 2
+!		y = Centre(2) - Radius%y - 2
+		y = blobrange(2,1) - 1
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_bottom
 	case (4)
 		x = Centre(1) + 0.5
-		y = Centre(2) + Radius%y + 2
+!		y = Centre(2) + Radius%y + 2
+		y = blobrange(2,2) + 1
 		z = Centre(3) + 0.5
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (5)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
-		z = Centre(3) - Radius%z - 2
+!		z = Centre(3) - Radius%z - 2
+		z = blobrange(3,1) - 1
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	case (6)
 		x = Centre(1) + 0.5
 		y = Centre(2) + 0.5
-		z = Centre(3) + Radius%z + 2
+!		z = Centre(3) + Radius%z + 2
+		z = blobrange(3,2) + 1
 		site = (/x, y, z/)
 		ibcstate = axis_end
 	end select
@@ -1642,7 +1653,7 @@ do kc = 1,lastcogID
 	endif
 enddo
 noncnt = 0
-if (show_Tcells) then
+if (use_Tcells .and. show_Tcells) then
     ! CD4 T cells are displayed
     do kcell = 1,nBlist
         if (associated(Bcell_list(kcell)%cptr)) cycle
@@ -1748,7 +1759,7 @@ integer, parameter :: LIGHTRED(3) = (/255,70,90/)
 integer, parameter :: LIGHTBLUE(3) = (/0,200,255/)
 integer, parameter :: LIGHTGREEN(3) = (/50,255,150/)
 integer, parameter :: DEEPORANGE(3) = (/240,70,0/)
-integer, parameter :: LIGHTORANGE(3) = (/255,130,50/)
+integer, parameter :: LIGHTORANGE(3) = (/255,130,0/)
 integer, parameter :: YELLOW(3) = (/255,255,0/)
 integer, parameter :: DEEPPURPLE(3) = (/180,180,30/)
 integer, parameter :: LIGHTPURPLE(3) = (/230,230,100/)
@@ -1801,7 +1812,7 @@ if (associated(p)) then
 	    col = WHITE				! 8
     end select
 elseif (Bcell_list(kcell)%ctype == COG_CD4_CELL) then
-	col = WHITE
+	col = LIGHTORANGE
 else
 	col = WHITE				    ! non-cognate
 endif

@@ -325,6 +325,7 @@ real(DP) :: BETA                            ! speed: 0 < beta < 1
 real(DP) :: RHO                             ! persistence: 0 < rho < 1
 
 logical :: use_traffic = .true.
+logical :: use_Tcells
 logical :: computed_outflow
 logical :: use_FDCs = .true.
 logical :: use_MRCs = .true.
@@ -446,7 +447,6 @@ real :: lastbalancetime
 real :: scale_factor	! scaling from model to one (or more) whole LNs
 real :: Fcognate		! fraction of B cells in circulation that are cognate
 logical :: use_cognate
-logical, parameter :: use_Tcells = .false.
 
 ! Result data
 type(result_type) :: localres, totalres

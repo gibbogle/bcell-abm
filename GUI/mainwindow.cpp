@@ -485,6 +485,16 @@ void MainWindow::loadParams()
 							if (use_traffic)
 								disableUseTraffic();
 						}
+                        bool use_tcells = qsname.contains("USE_TCELLS");
+                        if (p.value == 1) {
+                            w_cb->setChecked(true);
+                            if (use_tcells)
+                                enableUseTcells();
+                        } else {
+                            w_cb->setChecked(false);
+                            if (use_tcells)
+                                disableUseTcells();
+                        }
 
 						bool use_exit_chemotaxis = qsname.contains("USE_EXIT_CHEMOTAXIS");
 						if (p.value == 1) {
@@ -819,7 +829,17 @@ void MainWindow::reloadParams()
 							if (use_traffic)
 								disableUseTraffic();
 						}
-						bool use_exit_chemotaxis = qsname.contains("USE_EXIT_CHEMOTAXIS");
+                        bool use_tcells = qsname.contains("USE_TCELLS");
+                        if (p.value == 1) {
+                            w_cb->setChecked(true);
+                            if (use_tcells)
+                                enableUseTcells();
+                        } else {
+                            w_cb->setChecked(false);
+                            if (use_tcells)
+                                disableUseTcells();
+                        }
+                        bool use_exit_chemotaxis = qsname.contains("USE_EXIT_CHEMOTAXIS");
 						if (p.value == 1) {
 							w_cb->setChecked(true);
 							if (use_exit_chemotaxis)

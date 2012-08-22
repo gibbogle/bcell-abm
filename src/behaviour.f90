@@ -271,7 +271,7 @@ subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
 integer :: i, ic, k, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
-integer :: usetraffic, usechemo, computedoutflow, itestcase
+integer :: usetraffic, usetcells, usechemo, computedoutflow, itestcase
 character(4) :: logstr
 
 ok = .true.
@@ -280,7 +280,7 @@ read(nfcell,*) BC_AVIDITY_MEDIAN            ! median of avidity distribution (on
 read(nfcell,*) BC_AVIDITY_SHAPE			    ! shape -> 1 gives normal dist with small variance
 read(nfcell,*) BC_COGNATE_FRACTION			
 read(nfcell,*) BC_STIM_RATE_CONSTANT		! rate const for TCR stimulation (-> molecules/min)
-read(nfcell,*) BC_STIM_HALFLIFE				! halflife of T cell stimulation (hours)
+read(nfcell,*) BC_STIM_HALFLIFE				! halflife of B cell stimulation (hours)
 read(nfcell,*) divide_mean1
 read(nfcell,*) divide_shape1
 read(nfcell,*) divide_mean2
@@ -288,13 +288,14 @@ read(nfcell,*) divide_shape2
 read(nfcell,*) BETA							! speed: 0 < beta < 1		(0.65)
 read(nfcell,*) RHO							! persistence: 0 < rho < 1	(0.95)
 read(nfcell,*) NX							! rule of thumb: about 4*BLOB_RADIUS
-read(nfcell,*) BLOB_RADIUS					! initial T cell blob size (sites)
+read(nfcell,*) BLOB_RADIUS					! initial B cell blob size (sites)
 read(nfcell,*) BC_FRACTION					! B cell fraction of follicle volume
 read(nfcell,*) FLUID_FRACTION				! fraction of paracortex that is fluid
-read(nfcell,*) usetraffic					! use T cell trafficking
+read(nfcell,*) usetraffic					! use B cell trafficking
+read(nfcell,*) usetcells					! simulate T cells explicitly
 read(nfcell,*) usechemo                     ! use chemotaxis
 read(nfcell,*) computedoutflow				! compute outflow (with inflow)
-read(nfcell,*) RESIDENCE_TIME               ! T cell residence time in hours -> inflow rate
+read(nfcell,*) RESIDENCE_TIME               ! B cell residence time in hours -> inflow rate
 ! Vascularity parameters
 read(nfcell,*) Inflammation_days1	        ! Days of plateau level - parameters for VEGF_MODEL = 1
 read(nfcell,*) Inflammation_days2	        ! End of inflammation
@@ -443,9 +444,14 @@ enddo
 
 VEGF_MODEL = 1
 if (usetraffic == 1) then
-	USE_TRAFFIC = .true.
+	use_traffic = .true.
 else
-	USE_TRAFFIC = .false.
+	use_traffic = .false.
+endif
+if (usetcells == 1) then
+	use_Tcells = .true.
+else
+	use_Tcells = .false.
 endif
 if (computedoutflow == 1) then
 	computed_outflow = .true.
@@ -699,6 +705,10 @@ endif
 ndivided(gen) = ndivided(gen) + 1
 tdivided(gen) = tdivided(gen) + (tnow - p1%dividetime)
 
+if (p1%CD4index > 0) then	! There is a tethered CD4 T cell
+	call untether(p1)
+endif
+
 if (ngaps > 0) then
     icnew = gaplist(ngaps)
     ngaps = ngaps - 1
@@ -787,6 +797,17 @@ else
     return
 endif
 NBcells = NBcells + 1
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! The CD4 T cell is untethered from the B cell
+!-----------------------------------------------------------------------------------------
+subroutine untether(p)
+type(Bcog_type), pointer :: p
+integer :: ktcell
+
+ktcell = p%CD4index
+p%CD4index = 0
 end subroutine
 
 !-----------------------------------------------------------------------------------------

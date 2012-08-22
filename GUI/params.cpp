@@ -75,6 +75,10 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "B cell trafficking?",
 "B cell trafficking is simulated (ingress and egress)"},
 
+{"USE_TCELLS", 0, 0, 1,
+"Simulate T cells?",
+"CD4 T cells are explicitly simulated (i.e. they occupy space))"},
+
 {"USE_EXIT_CHEMOTAXIS", 0, 0, 1,
 "B cell exit chemotaxis?",
 "S1P-modulated B cell chemotaxis towards exit portals is simulated"},

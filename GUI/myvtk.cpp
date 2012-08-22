@@ -129,17 +129,20 @@ MyVTK::~MyVTK()
 //-----------------------------------------------------------------------------------------
 void MyVTK::key_canvas(QWidget *key_page)
 {
-    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 280));
+//    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 280));
+    QGraphicsScene* scene = new QGraphicsScene(QRect(0, 0, 130, 310));
     QBrush brush;
     QGraphicsTextItem *text;
 
-    brush.setColor(QColor(255,128,77));
+//    brush.setColor(QColor(255,128,77));
+    brush.setColor(QColor(150,100,0));
     brush.setStyle(Qt::SolidPattern);
 	scene->addEllipse(10,10,20,20,Qt::NoPen, brush);
 	text = scene->addText("FDC");
     text->setPos(35, 10);
 
-    brush.setColor(QColor(255,77,128));
+//    brush.setColor(QColor(255,77,128));
+    brush.setColor(QColor(200,60,100));
     brush.setStyle(Qt::SolidPattern);
     scene->addEllipse(10,40,20,20,Qt::NoPen, brush);
     text = scene->addText("MRC");
@@ -180,9 +183,15 @@ void MyVTK::key_canvas(QWidget *key_page)
 	text = scene->addText("Plasma cell");
     text->setPos(35, 250);
 
+    brush.setColor(QColor(255,130,0));
+    scene->addEllipse(10,280,20,20,Qt::NoPen, brush);
+    text = scene->addText("CD4 T cell");
+    text->setPos(35, 280);
+
 	QGraphicsView* view = new QGraphicsView(key_page);
     view->setScene(scene);
-    view->setGeometry(QRect(0, 0, 150, 300));
+//    view->setGeometry(QRect(0, 0, 150, 300));
+    view->setGeometry(QRect(0, 0, 150, 330));
     view->show();
 }
 //-----------------------------------------------------------------------------------------
@@ -626,8 +635,10 @@ void MyVTK::process_Dcells()
     double r, g, b;
     CELL_POS cp;
     vtkActor *actor;
-    double FDCColor[] = {1.0,0.5,0.3};
-    double MRCColor[] = {1.0,0.3,0.5};
+//    double FDCColor[] = {1.0,0.5,0.3};
+    double FDCColor[] = {0.59,0.39,0.0};  // 150,100,0
+//    double MRCColor[] = {1.0,0.3,0.5};
+    double MRCColor[] = {0.78,0.24,0.39};     // 200,60,100
     bool dbug = false;
     ACTOR_TYPE a;
     ACTOR_TYPE *ap;
