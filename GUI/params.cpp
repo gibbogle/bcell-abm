@@ -55,6 +55,30 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Motility persistence parameter",
 "B cell motility is described by speed and persistence parameters, each in the range 0 - 1. MOTILITY_RHO determines the extent to which motion is in the same direction from one time step to the next."},
 
+{"GCCPROB_GENLT3",0.0,0,0,
+"Probability for generation < 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation < 3."},
+
+{"GCCPROB_GENEQ3",0.1,0,0,
+"Probability for generation = 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation = 3."},
+
+{"GCCPROB_GENGT3",0.3,0,0,
+"Probability for generation > 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation > 3."},
+
+{"PLASMAPROB_GENLT3",0,0,0,
+"Probability for generation < 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation < 3."},
+
+{"PLASMAPROB_GENEQ3",0,0,0,
+"Probability for generation = 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation = 3."},
+
+{"PLASMAPROB_GENGT3",0.4,0,0,
+"Probability for generation > 3",
+"Probabilities of differentiation into GC cells or Plasma cells on cell division yielding generation > 3."},
+
 {"NX", 100, 100, 300,
 "Lattice size",
 "Dimension of the lattice (number of sites in X,Y and Z directions).  Typically 5*BLOB_RADIUS is OK."},

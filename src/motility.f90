@@ -273,7 +273,7 @@ nfull = 0
 nrest = 0
 nout = 0
 do irel = 1,nreldir
-	dir1 = reldir(lastdir1,irel)
+	dir1 = reldir(lastdir1,irel)	! this is absolute direction
 	site2 = site1 + jumpvec(:,dir1)
 	if (inside_xyz(site2)) then
 	    indx2 = occupancy(site2(1),site2(2),site2(3))%indx
@@ -310,6 +310,10 @@ if (ischemo) then
 	psave = p
 !	call chemo_probs(p,v,f)
 	call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
+endif
+
+if (crowding_correction) then
+	call correct_probs(p,site1)
 endif
 psum = sum(p)
 
@@ -390,6 +394,195 @@ if (CD4index > 0) then	! the CD4 T cell moves into the site vacated by the B cel
 else
 	occupancy(site1(1),site1(2),site1(3))%indx(kslot1) = 0
 endif
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! At site(:) there is a crowding gradient vector g(:), derived from the smoothed 
+! occupancy level.
+!-----------------------------------------------------------------------------------------
+subroutine correct_probs(p,site)
+real(DP) :: p(:)
+integer :: site(3)
+integer :: idir
+real :: g(3), jump(3), a, d, delta, pinit, dp(MAXRELDIR+1)
+real, parameter :: correct_factor = -0.05
+
+!g = (/0.5,0,0/)
+g = pressure_grad(:,site(1),site(2),site(3))
+
+a = norm(g)
+if (a == 0) return
+
+!if (a > 0.4) then
+!	write(*,'(a,3i4,5f8.4)') 'a, g: ',site,a,g,sum(p)
+!endif
+dp = 0
+do idir = 1,MAXRELDIR+1
+	if (idir == 14) cycle
+	jump = jumpvec(:,idir)
+	d = dot_product(jump,jump)
+	delta = dot_product(g,jump)/(a*d)
+	if (p(idir) > 0) then
+		dp(idir) = delta*correct_factor
+		pinit = p(idir)
+		p(idir) = max(pinit + dp(idir),0.0)
+!		if (a > 0.4) then
+!			write(*,'(i3,3f6.1,4f8.3)') idir,jump,delta,dp(idir),pinit,p(idir)
+!		endif
+	endif
+enddo
+a = sum(p)
+if (a > 0) then
+	p = p/a
+endif
+!write(*,'(a,27f6.3)') 'dp: ',dp
+!write(*,'(a,27f6.3)') 'p (out): ',p
+!write(*,*)
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! First a smoothing step (moving average) to determine the pressure field,
+! then gradient computation.
+!-----------------------------------------------------------------------------------------
+subroutine pressure_gradient
+integer :: x, y, z, x0, y0, z0, dx, dy, dz, indx(2), k, ns, nc, n, n2
+integer :: x1, x2, y1, y2, z1, z2, del, ky
+real :: P0, P1, P2, g(3), Pmax, gmax, psum, Pave(100)
+real, allocatable :: P(:,:,:)
+
+!write(*,*) 'pressure_gradient'
+allocate(P(NX,NY,NZ))
+!del = delta_movingaverage
+del = 2
+x1 = blobrange(1,1)
+x2 = blobrange(1,2)
+y1 = blobrange(2,1)
+y2 = blobrange(2,2)
+z1 = blobrange(3,1)
+z2 = blobrange(3,2)
+P = -1
+Pmax = 0
+n2 = 0
+do z0 = z1,z2
+	do y0 = y1,y2
+		do x0 = x1,x2
+			ns = 0
+			nc = 0
+			indx = occupancy(x0,y0,z0)%indx
+			if (indx(1) < 0) cycle
+			if (indx(1) > 0 .and. indx(2) > 0) n2 = n2 + 1
+			do dz = -del,del
+				z = z0 + dz
+				do dy = -del,del
+					y = y0 + dy
+					do dx = -del,del
+						x = x0 + dx
+						indx = occupancy(x,y,z)%indx
+						if (indx(1) < 0) cycle
+						ns = ns + 1
+						n = 0
+						do k = 1,2
+							if (indx(k) > 0) then
+								n = n + 1
+							endif
+						enddo
+						nc = nc + n
+					enddo
+				enddo
+			enddo
+			P(x0,y0,z0) = real(nc)/ns
+			Pmax = max(Pmax,P(x0,y0,z0))
+		enddo
+	enddo
+enddo
+gmax = 0
+do z = z1,z2
+	do y = y1,y2
+		do x = x1,x2
+			P0 = P(x,y,z)
+			if (P0 < 0) cycle
+			if (x-1 < 1) then
+				P1 = -1
+			else
+				P1 = P(x-1,y,z)
+			endif
+			if (x+1 > NX) then
+				P2 = -1
+			else
+				P2 = P(x+1,y,z)
+			endif
+			if (P1 >= 0 .and. P2 >= 0) then
+				g(1) = (P2 - P1)/2
+			elseif (P1 >= 0) then
+				g(1) = P0 - P1
+			elseif (P2 >= 0) then
+				g(1) = P2 - P0
+			else
+				g(1) = 0
+			endif
+			if (y-1 < 1) then
+				P1 = -1
+			else
+				P1 = P(x,y-1,z)
+			endif
+			if (y+1 > NY) then
+				P2 = -1
+			else
+				P2 = P(x,y+1,z)
+			endif
+			if (P1 >= 0 .and. P2 >= 0) then
+				g(2) = (P2 - P1)/2
+			elseif (P1 >= 0) then
+				g(2) = P0 - P1
+			elseif (P2 >= 0) then
+				g(2) = P2 - P0
+			else
+				g(2) = 0
+			endif
+			if (z-1 < 1) then
+				P1 = -1
+			else
+				P1 = P(x,y,z-1)
+			endif
+			if (z+1 > NZ) then
+				P2 = -1
+			else
+				P2 = P(x,y,z+1)
+			endif
+			if (P1 >= 0 .and. P2 >= 0) then
+				g(3) = (P2 - P1)/2
+			elseif (P1 >= 0) then
+				g(3) = P0 - P1
+			elseif (P2 >= 0) then
+				g(3) = P2 - P0
+			else
+				g(3) = 0
+			endif
+			gmax = max(gmax,norm(g))	
+			pressure_grad(:,x,y,z) = g
+		enddo
+	enddo
+enddo
+!write(*,*) 'n2: gmax: ',n2,gmax
+!write(*,'(10f6.2)') (P(49,y,49),y=blobrange(2,1),blobrange(2,2))
+!ky = 0
+!do y = blobrange(2,1),blobrange(2,2)
+!	psum = 0
+!	n = 0
+!	do x = blobrange(1,1),blobrange(1,2)
+!		do z = blobrange(3,1),blobrange(3,2)
+!			if (P(x,y,z) < 0) cycle
+!			psum = psum + P(x,y,z)
+!			n = n + 1
+!		enddo
+!	enddo
+!	if (n > 0) then
+!		ky = ky + 1
+!		Pave(ky) = psum/n
+!	endif
+!enddo
+!write(*,'(10f6.2)') Pave(1:ky),sum(Pave(1:ky))
+deallocate(P)
 end subroutine
 
 !-----------------------------------------------------------------------------------------

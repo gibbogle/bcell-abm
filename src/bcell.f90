@@ -203,6 +203,10 @@ if (evaluate_residence_time) then
     allocate(Tres_dist(int(days*24)))
     Tres_dist = 0
 endif
+
+if (crowding_correction) then
+	allocate(pressure_grad(3,NX,NY,NZ))
+endif
 ok = .true.
 
 end subroutine
@@ -1966,6 +1970,25 @@ if (test_case(1)) then    ! cognate cells are made insensitive to all chemokines
 	call mover(ok)
 	return
 endif
+if (test_case(2)) then    
+	! Testing the effects of the crowding correction
+	! Use only S1P, make non-cognate cells highly attracted, cognate cells are PLASMA, no chemotaxis
+	! (Note: chemokine parameters must be set appropriately).
+    if (istep == 1) then
+		do k = 1,lastcogID
+			kcell = cognate_list(k)
+			if (kcell > 0) then
+				Bcell_list(kcell)%receptor_level = 0
+   				call set_stage(Bcell_list(kcell)%cptr,PLASMA)
+            endif
+        enddo
+    endif
+!    if (mod(istep,10) == 1) then
+		call pressure_gradient
+!	endif
+	call mover(ok)
+	return
+endif
 
 if (mod(istep,240) == 0) then
     if (log_traffic) then
@@ -2260,6 +2283,7 @@ if (allocated(ODEdiff%ivar)) deallocate(ODEdiff%ivar)
 if (allocated(ODEdiff%varsite)) deallocate(ODEdiff%varsite)
 if (allocated(ODEdiff%icoef)) deallocate(ODEdiff%icoef)
 
+if(allocated(pressure_grad)) deallocate(pressure_grad)
 call logger('deallocated all arrays')
 
 ! Close all open files

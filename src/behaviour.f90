@@ -287,6 +287,12 @@ read(nfcell,*) divide_mean2
 read(nfcell,*) divide_shape2
 read(nfcell,*) BETA							! speed: 0 < beta < 1		(0.65)
 read(nfcell,*) RHO							! persistence: 0 < rho < 1	(0.95)
+read(nfcell,*) GCC_diffprob%gen_LT3
+read(nfcell,*) GCC_diffprob%gen_EQ3
+read(nfcell,*) GCC_diffprob%gen_GT3
+read(nfcell,*) Plasma_diffprob%gen_LT3
+read(nfcell,*) Plasma_diffprob%gen_EQ3
+read(nfcell,*) Plasma_diffprob%gen_GT3
 read(nfcell,*) NX							! rule of thumb: about 4*BLOB_RADIUS
 read(nfcell,*) BLOB_RADIUS					! initial B cell blob size (sites)
 read(nfcell,*) BC_FRACTION					! B cell fraction of follicle volume
@@ -385,7 +391,7 @@ if (itestcase /= 0) then
         iuse(CXCR5) = 0
     endif 
     if (itestcase == 2) then
-        shownoncog = 1
+        crowding_correction = .true.
     endif
 endif
 
@@ -925,11 +931,11 @@ real function get_GccProb(gen)
 integer :: gen
 
 if (gen <= 2) then
-	get_GccProb = 0
+	get_GccProb = GCC_diffprob%gen_LT3
 elseif (gen == 3) then
-	get_GccProb = 0.1
+	get_GccProb = GCC_diffprob%gen_EQ3
 else
-	get_GccProb = 0.3
+	get_GccProb = GCC_diffprob%gen_GT3
 endif
 end function
 
@@ -938,10 +944,12 @@ end function
 real function get_PlasmaProb(gen)
 integer :: gen
 
-if (gen <= 3) then
-	get_PlasmaProb = 0
+if (gen <= 2) then
+	get_PlasmaProb = Plasma_diffprob%gen_LT3
+elseif (gen == 3) then
+	get_PlasmaProb = Plasma_diffprob%gen_EQ3
 else
-	get_PlasmaProb = PLASMA_PROB
+	get_PlasmaProb = Plasma_diffprob%gen_GT3
 endif
 end function
 

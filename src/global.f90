@@ -131,7 +131,14 @@ real, parameter :: ENTRY_ALPHA = 0.5
 real, parameter :: EXIT_ALPHA = 0.5
 
 ! Differentiation probabilities
-real, parameter :: PLASMA_PROB = 0.4
+type diffprob_type
+	real :: gen_LT3
+	real :: gen_EQ3
+	real :: gen_GT3
+end type
+
+type(diffprob_type) :: GCC_diffprob
+type(diffprob_type) :: Plasma_diffprob
 
 ! Data above this line almost never change
 !==============================================================================================================
@@ -494,6 +501,10 @@ logical :: use_CPORT1 = .false.
 logical :: stopped, clear_to_send, simulation_start, par_zig_init
 logical :: dbug = .false.
 real :: base_exit_prob 					! testing different chemo_K
+
+! Crowding correction
+logical :: crowding_correction = .false.
+real, allocatable :: pressure_grad(:,:,:,:)
 
 !DEC$ ATTRIBUTES DLLEXPORT :: nsteps
 

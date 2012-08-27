@@ -97,7 +97,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -279,7 +279,7 @@ padding: 8px
               <widget class="QLineEdit" name="line_BC_COGNATE_FRACTION">
                <property name="maximumSize">
                 <size>
-                 <width>90</width>
+                 <width>50</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -337,7 +337,7 @@ padding: 8px
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>90</width>
+                 <width>50</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -385,7 +385,7 @@ padding: 8px
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>90</width>
+                 <width>50</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -437,7 +437,7 @@ padding: 8px
               <widget class="QLineEdit" name="line_MOTILITY_BETA">
                <property name="maximumSize">
                 <size>
-                 <width>90</width>
+                 <width>50</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -482,7 +482,7 @@ padding: 8px
               <widget class="QLineEdit" name="line_MOTILITY_RHO">
                <property name="maximumSize">
                 <size>
-                 <width>90</width>
+                 <width>50</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -775,6 +775,198 @@ padding: 8px
               <family>Arial</family>
               <pointsize>4</pointsize>
              </font>
+            </property>
+           </widget>
+           <widget class="QWidget" name="gridLayoutWidget_7">
+            <property name="geometry">
+             <rect>
+              <x>60</x>
+              <y>360</y>
+              <width>281</width>
+              <height>101</height>
+             </rect>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="1" column="0">
+              <widget class="QMyLabel" name="label_GCCPROB_GENLT3">
+               <property name="text">
+                <string>label_GCCPROB_GENLT3</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLineEdit" name="line_PLASMAPROB_GENLT3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="line_GCCPROB_GENLT3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="0">
+              <widget class="QMyLabel" name="label_GCCPROB_GENEQ3">
+               <property name="text">
+                <string>label_GCCPROB_GENEQ3</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="line_GCCPROB_GENEQ3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="3">
+              <widget class="QLineEdit" name="line_PLASMAPROB_GENEQ3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QMyLabel" name="label_GCCPROB_GENGT3">
+               <property name="text">
+                <string>label_GCCPROB_GENGT3</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <spacer name="horizontalSpacer_6">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLineEdit" name="line_GCCPROB_GENGT3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLineEdit" name="line_PLASMAPROB_GENGT3">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_generation">
+               <property name="text">
+                <string> </string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_GCC">
+               <property name="text">
+                <string>GC cell</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="label_Plasma">
+               <property name="text">
+                <string>Plasma cell</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <spacer name="horizontalSpacer_7">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QLabel" name="label_differentiation">
+            <property name="geometry">
+             <rect>
+              <x>110</x>
+              <y>340</y>
+              <width>191</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>10</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Differentiation Probabilities</string>
             </property>
            </widget>
           </widget>
