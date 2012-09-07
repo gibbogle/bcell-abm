@@ -216,7 +216,7 @@ type Bcog_type
 	real :: dietime			! time that the cell dies
 	real :: dividetime		! time that the cell divides
 	real :: stagetime		! time that a cell can pass to next stage
-	integer(2) :: generation
+	integer(2) :: generation = 1
 	integer(2) :: stage
 	integer(2) :: region
 	integer(2) :: status	! BCL6_LO, BCL6_HI, PLASMA
@@ -226,7 +226,7 @@ end type
 
 type Bcell_type
     integer :: ID
-    logical :: exists
+    logical :: exists = .true.
     integer :: site(3)
     integer :: step
     integer(2) :: ctype
@@ -503,7 +503,7 @@ logical :: dbug = .false.
 real :: base_exit_prob 					! testing different chemo_K
 
 ! Crowding correction
-logical :: crowding_correction = .false.
+logical :: use_crowding_correction
 real, allocatable :: pressure_grad(:,:,:,:)
 
 !DEC$ ATTRIBUTES DLLEXPORT :: nsteps

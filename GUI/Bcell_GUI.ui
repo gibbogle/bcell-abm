@@ -97,7 +97,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>4</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -3590,6 +3590,19 @@ p, li { white-space: pre-wrap; }
             </property>
             <property name="text">
              <string>Simulate T cells?</string>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="cbox_USE_CROWDING_CORRECTION">
+            <property name="geometry">
+             <rect>
+              <x>450</x>
+              <y>350</y>
+              <width>161</width>
+              <height>18</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Apply crowding correction?</string>
             </property>
            </widget>
           </widget>

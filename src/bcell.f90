@@ -204,7 +204,7 @@ if (evaluate_residence_time) then
     Tres_dist = 0
 endif
 
-if (crowding_correction) then
+if (use_crowding_correction) then
 	allocate(pressure_grad(3,NX,NY,NZ))
 endif
 ok = .true.

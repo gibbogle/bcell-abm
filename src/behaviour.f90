@@ -271,7 +271,7 @@ subroutine read_Bcell_params(ok)
 logical :: ok
 real :: sigma, divide_mean1, divide_shape1, divide_mean2, divide_shape2
 integer :: i, ic, k, shownoncog, ncpu_dummy, iuse(MAX_RECEPTOR), iuse_rate(MAX_CHEMO)
-integer :: usetraffic, usetcells, usechemo, computedoutflow, itestcase
+integer :: usetraffic, usetcells, usecrowdingcorrection, usechemo, computedoutflow, itestcase
 character(4) :: logstr
 
 ok = .true.
@@ -299,6 +299,7 @@ read(nfcell,*) BC_FRACTION					! B cell fraction of follicle volume
 read(nfcell,*) FLUID_FRACTION				! fraction of paracortex that is fluid
 read(nfcell,*) usetraffic					! use B cell trafficking
 read(nfcell,*) usetcells					! simulate T cells explicitly
+read(nfcell,*) usecrowdingcorrection		! apply crowding correction
 read(nfcell,*) usechemo                     ! use chemotaxis
 read(nfcell,*) computedoutflow				! compute outflow (with inflow)
 read(nfcell,*) RESIDENCE_TIME               ! B cell residence time in hours -> inflow rate
@@ -391,7 +392,7 @@ if (itestcase /= 0) then
         iuse(CXCR5) = 0
     endif 
     if (itestcase == 2) then
-        crowding_correction = .true.
+        use_crowding_correction = .true.
     endif
 endif
 
@@ -458,6 +459,11 @@ if (usetcells == 1) then
 	use_Tcells = .true.
 else
 	use_Tcells = .false.
+endif
+if (usecrowdingcorrection == 1) then
+	use_crowding_correction = .true.
+else
+	use_crowding_correction = .false.
 endif
 if (computedoutflow == 1) then
 	computed_outflow = .true.

@@ -312,7 +312,7 @@ if (ischemo) then
 	call chemo_probs_pre(p,rv,f)     ! this is the precomputed version
 endif
 
-if (crowding_correction) then
+if (use_crowding_correction) then
 	call correct_probs(p,site1)
 endif
 psum = sum(p)
