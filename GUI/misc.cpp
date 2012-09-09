@@ -165,7 +165,7 @@ void ExecThread::run()
             updated = true;
 		}
 		while(paused || leftb) {
-			Sleep(100);
+            sleep(100);
 		}
 		if (stopped) break;
 		simulate_step(&res);
@@ -186,7 +186,7 @@ void ExecThread::run()
                 istep = i;
 //                sprintf(msg,"got snapshot: i: %d",i);
 //                LOG_MSG(msg);
-                Sleep(10);
+                sleep(10);
 			}
 		}
 		if (stopped) break;
@@ -195,7 +195,7 @@ void ExecThread::run()
 	snapshot();
     sprintf(msg,"got snapshot:");
     LOG_MSG(msg);
-    Sleep(10);
+    sleep(10);
 	LOG_MSG("ExecThread::run: call terminate_run");
 	terminate_run(&res);
 

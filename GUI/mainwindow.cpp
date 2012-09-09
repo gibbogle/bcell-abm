@@ -13,12 +13,7 @@
 #include "myvtk.h"
 #include "transfer.h"
 
-#ifdef _WIN32
-#include "windows.h"
-#define sleep(n) Sleep(1000 * n)
-#endif
-
-#ifdef __LINUX
+#ifdef linux
 #include <QTcpServer>
 #else
 #include <QTcpServer.h>
@@ -38,7 +33,6 @@ int nDC_list;
 int bond_list[2*MAX_BOND];
 int nbond_list;
 int istep;
-QMutex mutex1, mutex2;
 
 int summaryData[100];
 int NX, NY, NZ, NBY;
@@ -927,10 +921,13 @@ void MainWindow::showMore(QString moreText)
 	LOG_MSG("label clicked!");
 	LOG_QMSG(moreText);
 	
-	if ((uintptr_t)sender() != currentDescription) {
+//	if ((uintptr_t)sender() != currentDescription) {
+    int i = reinterpret_cast<int >(sender());
+    if (i != currentDescription) {
         text_more->setEnabled(true); // self.ui.text_description.setEnabled(1) #show()
         text_more->setText(moreText); // text_description
-		currentDescription = (uintptr_t)sender();
+//		currentDescription = (uintptr_t)sender();
+        currentDescription = i;
     } else {
         text_more->clear(); // text_description
         text_more->setEnabled(false); // hide()#text_description
@@ -1394,7 +1391,7 @@ void MainWindow::runServer()
 	//    connect(sthread0, SIGNAL(sh_error(QString)), this, SLOT(errorPopup(QString)));	// doesn't work
 	sthread0->start();
 	vtk->cleanup();
-	Sleep(100);
+    sleep(100);
 
 	hours = 0;
 	nt_vtk = 0;
@@ -1550,12 +1547,12 @@ void MainWindow::displayScene()
 {
 	bool redo = false;	// need to understand this
 	started = true;
-	mutex2.lock();
+    exthread->mutex2.lock();
 //	bool fast = cbox_fastdisplay->isChecked();
 	bool fast = true;
 	vtk->get_cell_positions(fast);
 	vtk->renderCells(redo,false);
-	mutex2.unlock();
+    exthread->mutex2.unlock();
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1570,7 +1567,7 @@ void MainWindow::showSummary()
 		return;
 	}
 
-	mutex1.lock();
+    exthread->mutex1.lock();
 
 //	hour = summaryData[0]*DELTA_T/60;
     hour = summaryData[1]*DELTA_T/60;
@@ -1595,7 +1592,7 @@ void MainWindow::showSummary()
 		pGraph[i]->redraw(newR->tnow, newR->pData[i], step+1, casename);
 	}
 
-	mutex1.unlock();
+    exthread->mutex1.unlock();
 }
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------

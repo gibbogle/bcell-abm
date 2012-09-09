@@ -10,7 +10,7 @@
 #include "vtkInteractorStyleImage.h"
 #include "vtkActor.h"
 #include "log.h"
-#include <QinputDialog>
+#include <QInputDialog>
 #include <QMessageBox>
 
 #ifdef __cplusplus

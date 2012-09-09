@@ -6,20 +6,20 @@
 #include <stdio.h>
 
 //must be put in global scope and used once in all files
-#define LOG_DECLARE Log __log;
+#define LOG_DECLARE Log ___log;
 //used in any file need to access the log files, except the file that has LOG_DECLARE statment
-#define LOG_USE(); extern Log __log;
+#define LOG_USE(); extern Log ___log;
 //init log files, called once in program initialization
-#define LOG_INIT(fileName) do{if(fileName!= NULL)__log.init(fileName); else printf("error init log file %s", fileName);}while(0);
+#define LOG_INIT(fileName) do{if(fileName!= NULL)___log.init(fileName); else printf("error init log file %s", fileName);}while(0);
 
 //here are the different levels of logging
-#define LOG_VERBOSE(msg) __log.write("verbose", msg, __FILE__, __LINE__); //detailed info
-#define LOG_MSG(msg) __log.write("msg", msg, __FILE__, __LINE__); //brief info
-#define LOG_WARN(msg) __log.write("warn", msg, __FILE__, __LINE__); //warning
-#define LOG_ERR(msg) __log.write("error", msg, __FILE__, __LINE__); //error
-#define LOG_FATAL(msg) __log.write("fatal", msg, __FILE__, __LINE__); //fatal error
+#define LOG_VERBOSE(msg) ___log.write("verbose", msg, __FILE__, __LINE__); //detailed info
+#define LOG_MSG(msg) ___log.write("msg", msg, __FILE__, __LINE__); //brief info
+#define LOG_WARN(msg) ___log.write("warn", msg, __FILE__, __LINE__); //warning
+#define LOG_ERR(msg) ___log.write("error", msg, __FILE__, __LINE__); //error
+#define LOG_FATAL(msg) ___log.write("fatal", msg, __FILE__, __LINE__); //fatal error
 
-#define LOG_QMSG(qmsg) __log.qwrite("qmsg", qmsg, __FILE__, __LINE__); //brief info
+#define LOG_QMSG(qmsg) ___log.qwrite("qmsg", qmsg, __FILE__, __LINE__); //brief info
 
 class Log
 {

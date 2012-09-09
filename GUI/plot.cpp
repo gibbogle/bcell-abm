@@ -173,8 +173,10 @@ void Plot::redraw2(double *x1, double *y1, double *x2, double *y2, int n1, int n
 	pen->setColor(Qt::red);
 	curve[1]->setPen(*pen);
 	delete pen;
-	this->insertLegend(&QwtLegend(), QwtPlot::RightLegend);
-	double ylast = y1[n1-1];
+    QwtLegend *legend = new QwtLegend();
+//	this->insertLegend(&QwtLegend(), QwtPlot::RightLegend);
+    this->insertLegend(legend, QwtPlot::RightLegend);
+    double ylast = y1[n1-1];
 	double ylast2 = y2[n2-1];
 	if (ylast2 > ylast) {
 		ylast = ylast2;
@@ -200,8 +202,10 @@ void Plot::draw2(double *x1, double *y1, double *x2, double *y2, int n1, int n2)
 	pen->setColor(Qt::red);
 	curve[1]->setPen(*pen);
 	delete pen;
-	this->insertLegend(&QwtLegend(), QwtPlot::RightLegend);
-	double ylast = 0;
+    QwtLegend *legend = new QwtLegend();
+//	this->insertLegend(&QwtLegend(), QwtPlot::RightLegend);
+    this->insertLegend(legend, QwtPlot::RightLegend);
+    double ylast = 0;
 	for (int i=0; i<n1; i++)
 		ylast = max(ylast,y1[i]);
 	for (int i=0; i<n2; i++)

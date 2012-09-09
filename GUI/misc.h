@@ -1,6 +1,8 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include <QtGui>
+
 #include <QThread>
 #include <QTcpServer>
 
@@ -53,11 +55,19 @@ public:
 	int nsteps;
 	bool paused;
 	bool stopped;
+    QMutex mutex1, mutex2;
 signals:
 	void display();
 	void summary();
 };
 
 bool quitMessage(QString);
+
+#ifdef _WIN32
+#include "windows.h"
+#define sleep(n) Sleep(n)   // milliseconds
+#else
+#define sleep(n) usleep(1000*n)
+#endif
 
 #endif

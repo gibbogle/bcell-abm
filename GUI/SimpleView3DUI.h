@@ -7,7 +7,7 @@
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkActor.h"
-#include <QinputDialog>
+#include <QInputDialog>
 #include <QMessageBox>
 #include "log.h"
 
