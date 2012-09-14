@@ -2656,6 +2656,26 @@ int SliderPlus::nTicks() {
     return n;
 }
 
+void MainWindow::on_cbox_SHOW_NONCOGNATE_toggled(bool checked)
+{
+    QLineEdit *le = findChild<QLineEdit*>("line_DISPLAY_FRACTION");
+    if (checked) {
+        le->setEnabled(true);
+    } else {
+        le->setEnabled(false);
+    }
+}
+
+void MainWindow::on_action_show_gradient3D_triggered()
+{
+    showGradient3D();
+}
+
+void MainWindow::on_action_show_gradient2D_triggered()
+{
+    showGradient2D();
+}
+
 
 
 //==================================================================================================================
@@ -2663,47 +2683,46 @@ int SliderPlus::nTicks() {
 //----------------------------
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    event->accept();
-	/*
-    if (maybeSave()) {
-        writeSettings();
-        event->accept();
-    } else {
-        event->ignore();
-    }
-	*/
+//    event->accept();
+//    if (maybeSave()) {
+//        writeSettings();
+//        event->accept();
+//    } else {
+//        event->ignore();
+//    }
 }
 
 void MainWindow::newFile()
 {
-    if (maybeSave()) {
-        textEdit->clear();
-        setCurrentFile("");
-    }
+//    if (maybeSave()) {
+//        textEdit->clear();
+//        setCurrentFile("");
+//    }
 }
 
 void MainWindow::open()
 {
-    if (maybeSave()) {
-        QString fileName = QFileDialog::getOpenFileName(this);
-        if (!fileName.isEmpty())
-            loadFile(fileName);
-    }
+//    if (maybeSave()) {
+//        QString fileName = QFileDialog::getOpenFileName(this);
+//        if (!fileName.isEmpty())
+//            loadFile(fileName);
+//    }
 }
 
 void MainWindow::about()
 {
-   QMessageBox::about(this, tr("About Application"),
-            tr("The <b>Application</b> example demonstrates how to "
-               "write modern GUI applications using Qt, with a menu bar, "
-               "toolbars, and a status bar."));
+//   QMessageBox::about(this, tr("About Application"),
+//            tr("The <b>Application</b> example demonstrates how to "
+//               "write modern GUI applications using Qt, with a menu bar, "
+//               "toolbars, and a status bar."));
 }
 
 void MainWindow::documentWasModified()
 {
-    setWindowModified(textEdit->document()->isModified());
+//    setWindowModified(textEdit->document()->isModified());
 }
 
+/*
 void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
@@ -2799,7 +2818,7 @@ void MainWindow::loadFile(const QString &fileName)
     setCurrentFile(fileName);
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
-/*
+
 bool MainWindow::saveFile(const QString &fileName)
 {
     QFile file(fileName);
@@ -2827,7 +2846,7 @@ bool MainWindow::saveFile(const QString &fileName)
 
     return true;
 }
-*/
+
 void MainWindow::setCurrentFile(const QString &fileName)
 {
     curFile = fileName;
@@ -2844,23 +2863,4 @@ QString MainWindow::strippedName(const QString &fullFileName)
 {
     return QFileInfo(fullFileName).fileName();
 }
-
-void MainWindow::on_cbox_SHOW_NONCOGNATE_toggled(bool checked)
-{
-    QLineEdit *le = findChild<QLineEdit*>("line_DISPLAY_FRACTION");
-    if (checked) {
-        le->setEnabled(true);
-    } else {
-        le->setEnabled(false);
-    }
-}
-
-void MainWindow::on_action_show_gradient3D_triggered()
-{
-    showGradient3D();
-}
-
-void MainWindow::on_action_show_gradient2D_triggered()
-{
-    showGradient2D();
-}
+*/

@@ -177,7 +177,7 @@ private:
 
     QPlainTextEdit *textEdit;
     QString curFile;
-
+    /*
     QMenu *fileMenu;
     QMenu *editMenu;
     QMenu *helpMenu;
@@ -193,7 +193,7 @@ private:
     QAction *pasteAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
-
+    */
 	QList<QLineEdit *> lineEdit_list;
 	QList<QSpinBox *> spin_list;
 	QList<QComboBox *> combo_list;
