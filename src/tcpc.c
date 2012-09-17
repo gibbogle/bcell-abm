@@ -51,7 +51,8 @@
 #endif
 
 /* Defines to make routines fortran-callable */
-#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+//#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+#ifdef _WIN32
 #define tcp_close TCP_CLOSE
 #define tcp_read TCP_READ
 #define tcp_write TCP_WRITE

@@ -922,7 +922,7 @@ void MainWindow::showMore(QString moreText)
 	LOG_QMSG(moreText);
 	
 //	if ((uintptr_t)sender() != currentDescription) {
-    int i = reinterpret_cast<int >(sender());
+    long i = reinterpret_cast<long>(sender());
     if (i != currentDescription) {
         text_more->setEnabled(true); // self.ui.text_description.setEnabled(1) #show()
         text_more->setText(moreText); // text_description

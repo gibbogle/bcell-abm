@@ -1,7 +1,7 @@
 #ifndef TRANSFER_H
 #define TRANSFER_H
 
-#include <QMutex.h>
+#include <QMutex>
 
 extern int showingVTK;
 

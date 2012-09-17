@@ -44,7 +44,8 @@
 #endif
 
 /* Defines to make routines fortran-callable */
-#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+//#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+#ifdef _WIN32
 #define tcp_connect TCP_CONNECT
 #define tcp_init TCP_INIT
 #else
