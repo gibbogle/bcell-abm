@@ -110,6 +110,7 @@ logical, parameter :: save_input = .true.
 integer, parameter :: MAX_DC = 1000
 integer, parameter :: MAX_FDC = 1000
 integer, parameter :: MAX_MRC = 1000
+integer, parameter :: MAX_TBM = 1000
 integer, parameter :: DCDIM = 4         ! MUST be an even number
 real, parameter :: DCRadius = 2		! (grids) This is just the approx size in the lattice, NOT the SOI
 
