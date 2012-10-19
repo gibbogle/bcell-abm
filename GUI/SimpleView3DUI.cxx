@@ -174,10 +174,10 @@ void SimpleView3D::saveImage(void)
 //------------------------------------------------------------------------------------------------
 void SimpleView3D::setParameters()
 {
-    chemo_select[0] = 1;
+    chemo_select[0] = 0;
     chemo_select[1] = 0;
     chemo_select[2] = 0;
-    chemo_select[3] = 0;
+    chemo_select[3] = 1;
     chemo_displayed[0] = false;
     chemo_displayed[1] = false;
     chemo_displayed[2] = false;
@@ -189,10 +189,10 @@ void SimpleView3D::setParameters()
 //------------------------------------------------------------------------------------------------
 void SimpleView3D::chooseParameters(void)
 {
-    chemo_select[0] = 1;
+    chemo_select[0] = 0;
     chemo_select[1] = 0;
     chemo_select[2] = 0;
-    chemo_select[3] = 0;
+    chemo_select[3] = 1;
     chemo_displayed[0] = false;
     chemo_displayed[1] = false;
     chemo_displayed[2] = false;

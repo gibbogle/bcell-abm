@@ -158,10 +158,10 @@ void SimpleView2D::saveImage(void)
 //------------------------------------------------------------------------------------------------
 void SimpleView2D::setParameters()
 {
-    chemo_select[0] = 1;
+    chemo_select[0] = 0;
     chemo_select[1] = 0;
     chemo_select[2] = 0;
-    chemo_select[3] = 0;
+    chemo_select[3] = 1;
     chemo_displayed[0] = false;
     chemo_displayed[1] = false;
     chemo_displayed[2] = false;
@@ -176,10 +176,10 @@ void SimpleView2D::setParameters()
 //------------------------------------------------------------------------------------------------
 void SimpleView2D::chooseParameters()
 {
-    chemo_select[0] = 1;
+    chemo_select[0] = 0;
     chemo_select[1] = 0;
     chemo_select[2] = 0;
-    chemo_select[3] = 0;
+    chemo_select[3] = 1;
     chemo_displayed[0] = false;
     chemo_displayed[1] = false;
     chemo_displayed[2] = false;
@@ -331,6 +331,8 @@ void SimpleView2D::displayFields(void)
 }
 
 //------------------------------------------------------------------------------------------------
+// This is cheap and nasty - assumes that chemo_select[] is initially consistent with the GUI
+// checkboxes, and just switches on and off whenever the checkbox changes state.
 //------------------------------------------------------------------------------------------------
 void SimpleView2D::stateChanged_CheckBox_S1P(void)
 {
@@ -428,6 +430,7 @@ void SimpleView2D::CreateGradientData(vtkSmartPointer<vtkStructuredGrid> sgrid_a
     for (ichemo=0; ichemo<max_chemo; ichemo++) {
         sgrid_array[ichemo]->SetDimensions(dims);
     }
+    LOG_QMSG("CreateGradientData");
   get_gradient2d_info(chemo_simulated, &nsites, &axis, &fraction);
   nchemo_used = 0;
   for (ichemo=0; ichemo<max_chemo; ichemo++) {

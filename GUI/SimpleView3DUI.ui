@@ -106,7 +106,7 @@
       <string>S1P</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
     <widget class="QCheckBox" name="checkBox_CCL21">
@@ -164,6 +164,9 @@
      </property>
      <property name="text">
       <string>CXCL13</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
