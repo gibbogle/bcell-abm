@@ -124,14 +124,20 @@ void Plot::setYScale(double maxval)
 //-----------------------------------------------------------------------------------------
 void Plot::redraw(double *x, double *y, int n, QString name)
 {
-	if (n == 1) { // That is, this is the first plotting instance.
+    QwtLegend *legend;
+    if (n == 1) { // That is, this is the first plotting instance.
         yscale = max(yscale,calc_yscale(y[0]));
 		setAxisScale(QwtPlot::yLeft, 0, yscale, 0);
-	}
+        legend = this->legend();
+        if (legend == NULL) {
+            legend = new QwtLegend();
+            this->insertLegend(legend, QwtPlot::RightLegend);
+        }
+    }
 	// Note: Number of pen colors should match ncmax
 	QColor pencolor[] = {Qt::black, Qt::red, Qt::blue, Qt::darkGreen, Qt::magenta, Qt::darkCyan };
 	QPen *pen = new QPen();
-	QwtLegend *legend = new QwtLegend();
+//	QwtLegend *legend = new QwtLegend();
 	for (int k=0; k<ncmax; k++) {
 		if (curve[k] == 0) continue;
 		if (name.compare(curve[k]->title().text()) == 0) {
@@ -143,7 +149,7 @@ void Plot::redraw(double *x, double *y, int n, QString name)
 			}
 			curve[k]->setPen(*pen);
 			curve[k]->setData(x, y, n);
-			this->insertLegend(legend, QwtPlot::RightLegend);
+//			this->insertLegend(legend, QwtPlot::RightLegend);
 			double ylast = y[n-1];
 			if (ylast > yscale) {
 				yscale = max(yscale,calc_yscale(ylast));
