@@ -112,7 +112,7 @@ MyVTK::MyVTK(QWidget *page, QWidget *key_page)
 	first_VTK = true;
 	DCmotion = false;
     DCfade = false;
-	playing = false;
+    playing = false;
 	paused = false;
     record = false;
 

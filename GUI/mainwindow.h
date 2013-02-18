@@ -12,7 +12,11 @@
 
 using namespace std;
 
+#ifdef DISPLAY768
+#include "ui_Bcell_GUI-768.h"
+#else
 #include "ui_Bcell_GUI.h"
+#endif
 #include <qwt_plot_curve.h>
 #include "params.h"
 #include "misc.h"

@@ -279,8 +279,8 @@ open(nfcell,file=inputfile,status='old')
 read(nfcell,*) BC_AVIDITY_MEDIAN            ! median of avidity distribution (only if fix_avidity = false)
 read(nfcell,*) BC_AVIDITY_SHAPE			    ! shape -> 1 gives normal dist with small variance
 read(nfcell,*) BC_COGNATE_FRACTION			
-read(nfcell,*) BC_STIM_RATE_CONSTANT		! rate const for TCR stimulation (-> molecules/min)
-read(nfcell,*) BC_STIM_HALFLIFE				! halflife of B cell stimulation (hours)
+!read(nfcell,*) BC_STIM_RATE_CONSTANT		! rate const for TCR stimulation (-> molecules/min)
+!read(nfcell,*) BC_STIM_HALFLIFE				! halflife of B cell stimulation (hours)
 read(nfcell,*) divide_mean1
 read(nfcell,*) divide_shape1
 read(nfcell,*) divide_mean2

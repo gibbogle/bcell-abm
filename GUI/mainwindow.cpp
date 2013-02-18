@@ -113,7 +113,18 @@ MainWindow::MainWindow(QWidget *parent)
     timer = new QTimer(this);
     vtk = new MyVTK(mdiArea_VTK, widget_key);
 	vtk->init();
-	tabs->setCurrentIndex(0);
+    QRect rect;
+    rect.setX(50);
+    rect.setY(30);
+    rect.setHeight(580);
+    rect.setWidth(800);
+    mdiArea_VTK->setGeometry(rect);
+    rect.setX(10);
+    rect.setY(10);
+    rect.setHeight(400);
+    rect.setWidth(900);
+    mdiArea->setGeometry(rect);
+    tabs->setCurrentIndex(0);
 	goToInputs();
 }
 
@@ -221,7 +232,7 @@ void MainWindow::createLists()
 
 	QwtPlot *qp;
 
-	qp = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_TC_AVIDITY");
+    qp = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_TC_AVIDITY");
 	distplot_list[0] = qp;
 	qp = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_DIVIDE1");
 	distplot_list[1] = qp;
@@ -286,15 +297,15 @@ void MainWindow:: drawDistPlots()
 			LOG_QMSG(name);
 		}
 		if (j == 0) {
-			qp->setTitle("TCR Avidity");
-            median_qstr = line_BC_AVIDITY_MEDIAN->text();
-            shape_qstr = line_BC_AVIDITY_SHAPE->text();
+//            qp->setTitle("BCR Avidity");
+//            median_qstr = line_BC_AVIDITY_MEDIAN->text();
+//            shape_qstr = line_BC_AVIDITY_SHAPE->text();
 		} else if (j == 1) {
-			qp->setTitle("First division time (hrs)");
+            qp->setTitle("First division time (h)");
 			median_qstr = line_DIVIDE1_MEDIAN->text();
 			shape_qstr = line_DIVIDE1_SHAPE->text();
 		} else if (j == 2) {
-			qp->setTitle("Later division time (hrs)");
+            qp->setTitle("Later division time (h)");
 			median_qstr = line_DIVIDE2_MEDIAN->text();
 			shape_qstr = line_DIVIDE2_SHAPE->text();
 		} else if (j == 3) {

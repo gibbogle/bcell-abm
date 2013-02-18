@@ -18,18 +18,18 @@ The shape value must be greater than 1, and values close to 1 give distributions
 "B cell cognate fraction",
 "The fraction of B cells that are cognate, i.e. recognize and respond to the antigen."},
 
-{"BC_STIM_RATE_CONSTANT", 1, 0.0, 100.0,
-"BCR stimulation rate constant",
-"Rate constant Ks for BCR stimulation, where:\n\
-rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
-[molecules/min]"},
+//{"BC_STIM_RATE_CONSTANT", 1, 0.0, 100.0,
+//"BCR stimulation rate constant",
+//"Rate constant Ks for BCR stimulation, where:\n\
+//rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
+//[molecules/min]"},
 	
-{"BC_STIM_HALFLIFE", 24.0, 0.0, 100.0,
-"BCR stimulation halflife",
-"Integrated BCR stimulation decays with a specified halflife. \n\
-[hours]"},
+//{"BC_STIM_HALFLIFE", 24.0, 0.0, 100.0,
+//"BCR stimulation halflife",
+//"Integrated BCR stimulation decays with a specified halflife. \n\
+//[hours]"},
 
-{"DIVIDE1_MEDIAN", 6.0, 0.0, 100.0,
+{"DIVIDE1_MEDIAN", 24.0, 0.0, 100.0,
 "1st division time median parameter",
 "The time taken for the first B cell division, after full activation, has a lognormal distribution, described by the median and shape parameters. \n\
 [hours]"},
@@ -38,7 +38,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "1st division time shape parameter",
 "The time taken for the first B cell division, after full activation, has a lognormal distribution, described by the median and shape parameters."},
 
-{"DIVIDE2_MEDIAN", 5.0, 0, 100.0,
+{"DIVIDE2_MEDIAN", 9.0, 0, 100.0,
 "Later division time median parameter",
 "The time taken for later B cell divisions has a lognormal distribution, described by the median and shape parameters.\n\
 [hours]"},
@@ -115,7 +115,7 @@ rate of BCR stimulation = Ks*(BCR avidity)*(antigen load)\n\
 "Compute B cell outflow limit?",
 "The upper bound on B cell outflow is computed together with inflow.  The alternative is to permit (probabilistic) egress of any cell at a portal."},
 
-{"RESIDENCE_TIME", 15.0, 10.0, 30.0,
+{"RESIDENCE_TIME", 12.0, 0.0, 0.0,
 "B cell residence time",
 "B cell residence time.\n\
 [hours]"},
